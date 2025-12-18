@@ -1,90 +1,222 @@
-# Leaderboard Nexus
+# ARSC Leaderboard
 
-A modern competition leaderboard application built with React, TypeScript, and Supabase.
+A modern, real-time competition leaderboard application built for tracking and ranking participants across various competitive events. Features comprehensive user management, admin controls, and Indonesian language support.
 
-## Features
+## 🌟 Features
 
-- Real-time leaderboard with global ranking
-- User authentication and role management
-- Competition participation tracking
-- Admin dashboard for managing users and competitions
-- Responsive design with Indonesian language support
-- Search and filter functionality
+### Core Functionality
+- **Real-time Leaderboard**: Live ranking system based on total competition participations
+- **Global Ranking**: Sticky ranks that persist through searches and filters
+- **User Authentication**: Secure login/signup with Supabase Auth
+- **Role-based Access**: Admin and user roles with different permissions
 
-## Technologies Used
+### Competition Management
+- **Competition Tracking**: Add and manage various competitions
+- **Participation Requests**: Users can submit participation requests for verification
+- **Category Support**: Organize competitions by categories
+- **Verification System**: Admin approval workflow for participations
 
-- **Frontend**: React 18, TypeScript, Vite
-- **UI**: ShadCN UI, Tailwind CSS
-- **Backend**: Supabase (PostgreSQL, Auth, Real-time)
-- **State Management**: TanStack Query
-- **Forms**: React Hook Form, Zod validation
-- **Icons**: Lucide React
+### Admin Dashboard
+- **User Management**: View, edit, and manage user accounts
+- **Competition Oversight**: Create and manage competitions
+- **Participation Verification**: Approve/reject participation requests
+- **Notification System**: Real-time notifications for pending requests
 
-## Getting Started
+### User Experience
+- **Responsive Design**: Mobile-first design with professional UI
+- **Indonesian Language**: Complete localization in Bahasa Indonesia
+- **Search & Filter**: Find users and competitions quickly
+- **Real-time Updates**: Live data synchronization across all users
 
-### Prerequisites
+## 🛠️ Tech Stack
 
-- Node.js (v18 or higher)
-- npm or bun
+### Frontend
+- **React 18** - Modern React with hooks and concurrent features
+- **TypeScript** - Type-safe development
+- **Vite** - Fast build tool and development server
+- **Tailwind CSS** - Utility-first CSS framework
+- **ShadCN UI** - Modern component library built on Radix UI
 
-### Installation
+### Backend & Database
+- **Supabase** - PostgreSQL database with real-time subscriptions
+- **Supabase Auth** - User authentication and authorization
+- **Row Level Security (RLS)** - Database-level security policies
 
-1. Clone the repository:
-```bash
-git clone <YOUR_GIT_URL>
-cd leaderboard-nexus
-```
+### Development Tools
+- **ESLint** - Code linting and formatting
+- **React Hook Form** - Form management with validation
+- **Zod** - Schema validation
+- **TanStack Query** - Server state management
+- **React Router** - Client-side routing
 
-2. Install dependencies:
-```bash
-npm install
-# or
-bun install
-```
+## 📋 Prerequisites
 
-3. Set up environment variables:
-Create a `.env` file with your Supabase credentials:
-```
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
+- **Node.js** (v18 or higher)
+- **npm** or **bun** package manager
+- **Supabase** account and project
 
-4. Start the development server:
-```bash
-npm run dev
-# or
-bun run dev
-```
+## 🚀 Installation
 
-## Available Scripts
+1. **Clone the repository**
+   ```bash
+   git clone <YOUR_GIT_URL>
+   cd arsc-leaderboard
+   ```
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   bun install
+   ```
 
-## Project Structure
+3. **Environment Setup**
+   Create a `.env` file in the root directory:
+   ```env
+   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+4. **Database Setup**
+   - Create a new Supabase project
+   - Run the migration file: `supabase/migrations/20251218144952_e94de84e-a3ce-41d7-affa-d5b6ed534991.sql`
+   - Update your Supabase URL and anon key in the `.env` file
+
+5. **Start Development Server**
+   ```bash
+   npm run dev
+   # or
+   bun run dev
+   ```
+
+## 📁 Project Structure
 
 ```
 src/
-├── components/          # Reusable UI components
-│   ├── ui/             # ShadCN UI components
-│   ├── leaderboard/    # Leaderboard-specific components
-│   ├── admin/          # Admin dashboard components
-│   └── layout/         # Layout components
-├── pages/              # Page components
-├── hooks/              # Custom React hooks
-├── lib/                # Utilities and types
-└── integrations/       # External service integrations
+├── components/              # Reusable UI components
+│   ├── ui/                 # ShadCN UI components
+│   ├── leaderboard/        # Leaderboard-specific components
+│   ├── admin/              # Admin dashboard components
+│   └── layout/             # Layout components
+├── pages/                  # Page components
+│   ├── Index.tsx          # Main leaderboard page
+│   ├── Auth.tsx           # Authentication page
+│   ├── Admin.tsx          # Admin dashboard
+│   └── NotFound.tsx       # 404 page
+├── hooks/                  # Custom React hooks
+├── lib/                    # Utilities and type definitions
+└── integrations/           # External service integrations
+    └── supabase/           # Supabase client and types
+
+supabase/
+├── config.toml            # Supabase configuration
+└── migrations/            # Database migrations
 ```
 
-## Deployment
+## 🗄️ Database Schema
 
-This application can be deployed to any static hosting service like Vercel, Netlify, or GitHub Pages.
+### Core Tables
 
-1. Build the project:
+- **`profiles`** - User profiles with participation statistics
+- **`competitions`** - Competition information and metadata
+- **`participation_logs`** - Verified competition participations
+- **`verification_requests`** - Pending participation requests
+- **`user_roles`** - User role management (admin/user)
+
+### Key Features
+
+- **Row Level Security (RLS)** enabled on all tables
+- **Real-time subscriptions** for live updates
+- **Automatic ranking calculation** via database triggers
+- **Secure role-based access** control
+
+## 🔧 Available Scripts
+
+```bash
+# Development
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+
+# Code Quality
+npm run lint         # Run ESLint
+```
+
+## 🌐 Deployment
+
+### Build for Production
 ```bash
 npm run build
 ```
 
-2. Deploy the `dist` folder to your hosting provider.
+### Deploy Options
+
+**Recommended Platforms:**
+- **Vercel** - Seamless React deployment
+- **Netlify** - Great for static sites with forms
+- **Railway** - Full-stack deployment with database
+- **Supabase Edge Functions** - Serverless deployment
+
+### Environment Variables for Production
+Ensure these environment variables are set in your deployment platform:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+## 👥 User Roles & Permissions
+
+### Regular Users
+- View leaderboard and rankings
+- Submit participation requests
+- Update their own profile
+- Search and filter leaderboard
+
+### Administrators
+- All user permissions plus:
+- Manage user accounts and roles
+- Create and edit competitions
+- Approve/reject participation requests
+- View admin dashboard with analytics
+
+## 🎨 UI/UX Features
+
+- **Dark/Light Theme Support** - Automatic theme detection
+- **Responsive Design** - Optimized for all screen sizes
+- **Indonesian Localization** - Complete Bahasa Indonesia interface
+- **Accessibility** - WCAG compliant components
+- **Loading States** - Smooth loading animations
+- **Error Handling** - User-friendly error messages
+
+## 🔒 Security Features
+
+- **Supabase RLS** - Database-level security
+- **JWT Authentication** - Secure token-based auth
+- **Input Validation** - Client and server-side validation
+- **SQL Injection Protection** - Parameterized queries
+- **XSS Protection** - Sanitized user inputs
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **Supabase** - For the amazing backend-as-a-service platform
+- **ShadCN** - For the beautiful UI components
+- **Tailwind CSS** - For the utility-first CSS framework
+- **React Community** - For the excellent ecosystem
+
+## 📞 Support
+
+For support, please open an issue in the GitHub repository or contact the development team.
+
+---
+
+**Built with ❤️ for competitive communities**
