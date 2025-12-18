@@ -4,15 +4,18 @@ import { Profile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, Loader2, Search } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { Plus, Pencil, Trash2, Loader2, Search, Shield } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function UsersManagement() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [userRoles, setUserRoles] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -20,19 +23,40 @@ export function UsersManagement() {
   const [formData, setFormData] = useState({ full_name: '', avatar_url: '' });
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const { isSuperAdmin } = useAuth();
 
   useEffect(() => {
     fetchProfiles();
   }, []);
 
   const fetchProfiles = async () => {
-    const { data, error } = await supabase
+    const { data: profilesData, error: profilesError } = await supabase
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (!error && data) {
-      setProfiles(data);
+    if (!profilesError && profilesData) {
+      setProfiles(profilesData);
+
+      // Fetch user roles for profiles that have user_id
+      const userIds = profilesData
+        .filter(p => p.user_id)
+        .map(p => p.user_id);
+
+      if (userIds.length > 0) {
+        const { data: rolesData, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('user_id, role')
+          .in('user_id', userIds);
+
+        if (!rolesError && rolesData) {
+          const rolesMap: Record<string, string> = {};
+          rolesData.forEach(role => {
+            rolesMap[role.user_id!] = role.role;
+          });
+          setUserRoles(rolesMap);
+        }
+      }
     }
     setIsLoading(false);
   };
@@ -95,6 +119,39 @@ export function UsersManagement() {
     }
 
     setIsSaving(false);
+  };
+
+  const handleRoleUpdate = async (userId: string, newRole: string) => {
+    if (!isSuperAdmin) {
+      toast({ title: 'Error', description: 'Only superadmins can manage user roles', variant: 'destructive' });
+      return;
+    }
+
+    // Remove existing role first
+    await supabase
+      .from('user_roles')
+      .delete()
+      .eq('user_id', userId);
+
+    // Add new role if not 'user'
+    if (newRole !== 'user') {
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role: newRole });
+
+      if (error) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        return;
+      }
+    }
+
+    // Update local state
+    setUserRoles(prev => ({
+      ...prev,
+      [userId]: newRole === 'user' ? undefined : newRole
+    }));
+
+    toast({ title: 'Success', description: `User role updated to ${newRole}` });
   };
 
   const handleDelete = async (profile: Profile) => {
@@ -193,6 +250,7 @@ export function UsersManagement() {
           <TableHeader>
             <TableRow>
               <TableHead>User</TableHead>
+              <TableHead>Role</TableHead>
               <TableHead className="text-center">Participations</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -217,6 +275,28 @@ export function UsersManagement() {
                       </Avatar>
                       <span className="font-medium">{profile.full_name}</span>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {isSuperAdmin && profile.user_id ? (
+                      <Select
+                        value={userRoles[profile.user_id] || 'user'}
+                        onValueChange={(value) => handleRoleUpdate(profile.user_id!, value)}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">User</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="superadmin">Superadmin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-sm font-medium bg-muted">
+                        <Shield className="w-3 h-3" />
+                        {profile.user_id ? (userRoles[profile.user_id] || 'user') : 'No Account'}
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="text-center">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-primary/10 text-primary">

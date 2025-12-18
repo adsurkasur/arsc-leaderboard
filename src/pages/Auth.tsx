@@ -117,8 +117,8 @@ export default function Auth() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
               <Trophy className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold">Welcome</h1>
-            <p className="text-muted-foreground">Sign in to access the admin panel</p>
+            <h1 className="text-2xl font-bold">Competition Leaderboard</h1>
+            <p className="text-muted-foreground">Sign in to track your rankings and submit new participation records.</p>
           </div>
 
           {/* Auth Card */}

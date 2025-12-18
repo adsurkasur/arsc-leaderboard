@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Profile, Competition, ParticipationLog } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -21,7 +22,7 @@ export function ParticipationManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<string>('');
-  const [selectedCompetition, setSelectedCompetition] = useState<string>('');
+  const [competitionName, setCompetitionName] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const { user } = useAuth();
@@ -60,35 +61,79 @@ export function ParticipationManagement() {
   };
 
   const handleAddParticipation = async () => {
-    if (!selectedProfile || !selectedCompetition) {
-      toast({ title: 'Error', description: 'Please select a user and competition', variant: 'destructive' });
+    if (!selectedProfile || !competitionName.trim()) {
+      toast({ title: 'Error', description: 'Please select a user and enter a competition name', variant: 'destructive' });
       return;
     }
 
     setIsSaving(true);
 
-    const { error } = await supabase
-      .from('participation_logs')
-      .insert({
-        profile_id: selectedProfile,
-        competition_id: selectedCompetition,
-        admin_id: user?.id,
-        notes: notes || null
-      });
+    try {
+      // Check if competition exists, create if not
+      let competitionId: string;
+      const existingCompetition = competitions.find(
+        comp => comp.title.toLowerCase() === competitionName.trim().toLowerCase()
+      );
 
-    if (error) {
-      if (error.code === '23505') {
-        toast({ title: 'Error', description: 'This user is already registered for this competition', variant: 'destructive' });
+      if (existingCompetition) {
+        competitionId = existingCompetition.id;
       } else {
-        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        // Create new competition
+        const { data: newCompetition, error: createError } = await supabase
+          .from('competitions')
+          .insert({
+            title: competitionName.trim(),
+            category: 'General', // Default category
+            date: new Date().toISOString().split('T')[0], // Today's date
+          })
+          .select('id')
+          .single();
+
+        if (createError) {
+          toast({
+            title: 'Error',
+            description: 'Failed to create competition: ' + createError.message,
+            variant: 'destructive',
+          });
+          setIsSaving(false);
+          return;
+        }
+
+        competitionId = newCompetition.id;
+        // Refresh competitions list
+        await fetchData();
       }
-    } else {
-      toast({ title: 'Success', description: 'Participation added successfully' });
-      setIsDialogOpen(false);
-      setSelectedProfile('');
-      setSelectedCompetition('');
-      setNotes('');
-      fetchData();
+
+      // Add participation log
+      const { error } = await supabase
+        .from('participation_logs')
+        .insert({
+          profile_id: selectedProfile,
+          competition_id: competitionId,
+          admin_id: user?.id,
+          notes: notes || null
+        });
+
+      if (error) {
+        if (error.code === '23505') {
+          toast({ title: 'Error', description: 'This user is already registered for this competition', variant: 'destructive' });
+        } else {
+          toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        }
+      } else {
+        toast({ title: 'Success', description: 'Participation added successfully' });
+        setIsDialogOpen(false);
+        setSelectedProfile('');
+        setCompetitionName('');
+        setNotes('');
+        fetchData();
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
     }
 
     setIsSaving(false);
@@ -162,18 +207,15 @@ export function ParticipationManagement() {
               </div>
               <div className="space-y-2">
                 <Label>Select Competition</Label>
-                <Select value={selectedCompetition} onValueChange={setSelectedCompetition}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a competition..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {competitions.map((competition) => (
-                      <SelectItem key={competition.id} value={competition.id}>
-                        {competition.title} ({format(new Date(competition.date), 'MMM d, yyyy')})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  placeholder="Enter competition name"
+                  value={competitionName}
+                  onChange={(e) => setCompetitionName(e.target.value)}
+                  className="border-primary/20 focus:border-primary"
+                />
+                <p className="text-xs text-muted-foreground">
+                  If the competition doesn't exist, it will be created automatically.
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="notes">Notes (optional)</Label>

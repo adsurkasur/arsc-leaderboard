@@ -1,8 +1,141 @@
+import { useState, useEffect } from 'react';
 import { LeaderboardTable } from '@/components/leaderboard/LeaderboardTable';
 import { Header } from '@/components/layout/Header';
-import { Trophy, Users, Activity } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Competition } from '@/lib/types';
+import { Trophy, Users, Activity, Plus, Loader2 } from 'lucide-react';
 
 const Index = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [competitions, setCompetitions] = useState<Competition[]>([]);
+  const [competitionName, setCompetitionName] = useState('');
+  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchCompetitions();
+  }, []);
+
+  const fetchCompetitions = async () => {
+    const { data, error } = await supabase
+      .from('competitions')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (!error && data) {
+      setCompetitions(data);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!competitionName.trim() || !message.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a competition name and provide a message.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Get user's profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (!profile) {
+        toast({
+          title: 'Error',
+          description: 'User profile not found. Please contact an administrator.',
+          variant: 'destructive',
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Check if competition exists, create if not
+      let competitionId: string;
+      const existingCompetition = competitions.find(
+        comp => comp.title.toLowerCase() === competitionName.trim().toLowerCase()
+      );
+
+      if (existingCompetition) {
+        competitionId = existingCompetition.id;
+      } else {
+        // Create new competition
+        const { data: newCompetition, error: createError } = await supabase
+          .from('competitions')
+          .insert({
+            title: competitionName.trim(),
+            category: 'General', // Default category
+            date: new Date().toISOString().split('T')[0], // Today's date
+          })
+          .select('id')
+          .single();
+
+        if (createError) {
+          toast({
+            title: 'Error',
+            description: 'Failed to create competition: ' + createError.message,
+            variant: 'destructive',
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
+        competitionId = newCompetition.id;
+        // Refresh competitions list
+        fetchCompetitions();
+      }
+
+      // Submit verification request
+      const { error } = await supabase
+        .from('verification_requests')
+        .insert({
+          profile_id: profile.id,
+          competition_id: competitionId,
+          message: message.trim(),
+        });
+
+      if (error) {
+        toast({
+          title: 'Error',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Success',
+          description: 'Your participation request has been submitted for review.',
+        });
+        setIsModalOpen(false);
+        setCompetitionName('');
+        setMessage('');
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
+    }
+
+    setIsSubmitting(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -53,12 +186,75 @@ const Index = () => {
           <p className="text-muted-foreground">Rankings based on total competition participation</p>
         </div>
         <LeaderboardTable />
+        
+        {/* Submit Participation Section */}
+        {user && (
+          <div className="mt-12 text-center">
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+              <DialogTrigger asChild>
+                <Button size="lg" className="gap-2">
+                  <Plus className="w-5 h-5" />
+                  Submit Participation
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Submit Participation Request</DialogTitle>
+                  <DialogDescription>
+                    Select a competition and provide details about your participation.
+                    Your request will be reviewed by an administrator.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="competition">Competition Name</Label>
+                    <Input
+                      id="competition"
+                      placeholder="Enter competition name"
+                      value={competitionName}
+                      onChange={(e) => setCompetitionName(e.target.value)}
+                      className="border-primary/20 focus:border-primary"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      If the competition doesn't exist, it will be created automatically.
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="message">Message</Label>
+                    <Textarea
+                      id="message"
+                      placeholder="Describe your participation or provide any additional details..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      rows={4}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSubmit} disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      'Submit Request'
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
       </main>
 
       {/* Footer */}
       <footer className="border-t py-8 bg-muted/30">
         <div className="container text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Leaderboard System. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Competition Leaderboard. All rights reserved.</p>
         </div>
       </footer>
     </div>

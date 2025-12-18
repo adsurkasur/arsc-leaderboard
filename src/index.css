@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @layer base {
   :root {
@@ -15,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 15%;
 
-    --primary: 210 100% 35%;
+    --primary: 207 100% 35%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 20% 96%;
@@ -80,7 +80,7 @@
     --popover: 215 28% 12%;
     --popover-foreground: 210 20% 95%;
 
-    --primary: 210 100% 55%;
+    --primary: 207 100% 55%;
     --primary-foreground: 215 30% 8%;
 
     --secondary: 215 25% 18%;

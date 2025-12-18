@@ -51,6 +51,33 @@ export function NotificationInbox() {
   const handleUpdateStatus = async (id: string, status: 'approved' | 'rejected') => {
     setProcessingId(id);
 
+    // For approved requests, first create a participation log
+    if (status === 'approved') {
+      const request = requests.find(r => r.id === id);
+      if (!request) {
+        toast({ title: 'Error', description: 'Request not found', variant: 'destructive' });
+        setProcessingId(null);
+        return;
+      }
+
+      // Create participation log first
+      const { error: logError } = await supabase
+        .from('participation_logs')
+        .insert({
+          profile_id: request.profile_id,
+          competition_id: request.competition_id,
+          admin_id: (await supabase.auth.getUser()).data.user?.id,
+          notes: `Approved via verification request: ${request.message}`
+        });
+
+      if (logError) {
+        toast({ title: 'Error', description: `Failed to create participation log: ${logError.message}`, variant: 'destructive' });
+        setProcessingId(null);
+        return;
+      }
+    }
+
+    // Update the verification request status
     const { error } = await supabase
       .from('verification_requests')
       .update({ status })
