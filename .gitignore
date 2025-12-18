@@ -26,3 +26,9 @@ dist-ssr
 # Environment files
 *.env.*
 .env
+
+# Supabase
+.supabase/
+supabase/.branches/
+supabase/.temp/
+supabase/.ref
