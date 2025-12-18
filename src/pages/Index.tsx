@@ -42,7 +42,7 @@ const Index = () => {
     if (!competitionName.trim() || !competitionCategory.trim() || !message.trim()) {
       toast({
         title: 'Kesalahan',
-        description: 'Silakan masukkan nama kompetisi, pilih kategori, dan berikan pesan.',
+        description: 'Silakan isi nama kompetisi, pilih kategori, dan tuliskan pesan.',
         variant: 'destructive',
       });
       return;
@@ -121,7 +121,7 @@ const Index = () => {
       } else {
         toast({
           title: 'Berhasil',
-          description: 'Permintaan partisipasi Anda telah diajukan untuk ditinjau.',
+          description: 'Permintaan partisipasi Anda telah dikirim untuk ditinjau.',
         });
         setIsModalOpen(false);
         setCompetitionName('');
@@ -150,7 +150,7 @@ const Index = () => {
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium animate-fade-in">
               <Trophy className="w-4 h-4" />
-              Peringkat Kompetisi
+              Papan Peringkat
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-balance animate-slide-up">
               Temukan Para
@@ -166,8 +166,8 @@ const Index = () => {
       {/* Leaderboard Section */}
       <main className="container py-12">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-2">Papan Peringkat Kompetisi</h2>
-          <p className="text-muted-foreground">Peringkat berdasarkan total partisipasi kompetisi</p>
+          <h2 className="text-2xl font-bold mb-2">Papan Peringkat</h2>
+          <p className="text-muted-foreground">Peringkat berdasarkan total partisipasi</p>
         </div>
         <LeaderboardTable />
         
@@ -183,10 +183,9 @@ const Index = () => {
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Ajukan Permintaan Partisipasi</DialogTitle>
+                  <DialogTitle>Ajukan Partisipasi</DialogTitle>
                   <DialogDescription>
-                    Pilih kompetisi dan berikan detail tentang partisipasi Anda.
-                    Permintaan Anda akan ditinjau oleh administrator.
+                    Pilih kompetisi dan jelaskan detail partisipasi Anda. Permintaan akan ditinjau oleh administrator.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -200,11 +199,11 @@ const Index = () => {
                       className="border-primary/20 focus:border-primary"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Jika kompetisi tidak ada, maka akan dibuat secara otomatis.
+                      Jika kompetisi belum ada, akan dibuat otomatis.
                     </p>
                   </div>
                   <div>
-                    <Label htmlFor="category">Kategori Kompetisi *</Label>
+                    <Label htmlFor="category">Kategori *</Label>
                     <Select value={competitionCategory} onValueChange={setCompetitionCategory}>
                       <SelectTrigger className="border-primary/20 focus:border-primary">
                         <SelectValue placeholder="Pilih kategori" />
@@ -222,7 +221,7 @@ const Index = () => {
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Ini membantu dalam memfilter papan peringkat berdasarkan kategori.
+                      Ini membantu memfilter papan peringkat berdasarkan kategori.
                     </p>
                   </div>
                   <div>
@@ -247,7 +246,7 @@ const Index = () => {
                         Mengirim...
                       </>
                     ) : (
-                      'Ajukan Permintaan'
+                      'Kirim Permintaan'
                     )}
                   </Button>
                 </DialogFooter>

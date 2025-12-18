@@ -25,7 +25,7 @@ export default function Admin() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Memuat panel admin...</p>
+          <p className="text-muted-foreground">Memuat dashboard admin...</p>
         </div>
       </div>
     );
@@ -42,7 +42,7 @@ export default function Admin() {
       <main className="container py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Dashboard Admin</h1>
-          <p className="text-muted-foreground">Kelola pengguna, kompetisi, dan log partisipasi</p>
+          <p className="text-muted-foreground">Kelola pengguna, kompetisi, dan catatan partisipasi</p>
         </div>
 
         <Tabs defaultValue="users" className="space-y-6">

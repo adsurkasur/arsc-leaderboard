@@ -135,8 +135,8 @@ export default function Auth() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
               <Trophy className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold">Papan Peringkat Kompetisi</h1>
-            <p className="text-muted-foreground">Masuk untuk melacak peringkat Anda dan mengajukan catatan partisipasi baru.</p>
+            <h1 className="text-2xl font-bold">Papan Peringkat</h1>
+            <p className="text-muted-foreground">Masuk untuk melihat peringkat Anda dan mengajukan partisipasi baru.</p>
           </div>
 
           {/* Auth Card */}

@@ -134,7 +134,7 @@ export function Header() {
           <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
             <Trophy className="w-5 h-5 text-primary" />
           </div>
-          <span className="font-bold text-xl tracking-tight">Papan Peringkat Kompetisi</span>
+          <span className="font-bold text-xl tracking-tight">Papan Peringkat</span>
         </Link>
 
         <nav className="flex items-center gap-4">
@@ -159,7 +159,7 @@ export function Header() {
                     <DialogHeader>
                       <DialogTitle>Permintaan Partisipasi Saya</DialogTitle>
                       <DialogDescription>
-                        Lacak status permintaan partisipasi kompetisi Anda.
+                        Lacak status permintaan partisipasi Anda.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 max-h-96 overflow-y-auto">
@@ -170,7 +170,7 @@ export function Header() {
                       ) : userRequests.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground">
                           <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                          <p>Tidak ada permintaan ditemukan</p>
+                          <p>Belum ada permintaan</p>
                           <p className="text-sm">Ajukan permintaan partisipasi untuk memulai</p>
                         </div>
                       ) : (
