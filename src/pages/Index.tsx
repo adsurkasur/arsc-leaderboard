@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +19,7 @@ const Index = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [competitionName, setCompetitionName] = useState('');
+  const [competitionCategory, setCompetitionCategory] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,10 +39,10 @@ const Index = () => {
   };
 
   const handleSubmit = async () => {
-    if (!competitionName.trim() || !message.trim()) {
+    if (!competitionName.trim() || !competitionCategory.trim() || !message.trim()) {
       toast({
         title: 'Error',
-        description: 'Please enter a competition name and provide a message.',
+        description: 'Please enter a competition name, select a category, and provide a message.',
         variant: 'destructive',
       });
       return;
@@ -80,7 +82,7 @@ const Index = () => {
           .from('competitions')
           .insert({
             title: competitionName.trim(),
-            category: 'General', // Default category
+            category: competitionCategory.trim(),
             date: new Date().toISOString().split('T')[0], // Today's date
           })
           .select('id')
@@ -123,6 +125,7 @@ const Index = () => {
         });
         setIsModalOpen(false);
         setCompetitionName('');
+        setCompetitionCategory('');
         setMessage('');
       }
     } catch (error) {
@@ -217,6 +220,28 @@ const Index = () => {
                     />
                     <p className="text-xs text-muted-foreground mt-1">
                       If the competition doesn't exist, it will be created automatically.
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="category">Competition Category *</Label>
+                    <Select value={competitionCategory} onValueChange={setCompetitionCategory}>
+                      <SelectTrigger className="border-primary/20 focus:border-primary">
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Academic">Academic</SelectItem>
+                        <SelectItem value="Sports">Sports</SelectItem>
+                        <SelectItem value="Innovation">Innovation</SelectItem>
+                        <SelectItem value="Art">Art</SelectItem>
+                        <SelectItem value="Technology">Technology</SelectItem>
+                        <SelectItem value="Science">Science</SelectItem>
+                        <SelectItem value="Business">Business</SelectItem>
+                        <SelectItem value="Culture">Culture</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      This helps in filtering the leaderboard by category.
                     </p>
                   </div>
                   <div>

@@ -2,8 +2,78 @@
 
 ## Current Task Status
 - **Phase**: Complete
-- **Task**: Comprehensive Profile and Signup System Update
+- **Task**: Category Field for Participation Requests
 - **Last Updated**: 2025-12-18
+
+## Recent Implementation: Modal Centering Fix
+
+### Problem Solved
+- **Modal Spawn Offset**: Modals were appearing with offset positioning instead of perfect center
+- **Layout Shifts**: Scrollbar hiding/showing caused layout shifts during modal opening
+- **Animation Issues**: Animations started from incorrect positions due to translate-based centering
+
+### Solution Implemented
+- **Flexbox Centering**: Replaced translate-based positioning with natural flexbox centering
+- **DialogOverlay Refactor**: Updated to use `flex items-center justify-center` for natural centering
+- **DialogContent Restructure**: Moved DialogContent inside DialogOverlay with relative positioning
+- **Scrollbar Prevention**: Added `scrollbar-gutter: stable` to body to prevent layout shifts
+
+### Files Modified
+- `src/components/ui/dialog.tsx`: Refactored DialogOverlay and DialogContent structure
+- `src/index.css`: Added scrollbar-gutter prevention
+
+### Testing Results
+- ✅ Build successful with no compilation errors
+- ✅ Application starts without runtime errors
+- ✅ Modal structure properly restructured for flexbox centering
+- ✅ Scrollbar gutter prevention implemented
+- ✅ Test modal created, verified, and cleaned up
+- ✅ Final build successful after cleanup
+
+### Task Status: COMPLETE
+The nuclear modal centering implementation has been successfully completed. All modals in the application (Submit Participation, Profile Settings, Details) will now appear perfectly centered without offset or layout shifts.
+
+## Recent Implementation: Category Field for Participation Requests
+
+### Problem Solved
+- **Missing Category Support**: Participation requests lacked category information needed for leaderboard filtering
+- **Hardcoded Categories**: New competitions were created with a default 'General' category
+- **No Category Validation**: Users could submit requests without specifying competition categories
+
+### Solution Implemented
+- **Category Select Field**: Added a dropdown select field with predefined categories
+- **Required Validation**: Made category field mandatory before submission
+- **Auto-Creation Logic**: Updated competition creation to use user-selected category
+- **UI Integration**: Seamlessly integrated with existing modal design and theme
+
+### Files Modified
+- `src/pages/Index.tsx`: Added category state, validation, UI field, and submission logic
+
+### Category Options Provided
+- Academic, Sports, Innovation, Art, Technology, Science, Business, Culture, Other
+
+### Technical Details
+- **State Management**: Added `competitionCategory` state variable
+- **Validation**: Updated handleSubmit to require category field
+- **Database Integration**: Modified competition creation to use selected category
+- **UI Components**: Used ShadCN Select component with proper styling
+- **Form Reset**: Updated form clearing to include category field
+
+### Testing Results
+- ✅ Build successful with no compilation errors
+- ✅ Application starts without runtime errors
+- ✅ Category field properly integrated into modal
+- ✅ Validation prevents submission without category
+- ✅ Competition creation uses selected category
+- ✅ Form reset clears all fields including category
+
+### Task Status: COMPLETE
+The category field implementation has been successfully completed. Users can now select competition categories when submitting participation requests, enabling proper leaderboard filtering functionality.
+
+### Technical Details
+- **DialogOverlay**: Now uses flexbox container with `fixed inset-0 z-50 flex items-center justify-center`
+- **DialogContent**: Positioned relatively within the flex container, removing translate classes
+- **Scrollbar Gutter**: `scrollbar-gutter: stable` prevents layout shifts when modals hide scrollbars
 
 ## Project Overview
 **Leaderboard Nexus** is a modern web application for managing competition leaderboards. It provides a public-facing leaderboard that ranks participants based on their competition participation, with an admin panel for managing users, competitions, and participation records.
