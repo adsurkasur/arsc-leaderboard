@@ -2,7 +2,7 @@
 
 ## Current Task Status
 - **Phase**: Complete
-- **Task**: Superadmin Role Management Implementation
+- **Task**: Comprehensive Profile and Signup System Update
 - **Last Updated**: 2025-12-18
 
 ## Project Overview
@@ -162,6 +162,19 @@ src/
 - **2025-12-18**: Replaced competition dropdowns with text inputs for better UX
 - **2025-12-18**: Simplified role system to user/admin only, removed superadmin tier
 - **2025-12-18**: Finalized role system cleanup - all superadmin references removed
+- **2025-12-18**: Implemented Participation Details modal in LeaderboardTable component
+- **2025-12-18**: Added public access to view detailed participation history for any user
+- **2025-12-18**: Completed modal UI with loading states, error handling, and responsive design
+- **2025-12-18**: Implemented search and category filtering on leaderboard
+- **2025-12-18**: Added dynamic participation count calculation by category
+- **2025-12-18**: Enhanced empty states with contextual messages
+- **2025-12-18**: Added loading indicators for category data fetching
+- **2025-12-18**: Enhanced signup form with Full Name and Bidang/Biro fields
+- **2025-12-18**: Updated leaderboard display to show full_name and bidang_biro
+- **2025-12-18**: Added Profile Settings modal in Header component
+- **2025-12-18**: Implemented profile management with edit capabilities
+- **2025-12-18**: Added database migration for bidang_biro field
+- **2025-12-18**: Updated TypeScript types and interfaces
 
 ## Decisions Made
 - **Analysis Scope**: Focused on core functionality, architecture, and patterns
@@ -170,6 +183,101 @@ src/
 
 ## Issues & Resolutions
 - **None identified**: Project appears well-structured with no compilation errors
+
+## Participation Details Feature Completion
+✅ **Public Participation Viewing Implemented**
+
+**Feature Overview:**
+- Added "Details" column to leaderboard table with Info icon button
+- Implemented modal dialog showing user's participation history
+- Displays competition title, date, category, and participation date
+- Public access - any user can view any participant's details
+- Responsive design with loading states and error handling
+
+**Technical Implementation:**
+- Added Dialog components from ShadCN UI
+- Implemented handleViewDetails function with Supabase query
+- Joined participation_logs with competitions table
+- Added proper loading and empty states
+- Integrated with existing table structure and styling
+
+**User Experience:**
+- Click Info icon on any leaderboard row to view details
+- Modal shows chronological list of competitions participated in
+- Clean, professional UI matching existing design system
+- Mobile-responsive with scrollable content area
+
+## Search and Category Filtering Implementation
+✅ **Advanced Filtering System Implemented**
+
+**Features Added:**
+- **Real-time Search**: Case-insensitive participant name filtering with Search icon
+- **Category Filtering**: Dynamic dropdown fetching unique categories from competitions table
+- **Dynamic Rankings**: Participation counts recalculated based on selected category
+- **Smart Empty States**: Contextual messages for search/filter combinations
+- **Loading States**: Visual feedback during category data fetching
+
+**Technical Implementation:**
+- Enhanced LeaderboardTable component with category-specific participation counting
+- Added fetchCategoryParticipationCounts function with Supabase joins
+- Updated filteredAndSortedEntries logic to use effective participation counts
+- Implemented responsive layout (side-by-side on desktop, stacked on mobile)
+- Maintained professional blue (#0056b3) theme throughout
+
+**Database Queries:**
+- Categories fetched from competitions table with deduplication
+- Category participation counts calculated via participation_logs ↔ competitions join
+- Real-time updates maintained for all filtering states
+
+**User Experience:**
+- Instant search as user types
+- Category selection immediately updates rankings and counts
+- Clear visual feedback with loading spinners
+- Responsive design works on all screen sizes
+- Intuitive "No results found" messages when filters yield no matches
+
+## Profile and Signup System Implementation
+✅ **Identity-Focused User Experience Implemented**
+
+**Signup Form Enhancements:**
+- **Full Name Field**: Required text input for complete user identification
+- **Bidang/Biro Dropdown**: 6 predefined organizational roles with validation
+- **Metadata Storage**: User profile data stored in Supabase auth metadata
+- **Form Validation**: Comprehensive client-side validation with error messages
+- **Professional UI**: Consistent with existing blue (#0056b3) theme
+
+**Leaderboard Display Updates:**
+- **Identity Display**: Shows full_name prominently with bidang_biro as subtitle badge
+- **Visual Hierarchy**: Name in bold, department in muted badge style
+- **Responsive Layout**: Maintains clean appearance across all screen sizes
+- **Avatar Integration**: Profile pictures with fallback initials
+
+**Profile Management System:**
+- **Settings Modal**: Accessible via user dropdown menu in header
+- **Edit Capabilities**: Users can update Full Name and Bidang/Biro
+- **Real-time Updates**: Changes reflect immediately in leaderboard
+- **Success Feedback**: Toast notifications for successful updates
+- **Loading States**: Visual feedback during profile updates
+
+**Database Schema Updates:**
+- **New Migration**: Added bidang_biro column to profiles table
+- **Data Validation**: Check constraint ensuring valid bidang_biro values
+- **Type Safety**: Updated TypeScript interfaces and Supabase types
+- **Backward Compatibility**: Nullable field for existing users
+
+**Bidang/Biro Options:**
+1. Ketua Umum (KETUM)
+2. Biro Pengembangan Sumber Daya Mahasiswa (PSDM)
+3. Biro Administrasi dan Keuangan (ADKEU)
+4. Bidang Kepenulisan dan Kompetisi (PENKOM)
+5. Bidang Riset dan Teknologi (RISTEK)
+6. Bidang Informasi dan Komunikasi (INFOKOM)
+
+**User Journey Enhancement:**
+- **Registration**: Users provide complete identity information during signup
+- **Profile Management**: Easy access to update personal information
+- **Public Display**: Professional presentation of user identities on leaderboard
+- **Organizational Context**: Clear departmental affiliations for community building
 
 ## Final Summary
 ✅ **Complete Admin Workflow Bridge Implemented**

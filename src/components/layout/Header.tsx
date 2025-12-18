@@ -1,22 +1,32 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { VerificationRequest, Competition } from '@/lib/types';
-import { Trophy, Shield, LogOut, User, Clock, Loader2 } from 'lucide-react';
+import { VerificationRequest, Competition, Profile } from '@/lib/types';
+import { Trophy, Shield, LogOut, User, Clock, Loader2, Settings } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 export function Header() {
   const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [isRequestsOpen, setIsRequestsOpen] = useState(false);
   const [userRequests, setUserRequests] = useState<(VerificationRequest & { competition?: Competition })[]>([]);
   const [isLoadingRequests, setIsLoadingRequests] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profileFullName, setProfileFullName] = useState('');
+  const [profileBidangBiro, setProfileBidangBiro] = useState('');
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
   console.log('Header - isAdmin:', isAdmin, 'user:', user?.id);
 
@@ -25,6 +35,12 @@ export function Header() {
       fetchUserRequests();
     }
   }, [isRequestsOpen, user, isAdmin]);
+
+  useEffect(() => {
+    if (isProfileOpen && user) {
+      fetchUserProfile();
+    }
+  }, [isProfileOpen, user]);
 
   const fetchUserRequests = async () => {
     if (!user) return;
@@ -47,6 +63,52 @@ export function Header() {
       })));
     }
     setIsLoadingRequests(false);
+  };
+
+  const fetchUserProfile = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!error && data) {
+      setProfile(data);
+      setProfileFullName(data.full_name);
+      setProfileBidangBiro(data.bidang_biro || '');
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!user || !profile) return;
+
+    setIsUpdatingProfile(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        full_name: profileFullName,
+        bidang_biro: profileBidangBiro,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', user.id);
+
+    setIsUpdatingProfile(false);
+
+    if (error) {
+      toast({
+        title: 'Update failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Profile updated!',
+        description: 'Your profile has been successfully updated.',
+      });
+      setIsProfileOpen(false);
+    }
   };
 
   const handleSignOut = async () => {
@@ -131,6 +193,57 @@ export function Header() {
                   </DialogContent>
                 </Dialog>
               )}
+              
+              {/* Profile Settings Modal */}
+              <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Profile Settings</DialogTitle>
+                    <DialogDescription>
+                      Update your profile information and bidang/biro.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="profile-fullname">Full Name</Label>
+                      <Input
+                        id="profile-fullname"
+                        type="text"
+                        placeholder="Enter your full name"
+                        value={profileFullName}
+                        onChange={(e) => setProfileFullName(e.target.value)}
+                        disabled={isUpdatingProfile}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="profile-bidangbiro">Bidang/Biro</Label>
+                      <Select value={profileBidangBiro} onValueChange={setProfileBidangBiro} disabled={isUpdatingProfile}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your bidang/biro" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Ketua Umum (KETUM)">Ketua Umum (KETUM)</SelectItem>
+                          <SelectItem value="Biro Pengembangan Sumber Daya Mahasiswa (PSDM)">Biro Pengembangan Sumber Daya Mahasiswa (PSDM)</SelectItem>
+                          <SelectItem value="Biro Administrasi dan Keuangan (ADKEU)">Biro Administrasi dan Keuangan (ADKEU)</SelectItem>
+                          <SelectItem value="Bidang Kepenulisan dan Kompetisi (PENKOM)">Bidang Kepenulisan dan Kompetisi (PENKOM)</SelectItem>
+                          <SelectItem value="Bidang Riset dan Teknologi (RISTEK)">Bidang Riset dan Teknologi (RISTEK)</SelectItem>
+                          <SelectItem value="Bidang Informasi dan Komunikasi (INFOKOM)">Bidang Informasi dan Komunikasi (INFOKOM)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsProfileOpen(false)} disabled={isUpdatingProfile}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleUpdateProfile} disabled={isUpdatingProfile}>
+                      {isUpdatingProfile && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      Update Profile
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full">
@@ -142,6 +255,11 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => setIsProfileOpen(true)} className="cursor-pointer">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Profile Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem disabled className="text-muted-foreground">
                     <User className="w-4 h-4 mr-2" />
                     {user.email}

@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Trophy, Medal, Award, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Search, Trophy, Medal, Award, ArrowUpDown, ArrowUp, ArrowDown, Info, Loader2 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 
 type SortField = 'rank' | 'full_name' | 'total_participation_count' | 'last_activity_at';
@@ -21,6 +22,14 @@ export function LeaderboardTable() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortField, setSortField] = useState<SortField>('total_participation_count');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [categoryParticipationCounts, setCategoryParticipationCounts] = useState<Record<string, number>>({});
+  const [isLoadingCategoryData, setIsLoadingCategoryData] = useState(false);
+  
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
+  const [participationData, setParticipationData] = useState<any[]>([]);
+  const [isLoadingParticipation, setIsLoadingParticipation] = useState(false);
 
   useEffect(() => {
     fetchProfiles();
@@ -37,6 +46,15 @@ export function LeaderboardTable() {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // Fetch category-specific participation counts when category changes
+  useEffect(() => {
+    if (selectedCategory !== 'all') {
+      fetchCategoryParticipationCounts();
+    } else {
+      setCategoryParticipationCounts({});
+    }
+  }, [selectedCategory, profiles]);
 
   const fetchProfiles = async () => {
     const { data, error } = await supabase
@@ -61,10 +79,76 @@ export function LeaderboardTable() {
     }
   };
 
+  const fetchCategoryParticipationCounts = async () => {
+    if (selectedCategory === 'all') return;
+
+    setIsLoadingCategoryData(true);
+    try {
+      // Get all participation logs for the selected category
+      const { data, error } = await supabase
+        .from('participation_logs')
+        .select(`
+          profile_id,
+          competition:competitions!inner(category)
+        `)
+        .eq('competition.category', selectedCategory);
+
+      if (!error && data) {
+        // Count participations per profile for this category
+        const counts: Record<string, number> = {};
+        data.forEach(log => {
+          counts[log.profile_id] = (counts[log.profile_id] || 0) + 1;
+        });
+        setCategoryParticipationCounts(counts);
+      }
+    } catch (error) {
+      console.error('Error fetching category participation counts:', error);
+    }
+    setIsLoadingCategoryData(false);
+  };
+
+  const handleViewDetails = async (profile: Profile) => {
+    setSelectedProfile(profile);
+    setIsModalOpen(true);
+    setIsLoadingParticipation(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('participation_logs')
+        .select(`
+          *,
+          competition:competitions(id, title, date, category)
+        `)
+        .eq('profile_id', profile.id)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setParticipationData(data);
+      }
+    } catch (error) {
+      console.error('Error fetching participation data:', error);
+    }
+
+    setIsLoadingParticipation(false);
+  };
+
   const filteredAndSortedEntries = useMemo(() => {
     let filtered = profiles.filter(profile =>
       profile.full_name.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    // Add effective participation count based on category filter
+    filtered = filtered.map(profile => ({
+      ...profile,
+      effectiveParticipationCount: selectedCategory === 'all' 
+        ? profile.total_participation_count 
+        : (categoryParticipationCounts[profile.id] || 0)
+    }));
+
+    // Filter out profiles with 0 participations in the selected category
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(profile => profile.effectiveParticipationCount > 0);
+    }
 
     // Sort the filtered results
     filtered.sort((a, b) => {
@@ -75,7 +159,7 @@ export function LeaderboardTable() {
           comparison = a.full_name.localeCompare(b.full_name);
           break;
         case 'total_participation_count':
-          comparison = a.total_participation_count - b.total_participation_count;
+          comparison = (a as any).effectiveParticipationCount - (b as any).effectiveParticipationCount;
           break;
         case 'last_activity_at':
           const dateA = a.last_activity_at ? new Date(a.last_activity_at).getTime() : 0;
@@ -83,18 +167,19 @@ export function LeaderboardTable() {
           comparison = dateA - dateB;
           break;
         default:
-          comparison = b.total_participation_count - a.total_participation_count;
+          comparison = (b as any).effectiveParticipationCount - (a as any).effectiveParticipationCount;
       }
 
       return sortDirection === 'desc' ? -comparison : comparison;
     });
 
-    // Add rank based on participation count
+    // Add rank based on effective participation count
     return filtered.map((profile, index) => ({
       ...profile,
       rank: index + 1,
+      displayParticipationCount: (profile as any).effectiveParticipationCount
     })) as LeaderboardEntry[];
-  }, [profiles, searchQuery, sortField, sortDirection]);
+  }, [profiles, searchQuery, selectedCategory, categoryParticipationCounts, sortField, sortDirection]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -165,9 +250,10 @@ export function LeaderboardTable() {
             className="pl-10"
           />
         </div>
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+        <Select value={selectedCategory} onValueChange={setSelectedCategory} disabled={isLoadingCategoryData}>
           <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="All Categories" />
+            {isLoadingCategoryData && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
@@ -205,13 +291,17 @@ export function LeaderboardTable() {
                   Last Activity <SortIcon field="last_activity_at" />
                 </Button>
               </TableHead>
+              <TableHead className="w-20 text-center">Details</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredAndSortedEntries.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
-                  No participants found
+                <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                  {searchQuery || selectedCategory !== 'all' 
+                    ? 'No results found matching your search and filters'
+                    : 'No participants found'
+                  }
                 </TableCell>
               </TableRow>
             ) : (
@@ -230,12 +320,19 @@ export function LeaderboardTable() {
                           {getInitials(entry.full_name)}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="font-medium">{entry.full_name}</span>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{entry.full_name}</span>
+                        {entry.bidang_biro && (
+                          <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full w-fit">
+                            {entry.bidang_biro}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
                     <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1 bg-primary/10 text-primary font-semibold rounded-full">
-                      {entry.total_participation_count}
+                      {(entry as any).displayParticipationCount}
                     </span>
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
@@ -244,12 +341,78 @@ export function LeaderboardTable() {
                       : 'Never'
                     }
                   </TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleViewDetails(entry)}
+                      className="w-8 h-8 hover:bg-primary/10 hover:text-primary"
+                      title="View participation details"
+                    >
+                      <Info className="w-4 h-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
+
+      {/* Participation Details Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="w-5 h-5 text-primary" />
+              Participation Details
+            </DialogTitle>
+            <DialogDescription>
+              {selectedProfile && `Competitions participated in by ${selectedProfile.full_name}`}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {isLoadingParticipation ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                <span className="ml-2 text-muted-foreground">Loading participation data...</span>
+              </div>
+            ) : participationData.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Info className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>No participation records found</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-60 overflow-y-auto">
+                {participationData.map((participation) => (
+                  <div
+                    key={participation.id}
+                    className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border"
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{participation.competition?.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {participation.competition?.date && format(new Date(participation.competition.date), 'MMM d, yyyy')}
+                        {participation.competition?.category && ` • ${participation.competition.category}`}
+                      </p>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {format(new Date(participation.created_at), 'MMM d')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button onClick={() => setIsModalOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -6,18 +6,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Trophy, Mail, Lock, ArrowLeft, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
+const fullNameSchema = z.string().min(2, 'Full name must be at least 2 characters');
+const bidangBiroSchema = z.string().min(1, 'Please select your bidang/biro');
 
 export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [bidangBiro, setBidangBiro] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; fullName?: string; bidangBiro?: string }>({});
   
   const { user, signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -30,7 +35,7 @@ export default function Auth() {
   }, [user, navigate]);
 
   const validateForm = () => {
-    const newErrors: { email?: string; password?: string } = {};
+    const newErrors: { email?: string; password?: string; fullName?: string; bidangBiro?: string } = {};
     
     const emailResult = emailSchema.safeParse(email);
     if (!emailResult.success) {
@@ -40,6 +45,16 @@ export default function Auth() {
     const passwordResult = passwordSchema.safeParse(password);
     if (!passwordResult.success) {
       newErrors.password = passwordResult.error.errors[0].message;
+    }
+    
+    const fullNameResult = fullNameSchema.safeParse(fullName);
+    if (!fullNameResult.success) {
+      newErrors.fullName = fullNameResult.error.errors[0].message;
+    }
+    
+    const bidangBiroResult = bidangBiroSchema.safeParse(bidangBiro);
+    if (!bidangBiroResult.success) {
+      newErrors.bidangBiro = bidangBiroResult.error.errors[0].message;
     }
     
     setErrors(newErrors);
@@ -76,7 +91,10 @@ export default function Auth() {
     if (!validateForm()) return;
     
     setIsLoading(true);
-    const { error } = await signUp(email, password);
+    const { error } = await signUp(email, password, {
+      full_name: fullName,
+      bidang_biro: bidangBiro
+    });
     setIsLoading(false);
 
     if (error) {
@@ -194,6 +212,35 @@ export default function Auth() {
                         />
                       </div>
                       {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-fullname">Full Name</Label>
+                      <Input
+                        id="signup-fullname"
+                        type="text"
+                        placeholder="Enter your full name"
+                        value={fullName}
+                        onChange={(e) => { setFullName(e.target.value); setErrors({}); }}
+                        disabled={isLoading}
+                      />
+                      {errors.fullName && <p className="text-sm text-destructive">{errors.fullName}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-bidangbiro">Bidang/Biro</Label>
+                      <Select value={bidangBiro} onValueChange={(value) => { setBidangBiro(value); setErrors({}); }} disabled={isLoading}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your bidang/biro" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Ketua Umum (KETUM)">Ketua Umum (KETUM)</SelectItem>
+                          <SelectItem value="Biro Pengembangan Sumber Daya Mahasiswa (PSDM)">Biro Pengembangan Sumber Daya Mahasiswa (PSDM)</SelectItem>
+                          <SelectItem value="Biro Administrasi dan Keuangan (ADKEU)">Biro Administrasi dan Keuangan (ADKEU)</SelectItem>
+                          <SelectItem value="Bidang Kepenulisan dan Kompetisi (PENKOM)">Bidang Kepenulisan dan Kompetisi (PENKOM)</SelectItem>
+                          <SelectItem value="Bidang Riset dan Teknologi (RISTEK)">Bidang Riset dan Teknologi (RISTEK)</SelectItem>
+                          <SelectItem value="Bidang Informasi dan Komunikasi (INFOKOM)">Bidang Informasi dan Komunikasi (INFOKOM)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {errors.bidangBiro && <p className="text-sm text-destructive">{errors.bidangBiro}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-password">Password</Label>
