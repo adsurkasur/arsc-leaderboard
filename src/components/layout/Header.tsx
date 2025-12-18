@@ -96,14 +96,14 @@ export function Header() {
 
     if (error) {
       toast({
-        title: 'Update failed',
+        title: 'Gagal memperbarui',
         description: error.message,
         variant: 'destructive',
       });
     } else {
       toast({
-        title: 'Profile updated!',
-        description: 'Your profile has been successfully updated.',
+        title: 'Profil diperbarui!',
+        description: 'Profil Anda telah berhasil diperbarui.',
       });
       setIsProfileOpen(false);
     }
@@ -117,11 +117,11 @@ export function Header() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">Pending</Badge>;
+        return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">Menunggu</Badge>;
       case 'approved':
-        return <Badge variant="outline" className="bg-success/10 text-success border-success/20">Approved</Badge>;
+        return <Badge variant="outline" className="bg-success/10 text-success border-success/20">Disetujui</Badge>;
       case 'rejected':
-        return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">Rejected</Badge>;
+        return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">Ditolak</Badge>;
       default:
         return null;
     }
@@ -134,7 +134,7 @@ export function Header() {
           <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
             <Trophy className="w-5 h-5 text-primary" />
           </div>
-          <span className="font-bold text-xl tracking-tight">Competition Leaderboard</span>
+          <span className="font-bold text-xl tracking-tight">Papan Peringkat Kompetisi</span>
         </Link>
 
         <nav className="flex items-center gap-4">
@@ -144,7 +144,7 @@ export function Header() {
                 <Button variant="outline" size="sm" asChild className="gap-2">
                   <Link to="/admin">
                     <Shield className="w-4 h-4" />
-                    Admin Panel
+                    Panel Admin
                   </Link>
                 </Button>
               ) : (
@@ -152,14 +152,14 @@ export function Header() {
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm" className="gap-2">
                       <Clock className="w-4 h-4" />
-                      My Requests
+                      Permintaan Saya
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                      <DialogTitle>My Participation Requests</DialogTitle>
+                      <DialogTitle>Permintaan Partisipasi Saya</DialogTitle>
                       <DialogDescription>
-                        Track the status of your competition participation requests.
+                        Lacak status permintaan partisipasi kompetisi Anda.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 max-h-96 overflow-y-auto">
@@ -170,8 +170,8 @@ export function Header() {
                       ) : userRequests.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground">
                           <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                          <p>No requests found</p>
-                          <p className="text-sm">Submit a participation request to get started</p>
+                          <p>Tidak ada permintaan ditemukan</p>
+                          <p className="text-sm">Ajukan permintaan partisipasi untuk memulai</p>
                         </div>
                       ) : (
                         userRequests.map((request) => (
@@ -196,18 +196,18 @@ export function Header() {
               <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle>Profile Settings</DialogTitle>
+                    <DialogTitle>Pengaturan Profil</DialogTitle>
                     <DialogDescription>
-                      Update your profile information and bidang/biro.
+                      Perbarui informasi profil dan bidang/biro Anda.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="profile-fullname">Full Name</Label>
+                      <Label htmlFor="profile-fullname">Nama Lengkap</Label>
                       <Input
                         id="profile-fullname"
                         type="text"
-                        placeholder="Enter your full name"
+                        placeholder="Masukkan nama lengkap Anda"
                         value={profileFullName}
                         onChange={(e) => setProfileFullName(e.target.value)}
                         disabled={isUpdatingProfile}
@@ -217,7 +217,7 @@ export function Header() {
                       <Label htmlFor="profile-bidangbiro">Bidang/Biro</Label>
                       <Select value={profileBidangBiro} onValueChange={setProfileBidangBiro} disabled={isUpdatingProfile}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select your bidang/biro" />
+                          <SelectValue placeholder="Pilih bidang/biro Anda" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Ketua Umum (KETUM)">Ketua Umum (KETUM)</SelectItem>
@@ -232,11 +232,11 @@ export function Header() {
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsProfileOpen(false)} disabled={isUpdatingProfile}>
-                      Cancel
+                      Batal
                     </Button>
                     <Button onClick={handleUpdateProfile} disabled={isUpdatingProfile}>
                       {isUpdatingProfile && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                      Update Profile
+                      Perbarui Profil
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -255,7 +255,7 @@ export function Header() {
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem onClick={() => setIsProfileOpen(true)} className="cursor-pointer">
                     <Settings className="w-4 h-4 mr-2" />
-                    Profile Settings
+                    Pengaturan Profil
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem disabled className="text-muted-foreground">
@@ -265,14 +265,14 @@ export function Header() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
                     <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
+                    Keluar
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
           ) : (
             <Button asChild size="sm">
-              <Link to="/auth">Sign In</Link>
+              <Link to="/auth">Masuk</Link>
             </Button>
           )}
         </nav>

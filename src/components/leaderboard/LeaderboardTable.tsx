@@ -63,7 +63,24 @@ export function LeaderboardTable() {
       .order('total_participation_count', { ascending: false });
 
     if (!error && data) {
-      setProfiles(data);
+      // Calculate global ranks based on total participation count
+      // Handle ties by maintaining the same rank for equal participation counts
+      const profilesWithRanks = data.map((profile, index, array) => {
+        let globalRank = index + 1;
+
+        // If this profile has the same participation count as the previous one,
+        // they should have the same rank
+        if (index > 0 && profile.total_participation_count === array[index - 1].total_participation_count) {
+          globalRank = (array[index - 1] as any).globalRank;
+        }
+
+        return {
+          ...profile,
+          globalRank
+        };
+      });
+
+      setProfiles(profilesWithRanks);
     }
     setIsLoading(false);
   };
@@ -140,8 +157,8 @@ export function LeaderboardTable() {
     // Add effective participation count based on category filter
     filtered = filtered.map(profile => ({
       ...profile,
-      effectiveParticipationCount: selectedCategory === 'all' 
-        ? profile.total_participation_count 
+      effectiveParticipationCount: selectedCategory === 'all'
+        ? profile.total_participation_count
         : (categoryParticipationCounts[profile.id] || 0)
     }));
 
@@ -153,8 +170,11 @@ export function LeaderboardTable() {
     // Sort the filtered results
     filtered.sort((a, b) => {
       let comparison = 0;
-      
+
       switch (sortField) {
+        case 'rank':
+          comparison = (a.globalRank || 999) - (b.globalRank || 999);
+          break;
         case 'full_name':
           comparison = a.full_name.localeCompare(b.full_name);
           break;
@@ -173,10 +193,10 @@ export function LeaderboardTable() {
       return sortDirection === 'desc' ? -comparison : comparison;
     });
 
-    // Add rank based on effective participation count
-    return filtered.map((profile, index) => ({
+    // Use global rank instead of index-based rank
+    return filtered.map((profile) => ({
       ...profile,
-      rank: index + 1,
+      rank: profile.globalRank || 999,
       displayParticipationCount: (profile as any).effectiveParticipationCount
     })) as LeaderboardEntry[];
   }, [profiles, searchQuery, selectedCategory, categoryParticipationCounts, sortField, sortDirection]);
@@ -244,7 +264,7 @@ export function LeaderboardTable() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search participants..."
+            placeholder="Cari peserta..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -252,11 +272,11 @@ export function LeaderboardTable() {
         </div>
         <Select value={selectedCategory} onValueChange={setSelectedCategory} disabled={isLoadingCategoryData}>
           <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="All Categories" />
+            <SelectValue placeholder="Semua Kategori" />
             {isLoadingCategoryData && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="all">Semua Kategori</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category} value={category}>
                 {category}
@@ -273,25 +293,25 @@ export function LeaderboardTable() {
             <TableRow className="bg-muted/30 hover:bg-muted/30">
               <TableHead className="w-20">
                 <Button variant="ghost" size="sm" onClick={() => handleSort('rank')} className="font-semibold -ml-2">
-                  Rank <SortIcon field="rank" />
+                  Peringkat <SortIcon field="rank" />
                 </Button>
               </TableHead>
               <TableHead>
                 <Button variant="ghost" size="sm" onClick={() => handleSort('full_name')} className="font-semibold -ml-2">
-                  Participant <SortIcon field="full_name" />
+                  Peserta <SortIcon field="full_name" />
                 </Button>
               </TableHead>
               <TableHead className="text-center">
                 <Button variant="ghost" size="sm" onClick={() => handleSort('total_participation_count')} className="font-semibold">
-                  Participations <SortIcon field="total_participation_count" />
+                  Partisipasi <SortIcon field="total_participation_count" />
                 </Button>
               </TableHead>
               <TableHead className="text-right">
                 <Button variant="ghost" size="sm" onClick={() => handleSort('last_activity_at')} className="font-semibold">
-                  Last Activity <SortIcon field="last_activity_at" />
+                  Aktivitas Terakhir <SortIcon field="last_activity_at" />
                 </Button>
               </TableHead>
-              <TableHead className="w-20 text-center">Details</TableHead>
+              <TableHead className="w-20 text-center">Detail</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -299,8 +319,8 @@ export function LeaderboardTable() {
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
                   {searchQuery || selectedCategory !== 'all' 
-                    ? 'No results found matching your search and filters'
-                    : 'No participants found'
+                    ? 'Tidak ada hasil yang ditemukan sesuai pencarian dan filter Anda'
+                    : 'Tidak ada peserta ditemukan'
                   }
                 </TableCell>
               </TableRow>
@@ -365,10 +385,10 @@ export function LeaderboardTable() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Info className="w-5 h-5 text-primary" />
-              Participation Details
+              Detail Partisipasi
             </DialogTitle>
             <DialogDescription>
-              {selectedProfile && `Competitions participated in by ${selectedProfile.full_name}`}
+              {selectedProfile && `Kompetisi yang diikuti oleh ${selectedProfile.full_name}`}
             </DialogDescription>
           </DialogHeader>
 
@@ -376,12 +396,12 @@ export function LeaderboardTable() {
             {isLoadingParticipation ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                <span className="ml-2 text-muted-foreground">Loading participation data...</span>
+                <span className="ml-2 text-muted-foreground">Memuat data partisipasi...</span>
               </div>
             ) : participationData.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Info className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p>No participation records found</p>
+                <p>Rekaman partisipasi tidak ditemukan</p>
               </div>
             ) : (
               <div className="space-y-3 max-h-60 overflow-y-auto">
@@ -408,7 +428,7 @@ export function LeaderboardTable() {
 
           <DialogFooter>
             <Button onClick={() => setIsModalOpen(false)}>
-              Close
+              Tutup
             </Button>
           </DialogFooter>
         </DialogContent>

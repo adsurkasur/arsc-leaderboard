@@ -11,10 +11,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Trophy, Mail, Lock, ArrowLeft, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 
-const emailSchema = z.string().email('Please enter a valid email address');
-const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
-const fullNameSchema = z.string().min(2, 'Full name must be at least 2 characters');
-const bidangBiroSchema = z.string().min(1, 'Please select your bidang/biro');
+const emailSchema = z.string().email('Silakan masukkan alamat email yang valid');
+const passwordSchema = z.string().min(6, 'Kata sandi harus minimal 6 karakter');
+const fullNameSchema = z.string().min(2, 'Nama lengkap harus minimal 2 karakter');
+const bidangBiroSchema = z.string().min(1, 'Silakan pilih bidang/biro Anda');
 
 export default function Auth() {
   const [email, setEmail] = useState('');
@@ -71,16 +71,16 @@ export default function Auth() {
 
     if (error) {
       toast({
-        title: 'Sign in failed',
+        title: 'Gagal masuk',
         description: error.message === 'Invalid login credentials' 
-          ? 'Invalid email or password. Please try again.'
+          ? 'Email atau kata sandi tidak valid. Silakan coba lagi.'
           : error.message,
         variant: 'destructive',
       });
     } else {
       toast({
-        title: 'Welcome back!',
-        description: 'You have successfully signed in.',
+        title: 'Selamat datang kembali!',
+        description: 'Anda telah berhasil masuk.',
       });
       navigate('/');
     }
@@ -99,18 +99,18 @@ export default function Auth() {
 
     if (error) {
       const errorMessage = error.message.includes('already registered')
-        ? 'This email is already registered. Please sign in instead.'
+        ? 'Email ini sudah terdaftar. Silakan masuk saja.'
         : error.message;
       
       toast({
-        title: 'Sign up failed',
+        title: 'Gagal mendaftar',
         description: errorMessage,
         variant: 'destructive',
       });
     } else {
       toast({
-        title: 'Account created!',
-        description: 'Welcome! You can now sign in to your account.',
+        title: 'Akun berhasil dibuat!',
+        description: 'Selamat! Anda sekarang dapat masuk ke akun Anda.',
       });
     }
   };
@@ -122,7 +122,7 @@ export default function Auth() {
         <Button variant="ghost" size="sm" asChild className="gap-2">
           <Link to="/">
             <ArrowLeft className="w-4 h-4" />
-            Back to Leaderboard
+            Kembali ke Papan Peringkat
           </Link>
         </Button>
       </header>
@@ -135,8 +135,8 @@ export default function Auth() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
               <Trophy className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold">Competition Leaderboard</h1>
-            <p className="text-muted-foreground">Sign in to track your rankings and submit new participation records.</p>
+            <h1 className="text-2xl font-bold">Papan Peringkat Kompetisi</h1>
+            <p className="text-muted-foreground">Masuk untuk melacak peringkat Anda dan mengajukan catatan partisipasi baru.</p>
           </div>
 
           {/* Auth Card */}
@@ -144,8 +144,8 @@ export default function Auth() {
             <Tabs defaultValue="signin" className="w-full">
               <CardHeader className="pb-4">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="signin">Sign In</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                  <TabsTrigger value="signin">Masuk</TabsTrigger>
+                  <TabsTrigger value="signup">Daftar</TabsTrigger>
                 </TabsList>
               </CardHeader>
 
@@ -159,7 +159,7 @@ export default function Auth() {
                         <Input
                           id="signin-email"
                           type="email"
-                          placeholder="admin@example.com"
+                          placeholder="admin@contoh.com"
                           value={email}
                           onChange={(e) => { setEmail(e.target.value); setErrors({}); }}
                           className="pl-10"
@@ -169,7 +169,7 @@ export default function Auth() {
                       {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signin-password">Password</Label>
+                      <Label htmlFor="signin-password">Kata Sandi</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
@@ -188,7 +188,7 @@ export default function Auth() {
                   <CardFooter>
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                      Sign In
+                      Masuk
                     </Button>
                   </CardFooter>
                 </form>
@@ -204,7 +204,7 @@ export default function Auth() {
                         <Input
                           id="signup-email"
                           type="email"
-                          placeholder="your@email.com"
+                          placeholder="email@anda.com"
                           value={email}
                           onChange={(e) => { setEmail(e.target.value); setErrors({}); }}
                           className="pl-10"
@@ -214,11 +214,11 @@ export default function Auth() {
                       {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signup-fullname">Full Name</Label>
+                      <Label htmlFor="signup-fullname">Nama Lengkap</Label>
                       <Input
                         id="signup-fullname"
                         type="text"
-                        placeholder="Enter your full name"
+                        placeholder="Masukkan nama lengkap Anda"
                         value={fullName}
                         onChange={(e) => { setFullName(e.target.value); setErrors({}); }}
                         disabled={isLoading}
@@ -229,7 +229,7 @@ export default function Auth() {
                       <Label htmlFor="signup-bidangbiro">Bidang/Biro</Label>
                       <Select value={bidangBiro} onValueChange={(value) => { setBidangBiro(value); setErrors({}); }} disabled={isLoading}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select your bidang/biro" />
+                          <SelectValue placeholder="Pilih bidang/biro Anda" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Ketua Umum (KETUM)">Ketua Umum (KETUM)</SelectItem>
@@ -243,7 +243,7 @@ export default function Auth() {
                       {errors.bidangBiro && <p className="text-sm text-destructive">{errors.bidangBiro}</p>}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
+                      <Label htmlFor="signup-password">Kata Sandi</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
@@ -262,7 +262,7 @@ export default function Auth() {
                   <CardFooter>
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                      Create Account
+                      Buat Akun
                     </Button>
                   </CardFooter>
                 </form>

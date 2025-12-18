@@ -41,8 +41,8 @@ const Index = () => {
   const handleSubmit = async () => {
     if (!competitionName.trim() || !competitionCategory.trim() || !message.trim()) {
       toast({
-        title: 'Error',
-        description: 'Please enter a competition name, select a category, and provide a message.',
+        title: 'Kesalahan',
+        description: 'Silakan masukkan nama kompetisi, pilih kategori, dan berikan pesan.',
         variant: 'destructive',
       });
       return;
@@ -60,8 +60,8 @@ const Index = () => {
 
       if (!profile) {
         toast({
-          title: 'Error',
-          description: 'User profile not found. Please contact an administrator.',
+          title: 'Kesalahan',
+          description: 'Profil pengguna tidak ditemukan. Silakan hubungi administrator.',
           variant: 'destructive',
         });
         setIsSubmitting(false);
@@ -90,8 +90,8 @@ const Index = () => {
 
         if (createError) {
           toast({
-            title: 'Error',
-            description: 'Failed to create competition: ' + createError.message,
+            title: 'Kesalahan',
+            description: 'Gagal membuat kompetisi: ' + createError.message,
             variant: 'destructive',
           });
           setIsSubmitting(false);
@@ -114,14 +114,14 @@ const Index = () => {
 
       if (error) {
         toast({
-          title: 'Error',
+          title: 'Kesalahan',
           description: error.message,
           variant: 'destructive',
         });
       } else {
         toast({
-          title: 'Success',
-          description: 'Your participation request has been submitted for review.',
+          title: 'Berhasil',
+          description: 'Permintaan partisipasi Anda telah diajukan untuk ditinjau.',
         });
         setIsModalOpen(false);
         setCompetitionName('');
@@ -130,8 +130,8 @@ const Index = () => {
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'An unexpected error occurred.',
+        title: 'Kesalahan',
+        description: 'Terjadi kesalahan yang tidak terduga.',
         variant: 'destructive',
       });
     }
@@ -150,34 +150,15 @@ const Index = () => {
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium animate-fade-in">
               <Trophy className="w-4 h-4" />
-              Competition Rankings
+              Peringkat Kompetisi
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-balance animate-slide-up">
-              Discover Our Top
-              <span className="text-primary"> Performers</span>
+              Temukan Para
+              <span className="text-primary"> Performer Terbaik</span> Kami
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: '100ms' }}>
-              Track participation, celebrate achievements, and see who's leading the pack in our competitive community.
+              Lacak partisipasi, rayakan pencapaian, dan lihat siapa yang memimpin dalam komunitas kompetitif kami.
             </p>
-          </div>
-          
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-12 max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: '200ms' }}>
-            <div className="flex flex-col items-center p-6 rounded-xl bg-card border shadow-card">
-              <Users className="w-8 h-8 text-primary mb-2" />
-              <span className="text-2xl font-bold">100+</span>
-              <span className="text-sm text-muted-foreground">Participants</span>
-            </div>
-            <div className="flex flex-col items-center p-6 rounded-xl bg-card border shadow-card">
-              <Trophy className="w-8 h-8 text-gold mb-2" />
-              <span className="text-2xl font-bold">50+</span>
-              <span className="text-sm text-muted-foreground">Competitions</span>
-            </div>
-            <div className="flex flex-col items-center p-6 rounded-xl bg-card border shadow-card col-span-2 md:col-span-1">
-              <Activity className="w-8 h-8 text-success mb-2" />
-              <span className="text-2xl font-bold">Live</span>
-              <span className="text-sm text-muted-foreground">Real-time Updates</span>
-            </div>
           </div>
         </div>
       </section>
@@ -185,8 +166,8 @@ const Index = () => {
       {/* Leaderboard Section */}
       <main className="container py-12">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-2">Competition Leaderboard</h2>
-          <p className="text-muted-foreground">Rankings based on total competition participation</p>
+          <h2 className="text-2xl font-bold mb-2">Papan Peringkat Kompetisi</h2>
+          <p className="text-muted-foreground">Peringkat berdasarkan total partisipasi kompetisi</p>
         </div>
         <LeaderboardTable />
         
@@ -197,58 +178,58 @@ const Index = () => {
               <DialogTrigger asChild>
                 <Button size="lg" className="gap-2">
                   <Plus className="w-5 h-5" />
-                  Submit Participation
+                  Ajukan Partisipasi
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Submit Participation Request</DialogTitle>
+                  <DialogTitle>Ajukan Permintaan Partisipasi</DialogTitle>
                   <DialogDescription>
-                    Select a competition and provide details about your participation.
-                    Your request will be reviewed by an administrator.
+                    Pilih kompetisi dan berikan detail tentang partisipasi Anda.
+                    Permintaan Anda akan ditinjau oleh administrator.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="competition">Competition Name</Label>
+                    <Label htmlFor="competition">Nama Kompetisi</Label>
                     <Input
                       id="competition"
-                      placeholder="Enter competition name"
+                      placeholder="Masukkan nama kompetisi"
                       value={competitionName}
                       onChange={(e) => setCompetitionName(e.target.value)}
                       className="border-primary/20 focus:border-primary"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      If the competition doesn't exist, it will be created automatically.
+                      Jika kompetisi tidak ada, maka akan dibuat secara otomatis.
                     </p>
                   </div>
                   <div>
-                    <Label htmlFor="category">Competition Category *</Label>
+                    <Label htmlFor="category">Kategori Kompetisi *</Label>
                     <Select value={competitionCategory} onValueChange={setCompetitionCategory}>
                       <SelectTrigger className="border-primary/20 focus:border-primary">
-                        <SelectValue placeholder="Select a category" />
+                        <SelectValue placeholder="Pilih kategori" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Academic">Academic</SelectItem>
-                        <SelectItem value="Sports">Sports</SelectItem>
-                        <SelectItem value="Innovation">Innovation</SelectItem>
-                        <SelectItem value="Art">Art</SelectItem>
-                        <SelectItem value="Technology">Technology</SelectItem>
-                        <SelectItem value="Science">Science</SelectItem>
-                        <SelectItem value="Business">Business</SelectItem>
-                        <SelectItem value="Culture">Culture</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
+                        <SelectItem value="Academic">Akademik</SelectItem>
+                        <SelectItem value="Sports">Olahraga</SelectItem>
+                        <SelectItem value="Innovation">Inovasi</SelectItem>
+                        <SelectItem value="Art">Seni</SelectItem>
+                        <SelectItem value="Technology">Teknologi</SelectItem>
+                        <SelectItem value="Science">Sains</SelectItem>
+                        <SelectItem value="Business">Bisnis</SelectItem>
+                        <SelectItem value="Culture">Budaya</SelectItem>
+                        <SelectItem value="Other">Lainnya</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground mt-1">
-                      This helps in filtering the leaderboard by category.
+                      Ini membantu dalam memfilter papan peringkat berdasarkan kategori.
                     </p>
                   </div>
                   <div>
-                    <Label htmlFor="message">Message</Label>
+                    <Label htmlFor="message">Pesan</Label>
                     <Textarea
                       id="message"
-                      placeholder="Describe your participation or provide any additional details..."
+                      placeholder="Jelaskan partisipasi Anda atau berikan detail tambahan..."
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       rows={4}
@@ -257,16 +238,16 @@ const Index = () => {
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-                    Cancel
+                    Batal
                   </Button>
                   <Button onClick={handleSubmit} disabled={isSubmitting}>
                     {isSubmitting ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Submitting...
+                        Mengirim...
                       </>
                     ) : (
-                      'Submit Request'
+                      'Ajukan Permintaan'
                     )}
                   </Button>
                 </DialogFooter>
@@ -279,7 +260,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t py-8 bg-muted/30">
         <div className="container text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Competition Leaderboard. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Papan Peringkat Kompetisi. Seluruh hak cipta dilindungi.</p>
         </div>
       </footer>
     </div>

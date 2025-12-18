@@ -8,6 +8,7 @@ export interface Profile {
   last_activity_at: string | null;
   created_at: string;
   updated_at: string;
+  globalRank?: number;
 }
 
 export interface Competition {

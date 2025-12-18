@@ -25,7 +25,7 @@ export default function Admin() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading admin panel...</p>
+          <p className="text-muted-foreground">Memuat panel admin...</p>
         </div>
       </div>
     );
@@ -41,35 +41,35 @@ export default function Admin() {
       
       <main className="container py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Manage users, competitions, and participation logs</p>
+          <h1 className="text-3xl font-bold mb-2">Dashboard Admin</h1>
+          <p className="text-muted-foreground">Kelola pengguna, kompetisi, dan log partisipasi</p>
         </div>
 
         <Tabs defaultValue="users" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4 hidden sm:inline" />
-              Users
+              Pengguna
             </TabsTrigger>
             <TabsTrigger value="competitions" className="gap-2">
               <Trophy className="w-4 h-4 hidden sm:inline" />
-              Competitions
+              Kompetisi
             </TabsTrigger>
             <TabsTrigger value="participation" className="gap-2">
               <ClipboardList className="w-4 h-4 hidden sm:inline" />
-              Logs
+              Log
             </TabsTrigger>
             <TabsTrigger value="notifications" className="gap-2">
               <Bell className="w-4 h-4 hidden sm:inline" />
-              Inbox
+              Kotak Masuk
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users" className="animate-fade-in">
             <Card>
               <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>Create, edit, and manage user profiles</CardDescription>
+                <CardTitle>Manajemen Pengguna</CardTitle>
+                <CardDescription>Buat, edit, dan kelola profil pengguna</CardDescription>
               </CardHeader>
               <CardContent>
                 <UsersManagement />
@@ -80,8 +80,8 @@ export default function Admin() {
           <TabsContent value="competitions" className="animate-fade-in">
             <Card>
               <CardHeader>
-                <CardTitle>Competition Management</CardTitle>
-                <CardDescription>Create and manage competitions</CardDescription>
+                <CardTitle>Manajemen Kompetisi</CardTitle>
+                <CardDescription>Buat dan kelola kompetisi</CardDescription>
               </CardHeader>
               <CardContent>
                 <CompetitionsManagement />
@@ -92,8 +92,8 @@ export default function Admin() {
           <TabsContent value="participation" className="animate-fade-in">
             <Card>
               <CardHeader>
-                <CardTitle>Participation Logs</CardTitle>
-                <CardDescription>Add and manage user participation entries</CardDescription>
+                <CardTitle>Log Partisipasi</CardTitle>
+                <CardDescription>Tambah dan kelola entri partisipasi pengguna</CardDescription>
               </CardHeader>
               <CardContent>
                 <ParticipationManagement />
@@ -104,8 +104,8 @@ export default function Admin() {
           <TabsContent value="notifications" className="animate-fade-in">
             <Card>
               <CardHeader>
-                <CardTitle>Verification Requests</CardTitle>
-                <CardDescription>Review pending verification requests from users</CardDescription>
+                <CardTitle>Permintaan Verifikasi</CardTitle>
+                <CardDescription>Tinjau permintaan verifikasi yang tertunda dari pengguna</CardDescription>
               </CardHeader>
               <CardContent>
                 <NotificationInbox />
