@@ -18,6 +18,8 @@ export function Header() {
   const [userRequests, setUserRequests] = useState<(VerificationRequest & { competition?: Competition })[]>([]);
   const [isLoadingRequests, setIsLoadingRequests] = useState(false);
 
+  console.log('Header - isAdmin:', isAdmin, 'user:', user?.id);
+
   useEffect(() => {
     if (isRequestsOpen && user && !isAdmin) {
       fetchUserRequests();

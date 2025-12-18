@@ -6,7 +6,6 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   isAdmin: boolean;
-  isSuperAdmin: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -19,22 +18,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state change - event:', event, 'user:', session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          setTimeout(() => {
-            checkAdminRole(session.user.id);
-          }, 0);
+          checkAdminRole(session.user.id);
         } else {
           setIsAdmin(false);
-          setIsSuperAdmin(false);
         }
       }
     );
@@ -42,6 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      console.log('Initial session check - user:', session?.user?.id);
       
       if (session?.user) {
         checkAdminRole(session.user.id);
@@ -53,34 +51,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const checkAdminRole = async (userId: string) => {
-    // Check for superadmin role first
-    const { data: superAdminData, error: superAdminError } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .eq('role', 'superadmin')
-      .maybeSingle();
+    try {
+      console.log('Checking admin role for userId:', userId);
 
-    if (!superAdminError && superAdminData) {
-      setIsSuperAdmin(true);
-      setIsAdmin(true); // Superadmin also has admin rights
-      return;
-    }
+      // Check for admin role
+      const { data: adminData, error: adminError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
 
-    // Check for admin role
-    const { data: adminData, error: adminError } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .eq('role', 'admin')
-      .maybeSingle();
+      console.log('Admin role query result - data:', adminData, 'error:', adminError);
 
-    if (!adminError && adminData) {
-      setIsAdmin(true);
-      setIsSuperAdmin(false);
-    } else {
+      if (!adminError && adminData) {
+        console.log('User has admin role, setting isAdmin to true');
+        setIsAdmin(true);
+      } else {
+        console.log('User does not have admin role, setting isAdmin to false');
+        setIsAdmin(false);
+      }
+    } catch (error) {
+      console.error('Error in checkAdminRole:', error);
       setIsAdmin(false);
-      setIsSuperAdmin(false);
     }
   };
 
@@ -104,11 +97,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSession(null);
     setIsAdmin(false);
-    setIsSuperAdmin(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isAdmin, isSuperAdmin, isLoading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, isAdmin, isLoading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

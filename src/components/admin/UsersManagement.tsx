@@ -23,7 +23,7 @@ export function UsersManagement() {
   const [formData, setFormData] = useState({ full_name: '', avatar_url: '' });
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
-  const { isSuperAdmin } = useAuth();
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     fetchProfiles();
@@ -122,8 +122,8 @@ export function UsersManagement() {
   };
 
   const handleRoleUpdate = async (userId: string, newRole: string) => {
-    if (!isSuperAdmin) {
-      toast({ title: 'Error', description: 'Only superadmins can manage user roles', variant: 'destructive' });
+    if (!isAdmin) {
+      toast({ title: 'Error', description: 'Only admins can manage user roles', variant: 'destructive' });
       return;
     }
 
@@ -277,7 +277,7 @@ export function UsersManagement() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {isSuperAdmin && profile.user_id ? (
+                    {isAdmin && profile.user_id ? (
                       <Select
                         value={userRoles[profile.user_id] || 'user'}
                         onValueChange={(value) => handleRoleUpdate(profile.user_id!, value)}
@@ -288,7 +288,6 @@ export function UsersManagement() {
                         <SelectContent>
                           <SelectItem value="user">User</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="superadmin">Superadmin</SelectItem>
                         </SelectContent>
                       </Select>
                     ) : (
