@@ -28,8 +28,6 @@ export function Header() {
   const [profileBidangBiro, setProfileBidangBiro] = useState('');
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
-  console.log('Header - isAdmin:', isAdmin, 'user:', user?.id);
-
   useEffect(() => {
     if (isRequestsOpen && user && !isAdmin) {
       fetchUserRequests();

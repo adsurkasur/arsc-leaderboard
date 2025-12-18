@@ -23,7 +23,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state change - event:', event, 'user:', session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -39,8 +38,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       
-      console.log('Initial session check - user:', session?.user?.id);
-      
       if (session?.user) {
         checkAdminRole(session.user.id);
       }
@@ -52,8 +49,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAdminRole = async (userId: string) => {
     try {
-      console.log('Checking admin role for userId:', userId);
-
       // Check for admin role
       const { data: adminData, error: adminError } = await supabase
         .from('user_roles')
@@ -62,13 +57,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('role', 'admin')
         .maybeSingle();
 
-      console.log('Admin role query result - data:', adminData, 'error:', adminError);
-
       if (!adminError && adminData) {
-        console.log('User has admin role, setting isAdmin to true');
         setIsAdmin(true);
       } else {
-        console.log('User does not have admin role, setting isAdmin to false');
         setIsAdmin(false);
       }
     } catch (error) {
