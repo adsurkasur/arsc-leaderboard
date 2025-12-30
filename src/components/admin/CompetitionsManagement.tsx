@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Competition } from '@/lib/types';
@@ -62,7 +64,7 @@ export function CompetitionsManagement() {
 
   const handleSave = async () => {
     if (!formData.title.trim() || !formData.date) {
-      toast({ title: 'Error', description: 'Title and date are required', variant: 'destructive' });
+      toast({ title: 'Gagal', description: 'Judul dan tanggal wajib diisi', variant: 'destructive' });
       return;
     }
 
@@ -82,9 +84,9 @@ export function CompetitionsManagement() {
         .eq('id', editingCompetition.id);
 
       if (error) {
-        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        toast({ title: 'Gagal', description: error.message, variant: 'destructive' });
       } else {
-        toast({ title: 'Success', description: 'Competition updated successfully' });
+        toast({ title: 'Berhasil', description: 'Kompetisi berhasil diperbarui' });
         setIsDialogOpen(false);
         fetchCompetitions();
       }
@@ -94,9 +96,9 @@ export function CompetitionsManagement() {
         .insert(payload);
 
       if (error) {
-        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        toast({ title: 'Gagal', description: error.message, variant: 'destructive' });
       } else {
-        toast({ title: 'Success', description: 'Competition created successfully' });
+        toast({ title: 'Berhasil', description: 'Kompetisi berhasil dibuat' });
         setIsDialogOpen(false);
         fetchCompetitions();
       }
@@ -106,7 +108,7 @@ export function CompetitionsManagement() {
   };
 
   const handleDelete = async (competition: Competition) => {
-    if (!confirm(`Are you sure you want to delete "${competition.title}"?`)) return;
+    if (!confirm(`Apakah Anda yakin ingin menghapus "${competition.title}"?`)) return;
 
     const { error } = await supabase
       .from('competitions')
@@ -114,9 +116,9 @@ export function CompetitionsManagement() {
       .eq('id', competition.id);
 
     if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Gagal', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Success', description: 'Competition deleted successfully' });
+      toast({ title: 'Berhasil', description: 'Kompetisi berhasil dihapus' });
       fetchCompetitions();
     }
   };
@@ -141,7 +143,7 @@ export function CompetitionsManagement() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search competitions..."
+            placeholder="Cari kompetisi..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -151,28 +153,28 @@ export function CompetitionsManagement() {
           <DialogTrigger asChild>
             <Button onClick={openCreateDialog} className="gap-2">
               <Plus className="w-4 h-4" />
-              Add Competition
+              Tambah Kompetisi
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editingCompetition ? 'Edit Competition' : 'Create Competition'}</DialogTitle>
+              <DialogTitle>{editingCompetition ? 'Edit Kompetisi' : 'Buat Kompetisi'}</DialogTitle>
               <DialogDescription>
-                {editingCompetition ? 'Update the competition details.' : 'Add a new competition.'}
+                {editingCompetition ? 'Perbarui detail kompetisi.' : 'Tambahkan kompetisi baru.'}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
+                <Label htmlFor="title">Judul</Label>
                 <Input
                   id="title"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Competition Title"
+                  placeholder="Judul Kompetisi"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
+                <Label htmlFor="date">Tanggal</Label>
                 <Input
                   id="date"
                   type="date"
@@ -181,30 +183,30 @@ export function CompetitionsManagement() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category">Kategori</Label>
                 <Input
                   id="category"
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  placeholder="General"
+                  placeholder="Umum"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Description (optional)</Label>
+                <Label htmlFor="description">Deskripsi (opsional)</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Competition description..."
+                  placeholder="Deskripsi kompetisi..."
                   rows={3}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Batal</Button>
               <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {editingCompetition ? 'Save Changes' : 'Create Competition'}
+                {editingCompetition ? 'Simpan Perubahan' : 'Buat Kompetisi'}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -215,17 +217,17 @@ export function CompetitionsManagement() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Competition</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Kompetisi</TableHead>
+              <TableHead>Kategori</TableHead>
+              <TableHead>Tanggal</TableHead>
+              <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredCompetitions.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                  No competitions found
+                  Tidak ada kompetisi ditemukan
                 </TableCell>
               </TableRow>
             ) : (

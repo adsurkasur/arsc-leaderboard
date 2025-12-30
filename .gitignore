@@ -1,4 +1,28 @@
-# Logs
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Testing
+coverage
+
+# Next.js
+.next/
+out/
+build
+
+# Production
+dist
+dist-ssr
+
+# Misc
+*.local
+.DS_Store
+*.pem
+Thumbs.db
+
+# Debug
 logs
 *.log
 npm-debug.log*
@@ -7,27 +31,48 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Environment files
+.env
+.env*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Editor directories and files
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE/Editor
+.idea
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# Environment files
-*.env.*
-.env
-
 # Supabase
+supabase/.branches
+supabase/.temp
+
+# Bun
+bun.lockb
+
+# Turbopack
+.turbo
+
+# PWA files
+public/sw.js
+public/workbox-*.js
+public/swe-worker-*.js
 .supabase/
 supabase/.branches/
 supabase/.temp/

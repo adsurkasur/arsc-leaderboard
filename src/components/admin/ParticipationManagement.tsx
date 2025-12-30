@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -62,7 +64,7 @@ export function ParticipationManagement() {
 
   const handleAddParticipation = async () => {
     if (!selectedProfile || !competitionName.trim()) {
-      toast({ title: 'Error', description: 'Please select a user and enter a competition name', variant: 'destructive' });
+      toast({ title: 'Gagal', description: 'Silakan pilih pengguna dan masukkan nama kompetisi', variant: 'destructive' });
       return;
     }
 
@@ -91,8 +93,8 @@ export function ParticipationManagement() {
 
         if (createError) {
           toast({
-            title: 'Error',
-            description: 'Failed to create competition: ' + createError.message,
+            title: 'Gagal',
+            description: 'Gagal membuat kompetisi: ' + createError.message,
             variant: 'destructive',
           });
           setIsSaving(false);
@@ -116,12 +118,12 @@ export function ParticipationManagement() {
 
       if (error) {
         if (error.code === '23505') {
-          toast({ title: 'Error', description: 'This user is already registered for this competition', variant: 'destructive' });
+          toast({ title: 'Gagal', description: 'Pengguna ini sudah terdaftar untuk kompetisi ini', variant: 'destructive' });
         } else {
-          toast({ title: 'Error', description: error.message, variant: 'destructive' });
+          toast({ title: 'Gagal', description: error.message, variant: 'destructive' });
         }
       } else {
-        toast({ title: 'Success', description: 'Participation added successfully' });
+        toast({ title: 'Berhasil', description: 'Partisipasi berhasil ditambahkan' });
         setIsDialogOpen(false);
         setSelectedProfile('');
         setCompetitionName('');
@@ -130,8 +132,8 @@ export function ParticipationManagement() {
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'An unexpected error occurred.',
+        title: 'Gagal',
+        description: 'Terjadi kesalahan yang tidak terduga.',
         variant: 'destructive',
       });
     }
@@ -140,7 +142,7 @@ export function ParticipationManagement() {
   };
 
   const handleDelete = async (log: ParticipationLog) => {
-    if (!confirm('Are you sure you want to remove this participation entry?')) return;
+    if (!confirm('Apakah Anda yakin ingin menghapus entri partisipasi ini?')) return;
 
     const { error } = await supabase
       .from('participation_logs')
@@ -148,9 +150,9 @@ export function ParticipationManagement() {
       .eq('id', log.id);
 
     if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Gagal', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Success', description: 'Participation removed successfully' });
+      toast({ title: 'Berhasil', description: 'Partisipasi berhasil dihapus' });
       fetchData();
     }
   };
@@ -179,22 +181,22 @@ export function ParticipationManagement() {
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
-              Add Participation
+              Tambah Partisipasi
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add Participation Entry</DialogTitle>
+              <DialogTitle>Tambah Entri Partisipasi</DialogTitle>
               <DialogDescription>
-                Record a user's participation in a competition.
+                Catat partisipasi pengguna dalam kompetisi.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Select User</Label>
+                <Label>Pilih Pengguna</Label>
                 <Select value={selectedProfile} onValueChange={setSelectedProfile}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Choose a user..." />
+                    <SelectValue placeholder="Pilih pengguna..." />
                   </SelectTrigger>
                   <SelectContent>
                     {profiles.map((profile) => (
@@ -206,33 +208,33 @@ export function ParticipationManagement() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Select Competition</Label>
+                <Label>Pilih Kompetisi</Label>
                 <Input
-                  placeholder="Enter competition name"
+                  placeholder="Masukkan nama kompetisi"
                   value={competitionName}
                   onChange={(e) => setCompetitionName(e.target.value)}
                   className="border-primary/20 focus:border-primary"
                 />
                 <p className="text-xs text-muted-foreground">
-                  If the competition doesn't exist, it will be created automatically.
+                  Jika kompetisi belum ada, akan dibuat otomatis.
                 </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="notes">Notes (optional)</Label>
+                <Label htmlFor="notes">Catatan (opsional)</Label>
                 <Textarea
                   id="notes"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Additional notes..."
+                  placeholder="Catatan tambahan..."
                   rows={2}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Batal</Button>
               <Button onClick={handleAddParticipation} disabled={isSaving}>
                 {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Add Entry
+                Tambah Entri
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -243,17 +245,17 @@ export function ParticipationManagement() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead>Competition</TableHead>
-              <TableHead>Verified At</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Pengguna</TableHead>
+              <TableHead>Kompetisi</TableHead>
+              <TableHead>Diverifikasi Pada</TableHead>
+              <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {logs.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                  No participation logs found
+                  Tidak ada log partisipasi ditemukan
                 </TableCell>
               </TableRow>
             ) : (
@@ -267,12 +269,12 @@ export function ParticipationManagement() {
                           {log.profile ? getInitials(log.profile.full_name) : '?'}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="font-medium">{log.profile?.full_name || 'Unknown'}</span>
+                      <span className="font-medium">{log.profile?.full_name || 'Tidak Dikenal'}</span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div>
-                      <span>{log.competition?.title || 'Unknown'}</span>
+                      <span>{log.competition?.title || 'Tidak Dikenal'}</span>
                       {log.competition?.date && (
                         <p className="text-xs text-muted-foreground">
                           {format(new Date(log.competition.date), 'MMM d, yyyy')}

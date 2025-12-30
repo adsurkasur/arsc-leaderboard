@@ -1,10 +1,13 @@
+'use client';
+
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -16,33 +19,57 @@ const passwordSchema = z.string().min(6, 'Kata sandi harus minimal 6 karakter');
 const fullNameSchema = z.string().min(2, 'Nama lengkap harus minimal 2 karakter');
 const bidangBiroSchema = z.string().min(1, 'Silakan pilih bidang/biro Anda');
 
-export default function Auth() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export default function AuthPage() {
+  // Login form state
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginErrors, setLoginErrors] = useState<{ email?: string; password?: string }>({});
+  
+  // Register form state
+  const [registerEmail, setRegisterEmail] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [bidangBiro, setBidangBiro] = useState('');
+  const [registerErrors, setRegisterErrors] = useState<{ email?: string; password?: string; fullName?: string; bidangBiro?: string }>({});
+  
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; fullName?: string; bidangBiro?: string }>({});
   
   const { user, signIn, signUp } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
-      navigate('/');
+      router.push('/');
     }
-  }, [user, navigate]);
+  }, [user, router]);
 
-  const validateForm = () => {
-    const newErrors: { email?: string; password?: string; fullName?: string; bidangBiro?: string } = {};
+  const validateLoginForm = () => {
+    const newErrors: { email?: string; password?: string } = {};
     
-    const emailResult = emailSchema.safeParse(email);
+    const emailResult = emailSchema.safeParse(loginEmail);
     if (!emailResult.success) {
       newErrors.email = emailResult.error.errors[0].message;
     }
     
-    const passwordResult = passwordSchema.safeParse(password);
+    const passwordResult = passwordSchema.safeParse(loginPassword);
+    if (!passwordResult.success) {
+      newErrors.password = passwordResult.error.errors[0].message;
+    }
+    
+    setLoginErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateRegisterForm = () => {
+    const newErrors: { email?: string; password?: string; fullName?: string; bidangBiro?: string } = {};
+    
+    const emailResult = emailSchema.safeParse(registerEmail);
+    if (!emailResult.success) {
+      newErrors.email = emailResult.error.errors[0].message;
+    }
+    
+    const passwordResult = passwordSchema.safeParse(registerPassword);
     if (!passwordResult.success) {
       newErrors.password = passwordResult.error.errors[0].message;
     }
@@ -57,16 +84,16 @@ export default function Auth() {
       newErrors.bidangBiro = bidangBiroResult.error.errors[0].message;
     }
     
-    setErrors(newErrors);
+    setRegisterErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateLoginForm()) return;
     
     setIsLoading(true);
-    const { error } = await signIn(email, password);
+    const { error } = await signIn(loginEmail, loginPassword);
     setIsLoading(false);
 
     if (error) {
@@ -82,16 +109,16 @@ export default function Auth() {
         title: 'Selamat datang kembali!',
         description: 'Anda telah berhasil masuk.',
       });
-      navigate('/');
+      router.push('/');
     }
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateRegisterForm()) return;
     
     setIsLoading(true);
-    const { error } = await signUp(email, password, {
+    const { error } = await signUp(registerEmail, registerPassword, {
       full_name: fullName,
       bidang_biro: bidangBiro
     });
@@ -120,7 +147,7 @@ export default function Auth() {
       {/* Header */}
       <header className="p-4">
         <Button variant="ghost" size="sm" asChild className="gap-2">
-          <Link to="/">
+          <Link href="/">
             <ArrowLeft className="w-4 h-4" />
             Kembali ke Papan Peringkat
           </Link>
@@ -160,13 +187,13 @@ export default function Auth() {
                           id="signin-email"
                           type="email"
                           placeholder="admin@contoh.com"
-                          value={email}
-                          onChange={(e) => { setEmail(e.target.value); setErrors({}); }}
+                          value={loginEmail}
+                          onChange={(e) => { setLoginEmail(e.target.value); setLoginErrors({}); }}
                           className="pl-10"
                           disabled={isLoading}
                         />
                       </div>
-                      {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                      {loginErrors.email && <p className="text-sm text-destructive">{loginErrors.email}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signin-password">Kata Sandi</Label>
@@ -176,13 +203,13 @@ export default function Auth() {
                           id="signin-password"
                           type="password"
                           placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => { setPassword(e.target.value); setErrors({}); }}
+                          value={loginPassword}
+                          onChange={(e) => { setLoginPassword(e.target.value); setLoginErrors({}); }}
                           className="pl-10"
                           disabled={isLoading}
                         />
                       </div>
-                      {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                      {loginErrors.password && <p className="text-sm text-destructive">{loginErrors.password}</p>}
                     </div>
                   </CardContent>
                   <CardFooter>
@@ -205,13 +232,13 @@ export default function Auth() {
                           id="signup-email"
                           type="email"
                           placeholder="email@anda.com"
-                          value={email}
-                          onChange={(e) => { setEmail(e.target.value); setErrors({}); }}
+                          value={registerEmail}
+                          onChange={(e) => { setRegisterEmail(e.target.value); setRegisterErrors({}); }}
                           className="pl-10"
                           disabled={isLoading}
                         />
                       </div>
-                      {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                      {registerErrors.email && <p className="text-sm text-destructive">{registerErrors.email}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-fullname">Nama Lengkap</Label>
@@ -220,14 +247,14 @@ export default function Auth() {
                         type="text"
                         placeholder="Masukkan nama lengkap Anda"
                         value={fullName}
-                        onChange={(e) => { setFullName(e.target.value); setErrors({}); }}
+                        onChange={(e) => { setFullName(e.target.value); setRegisterErrors({}); }}
                         disabled={isLoading}
                       />
-                      {errors.fullName && <p className="text-sm text-destructive">{errors.fullName}</p>}
+                      {registerErrors.fullName && <p className="text-sm text-destructive">{registerErrors.fullName}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-bidangbiro">Bidang/Biro</Label>
-                      <Select value={bidangBiro} onValueChange={(value) => { setBidangBiro(value); setErrors({}); }} disabled={isLoading}>
+                      <Select value={bidangBiro} onValueChange={(value) => { setBidangBiro(value); setRegisterErrors({}); }} disabled={isLoading}>
                         <SelectTrigger>
                           <SelectValue placeholder="Pilih bidang/biro Anda" />
                         </SelectTrigger>
@@ -240,7 +267,7 @@ export default function Auth() {
                           <SelectItem value="Bidang Informasi dan Komunikasi (INFOKOM)">Bidang Informasi dan Komunikasi (INFOKOM)</SelectItem>
                         </SelectContent>
                       </Select>
-                      {errors.bidangBiro && <p className="text-sm text-destructive">{errors.bidangBiro}</p>}
+                      {registerErrors.bidangBiro && <p className="text-sm text-destructive">{registerErrors.bidangBiro}</p>}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-password">Kata Sandi</Label>
@@ -250,13 +277,13 @@ export default function Auth() {
                           id="signup-password"
                           type="password"
                           placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => { setPassword(e.target.value); setErrors({}); }}
+                          value={registerPassword}
+                          onChange={(e) => { setRegisterPassword(e.target.value); setRegisterErrors({}); }}
                           className="pl-10"
                           disabled={isLoading}
                         />
                       </div>
-                      {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+                      {registerErrors.password && <p className="text-sm text-destructive">{registerErrors.password}</p>}
                     </div>
                   </CardContent>
                   <CardFooter>

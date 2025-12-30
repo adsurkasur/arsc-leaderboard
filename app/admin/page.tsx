@@ -1,5 +1,8 @@
+'use client';
+
 import { useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { Header } from '@/components/layout/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,15 +13,15 @@ import { NotificationInbox } from '@/components/admin/NotificationInbox';
 import { CompetitionsManagement } from '@/components/admin/CompetitionsManagement';
 import { Loader2, Users, ClipboardList, Bell, Trophy } from 'lucide-react';
 
-export default function Admin() {
+export default function AdminPage() {
   const { user, isAdmin, isLoading } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   useEffect(() => {
     if (!isLoading && (!user || !isAdmin)) {
-      navigate('/auth');
+      router.push('/auth');
     }
-  }, [user, isAdmin, isLoading, navigate]);
+  }, [user, isAdmin, isLoading, router]);
 
   if (isLoading) {
     return (

@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { LeaderboardTable } from '@/components/leaderboard/LeaderboardTable';
 import { Header } from '@/components/layout/Header';
@@ -11,9 +13,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Competition } from '@/lib/types';
-import { Trophy, Users, Activity, Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 
-const Index = () => {
+export default function HomePage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -260,6 +262,4 @@ const Index = () => {
       </footer>
     </div>
   );
-};
-
-export default Index;
+}

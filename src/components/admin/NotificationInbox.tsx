@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { VerificationRequest, Profile, Competition } from '@/lib/types';
@@ -55,7 +57,7 @@ export function NotificationInbox() {
     if (status === 'approved') {
       const request = requests.find(r => r.id === id);
       if (!request) {
-        toast({ title: 'Error', description: 'Request not found', variant: 'destructive' });
+        toast({ title: 'Gagal', description: 'Permintaan tidak ditemukan', variant: 'destructive' });
         setProcessingId(null);
         return;
       }
@@ -71,7 +73,7 @@ export function NotificationInbox() {
         });
 
       if (logError) {
-        toast({ title: 'Error', description: `Failed to create participation log: ${logError.message}`, variant: 'destructive' });
+        toast({ title: 'Gagal', description: `Gagal membuat log partisipasi: ${logError.message}`, variant: 'destructive' });
         setProcessingId(null);
         return;
       }
@@ -84,11 +86,11 @@ export function NotificationInbox() {
       .eq('id', id);
 
     if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Gagal', description: error.message, variant: 'destructive' });
     } else {
       toast({ 
-        title: 'Success', 
-        description: `Request ${status === 'approved' ? 'approved' : 'rejected'} successfully` 
+        title: 'Berhasil', 
+        description: `Permintaan berhasil ${status === 'approved' ? 'disetujui' : 'ditolak'}` 
       });
       fetchRequests();
     }
@@ -103,11 +105,11 @@ export function NotificationInbox() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">Pending</Badge>;
+        return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">Menunggu</Badge>;
       case 'approved':
-        return <Badge variant="outline" className="bg-success/10 text-success border-success/20">Approved</Badge>;
+        return <Badge variant="outline" className="bg-success/10 text-success border-success/20">Disetujui</Badge>;
       case 'rejected':
-        return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">Rejected</Badge>;
+        return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">Ditolak</Badge>;
       default:
         return null;
     }
@@ -129,8 +131,8 @@ export function NotificationInbox() {
         <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
           <Inbox className="w-8 h-8 text-muted-foreground" />
         </div>
-        <h3 className="font-semibold text-lg mb-1">No Verification Requests</h3>
-        <p className="text-muted-foreground">When users submit verification requests, they'll appear here.</p>
+        <h3 className="font-semibold text-lg mb-1">Tidak Ada Permintaan Verifikasi</h3>
+        <p className="text-muted-foreground">Ketika pengguna mengirim permintaan verifikasi, akan muncul di sini.</p>
       </div>
     );
   }
@@ -140,11 +142,11 @@ export function NotificationInbox() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>User</TableHead>
-            <TableHead>Message</TableHead>
+            <TableHead>Pengguna</TableHead>
+            <TableHead>Pesan</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Time</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead>Waktu</TableHead>
+            <TableHead className="text-right">Aksi</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -158,7 +160,7 @@ export function NotificationInbox() {
                       {request.profile ? getInitials(request.profile.full_name) : '?'}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="font-medium">{request.profile?.full_name || 'Unknown'}</span>
+                  <span className="font-medium">{request.profile?.full_name || 'Tidak Dikenal'}</span>
                 </div>
               </TableCell>
               <TableCell>

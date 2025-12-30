@@ -5,10 +5,12 @@ A modern, real-time competition leaderboard application built for tracking and r
 ## 🌟 Features
 
 ### Core Functionality
-- **Real-time Leaderboard**: Live ranking system based on total competition participations
+- **Real-time Leaderboard**: Live ranking system with top 10 display based on total competition participations
 - **Global Ranking**: Sticky ranks that persist through searches and filters
 - **User Authentication**: Secure login/signup with Supabase Auth
 - **Role-based Access**: Admin and user roles with different permissions
+- **Help Guide (Bantuan)**: In-app help documentation
+- **About Section (Tentang)**: Application information and version
 
 ### Competition Management
 - **Competition Tracking**: Add and manage various competitions
@@ -18,11 +20,13 @@ A modern, real-time competition leaderboard application built for tracking and r
 
 ### Admin Dashboard
 - **User Management**: View, edit, and manage user accounts
+- **Account Assignment**: Create accounts for users without email
 - **Competition Oversight**: Create and manage competitions
 - **Participation Verification**: Approve/reject participation requests
 - **Notification System**: Real-time notifications for pending requests
 
 ### User Experience
+- **Fluid Animations**: Spring-like animations for a more engaging experience
 - **Responsive Design**: Mobile-first design with professional UI
 - **Indonesian Language**: Complete localization in Bahasa Indonesia
 - **Search & Filter**: Find users and competitions quickly
@@ -31,9 +35,9 @@ A modern, real-time competition leaderboard application built for tracking and r
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **React 18** - Modern React with hooks and concurrent features
+- **Next.js 16** - React framework with App Router and Turbopack
+- **React 19** - Latest React with concurrent features
 - **TypeScript** - Type-safe development
-- **Vite** - Fast build tool and development server
 - **Tailwind CSS** - Utility-first CSS framework
 - **ShadCN UI** - Modern component library built on Radix UI
 
@@ -47,7 +51,6 @@ A modern, real-time competition leaderboard application built for tracking and r
 - **React Hook Form** - Form management with validation
 - **Zod** - Schema validation
 - **TanStack Query** - Server state management
-- **React Router** - Client-side routing
 
 ## 📋 Prerequisites
 
@@ -73,8 +76,8 @@ A modern, real-time competition leaderboard application built for tracking and r
 3. **Environment Setup**
    Create a `.env` file in the root directory:
    ```env
-   VITE_SUPABASE_URL=your_supabase_project_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
 4. **Database Setup**
@@ -85,13 +88,19 @@ A modern, real-time competition leaderboard application built for tracking and r
 5. **Start Development Server**
    ```bash
    npm run dev
-   # or
-   bun run dev
    ```
 
 ## 📁 Project Structure
 
 ```
+app/                         # Next.js App Router pages
+├── layout.tsx              # Root layout with providers
+├── page.tsx                # Home page (leaderboard)
+├── providers.tsx           # Client-side providers
+├── globals.css             # Global styles
+├── auth/page.tsx           # Authentication page
+├── admin/page.tsx          # Admin dashboard
+└── not-found.tsx           # 404 page
 src/
 ├── components/              # Reusable UI components
 │   ├── ui/                 # ShadCN UI components

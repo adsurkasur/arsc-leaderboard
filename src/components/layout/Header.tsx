@@ -1,4 +1,7 @@
-import { Link, useNavigate } from 'react-router-dom';
+'use client';
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,18 +14,20 @@ import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { VerificationRequest, Competition, Profile } from '@/lib/types';
-import { Trophy, Shield, LogOut, User, Clock, Loader2, Settings } from 'lucide-react';
+import { Trophy, Shield, LogOut, User, Clock, Loader2, Settings, HelpCircle, Info } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
 export function Header() {
   const { user, isAdmin, signOut } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const { toast } = useToast();
   const [isRequestsOpen, setIsRequestsOpen] = useState(false);
   const [userRequests, setUserRequests] = useState<(VerificationRequest & { competition?: Competition })[]>([]);
   const [isLoadingRequests, setIsLoadingRequests] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileFullName, setProfileFullName] = useState('');
   const [profileBidangBiro, setProfileBidangBiro] = useState('');
@@ -111,7 +116,7 @@ export function Header() {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
+    router.push('/');
   };
 
   const getStatusBadge = (status: string) => {
@@ -130,7 +135,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 group">
+        <Link href="/" className="flex items-center gap-2 group">
           <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
             <Trophy className="w-5 h-5 text-primary" />
           </div>
@@ -142,7 +147,7 @@ export function Header() {
             <>
               {isAdmin ? (
                 <Button variant="outline" size="sm" asChild className="gap-2">
-                  <Link to="/admin">
+                  <Link href="/admin">
                     <Shield className="w-4 h-4" />
                     Panel Admin
                   </Link>
@@ -177,7 +182,7 @@ export function Header() {
                         userRequests.map((request) => (
                           <div key={request.id} className="flex items-center justify-between p-3 border rounded-lg">
                             <div className="flex-1">
-                              <p className="font-medium">{request.competition?.title || 'Unknown Competition'}</p>
+                              <p className="font-medium">{request.competition?.title || 'Kompetisi Tidak Dikenal'}</p>
                               <p className="text-sm text-muted-foreground truncate">{request.message}</p>
                               <p className="text-xs text-muted-foreground">
                                 {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
@@ -257,6 +262,14 @@ export function Header() {
                     <Settings className="w-4 h-4 mr-2" />
                     Pengaturan Profil
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsHelpOpen(true)} className="cursor-pointer">
+                    <HelpCircle className="w-4 h-4 mr-2" />
+                    Bantuan
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsAboutOpen(true)} className="cursor-pointer">
+                    <Info className="w-4 h-4 mr-2" />
+                    Tentang
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem disabled className="text-muted-foreground">
                     <User className="w-4 h-4 mr-2" />
@@ -269,10 +282,120 @@ export function Header() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {/* Help Modal */}
+              <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
+                <DialogContent className="sm:max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <HelpCircle className="w-5 h-5 text-primary" />
+                      Bantuan - Panduan Penggunaan
+                    </DialogTitle>
+                    <DialogDescription>
+                      Panduan lengkap untuk menggunakan Papan Peringkat ARSC
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">📊 Melihat Papan Peringkat</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Papan peringkat menampilkan Top 10 peserta berdasarkan jumlah partisipasi kompetisi. 
+                        Anda dapat mencari peserta dan memfilter berdasarkan kategori.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">📝 Mengajukan Partisipasi</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Klik tombol "Ajukan Partisipasi" di halaman utama. Isi nama kompetisi, 
+                        pilih kategori, dan jelaskan partisipasi Anda. Admin akan meninjau permintaan Anda.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">🔍 Melacak Permintaan</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Klik "Permintaan Saya" untuk melihat status permintaan partisipasi Anda 
+                        (Menunggu, Disetujui, atau Ditolak).
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">⚙️ Mengatur Profil</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Klik avatar Anda lalu pilih "Pengaturan Profil" untuk memperbarui nama dan bidang/biro.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">🏆 Peringkat & Medali</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Medali emas, perak, dan perunggu diberikan kepada 3 peserta teratas. 
+                        Peringkat dihitung berdasarkan total partisipasi yang disetujui.
+                      </p>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={() => setIsHelpOpen(false)}>Tutup</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* About Modal */}
+              <Dialog open={isAboutOpen} onOpenChange={setIsAboutOpen}>
+                <DialogContent className="sm:max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Info className="w-5 h-5 text-primary" />
+                      Tentang Aplikasi
+                    </DialogTitle>
+                    <DialogDescription>
+                      Informasi tentang Papan Peringkat ARSC
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="text-center py-4">
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+                        <Trophy className="w-8 h-8 text-primary" />
+                      </div>
+                      <h3 className="text-lg font-bold">ARSC Leaderboard</h3>
+                      <p className="text-sm text-muted-foreground">Versi 1.0.0</p>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">📌 Tentang Aplikasi</h4>
+                      <p className="text-sm text-muted-foreground">
+                        ARSC Leaderboard adalah platform papan peringkat kompetisi yang dirancang untuk 
+                        melacak dan menampilkan partisipasi anggota dalam berbagai kompetisi. 
+                        Aplikasi ini membantu memotivasi anggota untuk aktif berpartisipasi dalam kompetisi.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">🎯 Tujuan</h4>
+                      <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                        <li>Mendorong partisipasi aktif dalam kompetisi</li>
+                        <li>Memberikan pengakuan kepada anggota berprestasi</li>
+                        <li>Memudahkan pelacakan partisipasi kompetisi</li>
+                        <li>Membangun semangat kompetitif yang sehat</li>
+                      </ul>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm">👨‍💻 Pengembang</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Dikembangkan oleh Tim ARSC dengan teknologi Next.js 16, React 19, 
+                        Tailwind CSS, dan Supabase.
+                      </p>
+                    </div>
+                    <div className="pt-2 border-t">
+                      <p className="text-xs text-center text-muted-foreground">
+                        © {new Date().getFullYear()} ARSC. Seluruh hak cipta dilindungi.
+                      </p>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={() => setIsAboutOpen(false)}>Tutup</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </>
           ) : (
             <Button asChild size="sm">
-              <Link to="/auth">Masuk</Link>
+              <Link href="/auth">Masuk</Link>
             </Button>
           )}
         </nav>

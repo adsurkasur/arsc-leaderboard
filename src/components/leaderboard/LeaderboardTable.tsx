@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, LeaderboardEntry } from '@/lib/types';
@@ -8,11 +10,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Trophy, Medal, Award, ArrowUpDown, ArrowUp, ArrowDown, Info, Loader2 } from 'lucide-react';
+import { Search, Trophy, Medal, Award, ArrowUpDown, ArrowUp, ArrowDown, Info, Loader2, Sparkles } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
+
+const TOP_LEADERBOARD_LIMIT = 10;
 
 type SortField = 'rank' | 'full_name' | 'total_participation_count' | 'last_activity_at';
 type SortDirection = 'asc' | 'desc';
+
+// Extended profile type for leaderboard calculations
+type ProfileWithEffectiveCount = Profile & {
+  effectiveParticipationCount: number;
+};
 
 export function LeaderboardTable() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -150,12 +159,9 @@ export function LeaderboardTable() {
   };
 
   const filteredAndSortedEntries = useMemo(() => {
-    let filtered = profiles.filter(profile =>
+    let filtered: ProfileWithEffectiveCount[] = profiles.filter(profile =>
       profile.full_name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    // Add effective participation count based on category filter
-    filtered = filtered.map(profile => ({
+    ).map(profile => ({
       ...profile,
       effectiveParticipationCount: selectedCategory === 'all'
         ? profile.total_participation_count
@@ -193,12 +199,19 @@ export function LeaderboardTable() {
       return sortDirection === 'desc' ? -comparison : comparison;
     });
 
-    // Use global rank instead of index-based rank
-    return filtered.map((profile) => ({
+    // Use global rank instead of index-based rank and limit to top 10
+    const rankedEntries = filtered.map((profile) => ({
       ...profile,
       rank: profile.globalRank || 999,
       displayParticipationCount: (profile as any).effectiveParticipationCount
     })) as LeaderboardEntry[];
+
+    // Apply top 10 limit only when not searching and category is 'all'
+    if (!searchQuery && selectedCategory === 'all') {
+      return rankedEntries.slice(0, TOP_LEADERBOARD_LIMIT);
+    }
+    
+    return rankedEntries;
   }, [profiles, searchQuery, selectedCategory, categoryParticipationCounts, sortField, sortDirection]);
 
   const handleSort = (field: SortField) => {
@@ -328,8 +341,8 @@ export function LeaderboardTable() {
               filteredAndSortedEntries.map((entry, index) => (
                 <TableRow 
                   key={entry.id} 
-                  className="table-row-hover"
-                  style={{ animationDelay: `${index * 50}ms` }}
+                  className="table-row-hover animate-stagger-in"
+                  style={{ animationDelay: `${index * 80}ms` }}
                 >
                   <TableCell>{getRankBadge(entry.rank)}</TableCell>
                   <TableCell>
@@ -358,7 +371,7 @@ export function LeaderboardTable() {
                   <TableCell className="text-right text-muted-foreground">
                     {entry.last_activity_at 
                       ? formatDistanceToNow(new Date(entry.last_activity_at), { addSuffix: true })
-                      : 'Never'
+                      : 'Belum pernah'
                     }
                   </TableCell>
                   <TableCell className="text-center">
@@ -367,7 +380,7 @@ export function LeaderboardTable() {
                       size="icon"
                       onClick={() => handleViewDetails(entry)}
                       className="w-8 h-8 hover:bg-primary/10 hover:text-primary"
-                      title="View participation details"
+                      title="Lihat detail partisipasi"
                     >
                       <Info className="w-4 h-4" />
                     </Button>
