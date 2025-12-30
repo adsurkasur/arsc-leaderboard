@@ -113,6 +113,23 @@ export default {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.7" },
         },
+        // Enterprise-grade modal animations
+        "overlay-show": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        "overlay-hide": {
+          "0%": { opacity: "1" },
+          "100%": { opacity: "0" },
+        },
+        "dialog-show": {
+          "0%": { opacity: "0", transform: "translate(-50%, -50%) scale(0.96)" },
+          "100%": { opacity: "1", transform: "translate(-50%, -50%) scale(1)" },
+        },
+        "dialog-hide": {
+          "0%": { opacity: "1", transform: "translate(-50%, -50%) scale(1)" },
+          "100%": { opacity: "0", transform: "translate(-50%, -50%) scale(0.96)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -121,6 +138,11 @@ export default {
         "scale-in": "scale-in 0.2s ease-out",
         "slide-in-right": "slide-in-right 0.3s ease-out",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
+        // Enterprise-grade modal animations
+        "overlay-show": "overlay-show 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "overlay-hide": "overlay-hide 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "dialog-show": "dialog-show 150ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "dialog-hide": "dialog-hide 100ms cubic-bezier(0.16, 1, 0.3, 1)",
       },
     },
   },
