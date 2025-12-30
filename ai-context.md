@@ -2,30 +2,65 @@
 
 ## Current Task Status
 - **Phase**: ✅ COMPLETE
-- **Task**: UX Fixes - Modal Animations, Overlay, and Ranking Tiebreaker
+- **Task**: Enterprise-Grade Modal Animations & Standardization
 - **Last Updated**: 2025-12-31
 
-## Latest Implementation: UX Fixes
+## Latest Implementation: Enterprise-Grade Modal System
 
-### ✅ 10. Modal Animation & Overlay Fix
-**File: src/components/ui/dialog.tsx**
-- Simplified animation from complex zoom+slide to clean fade+scale
-- Updated overlay: `bg-black/50 backdrop-blur-sm` with smooth fade transition
-- Updated content: Uses `scale-95`/`scale-100` transition for spawn/despawn
-- Added `transition-all duration-200` for smooth animations
-- This fixes both the weird animation and the overlay lingering issue
+### ✅ 12. Modal Animation & Overlay Complete Overhaul
 
-### ✅ 11. Ranking Tiebreaker - Earlier Activity = Better Rank
-**File: src/components/leaderboard/LeaderboardTable.tsx**
-- Added secondary sort by `last_activity_at` (ascending) in Supabase query
-- Updated ranking logic to only share rank if BOTH count AND activity time are exactly the same
-- Added tiebreaker in local sort function for `total_participation_count` sort field
-- Earlier last_activity_at = better rank when participation counts are equal
+**Problem Analysis:**
+- Modals were spawning offset then centering (animation conflict with translate)
+- Overlay gaps at edges during animation
+- Overlay lingering invisibly after modal closed (blocking interaction)
+- Components not standardized across dialog, alert-dialog, and sheet
+
+**Solution Implemented:**
+
+**1. Custom Keyframe Animations (tailwind.config.ts):**
+```typescript
+// Overlay animations
+"overlay-show": { "0%": { opacity: "0" }, "100%": { opacity: "1" } }
+"overlay-hide": { "0%": { opacity: "1" }, "100%": { opacity: "0" } }
+
+// Dialog animations - includes translate for proper centering
+"dialog-show": { 
+  "0%": { opacity: "0", transform: "translate(-50%, -50%) scale(0.96)" },
+  "100%": { opacity: "1", transform: "translate(-50%, -50%) scale(1)" }
+}
+"dialog-hide": {
+  "0%": { opacity: "1", transform: "translate(-50%, -50%) scale(1)" },
+  "100%": { opacity: "0", transform: "translate(-50%, -50%) scale(0.96)" }
+}
+```
+
+**2. Animation Timing (Professional feel):**
+- Overlay: 150ms with `cubic-bezier(0.16, 1, 0.3, 1)` 
+- Dialog show: 150ms with same easing
+- Dialog hide: 100ms (faster close feels snappier)
+
+**3. Standardized Components:**
+- **dialog.tsx**: Clean fade+scale, proper centering with `left-[50%] top-[50%]`
+- **alert-dialog.tsx**: Same animations and structure
+- **sheet.tsx**: Same overlay animation, keeps slide animation for side panels
+
+**4. Removed Problematic Classes:**
+- Removed `tailwindcss-animate` generated classes (`animate-in`, `animate-out`)
+- Removed conflicting translate classes from Tailwind
+- Transform is now fully controlled by keyframe animation
+
+**Key Technical Details:**
+- Using `origin-center` for proper scale origin
+- Animation transform includes `-50%, -50%` to maintain centering during scale
+- `bg-black/60` standardized across all overlays
+- Proper z-index layering (z-50)
 
 ---
 
-## Previous Implementation: Language Consistency - Bahasa Indonesia Only
-- **Last Updated**: 2025-12-31
+## Previous Implementation: UX Fixes
+
+### ✅ 10-11. Previous Modal & Ranking Fixes
+- See previous entries below
 
 **UsersManagement.tsx:**
 - Toast titles: Error → Gagal, Success → Berhasil
