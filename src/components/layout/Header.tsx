@@ -133,21 +133,22 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-            <Trophy className="w-5 h-5 text-primary" />
-          </div>
-          <span className="font-bold text-xl tracking-tight">Papan Peringkat</span>
-        </Link>
+    <>
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+              <Trophy className="w-5 h-5 text-primary" />
+            </div>
+            <span className="font-bold text-xl tracking-tight">Papan Peringkat</span>
+          </Link>
 
-        <nav className="flex items-center gap-4">
-          {user ? (
-            <>
-              {isAdmin ? (
-                <Button variant="outline" size="sm" asChild className="gap-2">
-                  <Link href="/admin">
+          <nav className="flex items-center gap-4">
+            {user ? (
+              <>
+                {isAdmin ? (
+                  <Button variant="outline" size="sm" asChild className="gap-2">
+                    <Link href="/admin">
                     <Shield className="w-4 h-4" />
                     Panel Admin
                   </Link>
@@ -197,56 +198,6 @@ export function Header() {
                 </Dialog>
               )}
               
-              {/* Profile Settings Modal */}
-              <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Pengaturan Profil</DialogTitle>
-                    <DialogDescription>
-                      Perbarui informasi profil dan bidang/biro Anda.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="profile-fullname">Nama Lengkap</Label>
-                      <Input
-                        id="profile-fullname"
-                        type="text"
-                        placeholder="Masukkan nama lengkap Anda"
-                        value={profileFullName}
-                        onChange={(e) => setProfileFullName(e.target.value)}
-                        disabled={isUpdatingProfile}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="profile-bidangbiro">Bidang/Biro</Label>
-                      <Select value={profileBidangBiro} onValueChange={setProfileBidangBiro} disabled={isUpdatingProfile}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih bidang/biro Anda" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Ketua Umum (KETUM)">Ketua Umum (KETUM)</SelectItem>
-                          <SelectItem value="Biro Pengembangan Sumber Daya Mahasiswa (PSDM)">Biro Pengembangan Sumber Daya Mahasiswa (PSDM)</SelectItem>
-                          <SelectItem value="Biro Administrasi dan Keuangan (ADKEU)">Biro Administrasi dan Keuangan (ADKEU)</SelectItem>
-                          <SelectItem value="Bidang Kepenulisan dan Kompetisi (PENKOM)">Bidang Kepenulisan dan Kompetisi (PENKOM)</SelectItem>
-                          <SelectItem value="Bidang Riset dan Teknologi (RISTEK)">Bidang Riset dan Teknologi (RISTEK)</SelectItem>
-                          <SelectItem value="Bidang Informasi dan Komunikasi (INFOKOM)">Bidang Informasi dan Komunikasi (INFOKOM)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsProfileOpen(false)} disabled={isUpdatingProfile}>
-                      Batal
-                    </Button>
-                    <Button onClick={handleUpdateProfile} disabled={isUpdatingProfile}>
-                      {isUpdatingProfile && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                      Perbarui Profil
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full">
@@ -282,116 +233,6 @@ export function Header() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              {/* Help Modal */}
-              <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
-                <DialogContent className="sm:max-w-lg">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                      <HelpCircle className="w-5 h-5 text-primary" />
-                      Bantuan - Panduan Penggunaan
-                    </DialogTitle>
-                    <DialogDescription>
-                      Panduan lengkap untuk menggunakan Papan Peringkat ARSC
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm">📊 Melihat Papan Peringkat</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Papan peringkat menampilkan Top 10 peserta berdasarkan jumlah partisipasi kompetisi. 
-                        Anda dapat mencari peserta dan memfilter berdasarkan kategori.
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm">📝 Mengajukan Partisipasi</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Klik tombol "Ajukan Partisipasi" di halaman utama. Isi nama kompetisi, 
-                        pilih kategori, dan jelaskan partisipasi Anda. Admin akan meninjau permintaan Anda.
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm">🔍 Melacak Permintaan</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Klik "Permintaan Saya" untuk melihat status permintaan partisipasi Anda 
-                        (Menunggu, Disetujui, atau Ditolak).
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm">⚙️ Mengatur Profil</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Klik avatar Anda lalu pilih "Pengaturan Profil" untuk memperbarui nama dan bidang/biro.
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm">🏆 Peringkat & Medali</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Medali emas, perak, dan perunggu diberikan kepada 3 peserta teratas. 
-                        Peringkat dihitung berdasarkan total partisipasi yang disetujui.
-                      </p>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={() => setIsHelpOpen(false)}>Tutup</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-
-              {/* About Modal */}
-              <Dialog open={isAboutOpen} onOpenChange={setIsAboutOpen}>
-                <DialogContent className="sm:max-w-lg">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                      <Info className="w-5 h-5 text-primary" />
-                      Tentang Aplikasi
-                    </DialogTitle>
-                    <DialogDescription>
-                      Informasi tentang Papan Peringkat ARSC
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="text-center py-4">
-                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-                        <Trophy className="w-8 h-8 text-primary" />
-                      </div>
-                      <h3 className="text-lg font-bold">ARSC Leaderboard</h3>
-                      <p className="text-sm text-muted-foreground">Versi 1.0.0</p>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm">📌 Tentang Aplikasi</h4>
-                      <p className="text-sm text-muted-foreground">
-                        ARSC Leaderboard adalah platform papan peringkat kompetisi yang dirancang untuk 
-                        melacak dan menampilkan partisipasi anggota dalam berbagai kompetisi. 
-                        Aplikasi ini membantu memotivasi anggota untuk aktif berpartisipasi dalam kompetisi.
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm">🎯 Tujuan</h4>
-                      <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                        <li>Mendorong partisipasi aktif dalam kompetisi</li>
-                        <li>Memberikan pengakuan kepada anggota berprestasi</li>
-                        <li>Memudahkan pelacakan partisipasi kompetisi</li>
-                        <li>Membangun semangat kompetitif yang sehat</li>
-                      </ul>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-semibold text-sm">👨‍💻 Pengembang</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Dikembangkan oleh Tim ARSC dengan teknologi Next.js 16, React 19, 
-                        Tailwind CSS, dan Supabase.
-                      </p>
-                    </div>
-                    <div className="pt-2 border-t">
-                      <p className="text-xs text-center text-muted-foreground">
-                        © {new Date().getFullYear()} ARSC. Seluruh hak cipta dilindungi.
-                      </p>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={() => setIsAboutOpen(false)}>Tutup</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
             </>
           ) : (
             <Button asChild size="sm">
@@ -401,5 +242,171 @@ export function Header() {
         </nav>
       </div>
     </header>
+
+    {/* Modals - Rendered outside the header structure to prevent portal conflicts */}
+    {user && (
+      <>
+        {/* Profile Settings Modal */}
+        <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Pengaturan Profil</DialogTitle>
+              <DialogDescription>
+                Perbarui informasi profil dan bidang/biro Anda.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="profile-fullname">Nama Lengkap</Label>
+                <Input
+                  id="profile-fullname"
+                  type="text"
+                  placeholder="Masukkan nama lengkap Anda"
+                  value={profileFullName}
+                  onChange={(e) => setProfileFullName(e.target.value)}
+                  disabled={isUpdatingProfile}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profile-bidangbiro">Bidang/Biro</Label>
+                <Select value={profileBidangBiro} onValueChange={setProfileBidangBiro} disabled={isUpdatingProfile}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih bidang/biro Anda" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Ketua Umum (KETUM)">Ketua Umum (KETUM)</SelectItem>
+                    <SelectItem value="Biro Pengembangan Sumber Daya Mahasiswa (PSDM)">Biro Pengembangan Sumber Daya Mahasiswa (PSDM)</SelectItem>
+                    <SelectItem value="Biro Administrasi dan Keuangan (ADKEU)">Biro Administrasi dan Keuangan (ADKEU)</SelectItem>
+                    <SelectItem value="Bidang Kepenulisan dan Kompetisi (PENKOM)">Bidang Kepenulisan dan Kompetisi (PENKOM)</SelectItem>
+                    <SelectItem value="Bidang Riset dan Teknologi (RISTEK)">Bidang Riset dan Teknologi (RISTEK)</SelectItem>
+                    <SelectItem value="Bidang Informasi dan Komunikasi (INFOKOM)">Bidang Informasi dan Komunikasi (INFOKOM)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsProfileOpen(false)} disabled={isUpdatingProfile}>
+                Batal
+              </Button>
+              <Button onClick={handleUpdateProfile} disabled={isUpdatingProfile}>
+                {isUpdatingProfile && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Perbarui Profil
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Help Modal */}
+        <Dialog open={isHelpOpen} onOpenChange={setIsHelpOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-primary" />
+                Bantuan - Panduan Penggunaan
+              </DialogTitle>
+              <DialogDescription>
+                Panduan lengkap untuk menggunakan Papan Peringkat ARSC
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">📊 Melihat Papan Peringkat</h4>
+                <p className="text-sm text-muted-foreground">
+                  Papan peringkat menampilkan Top 10 peserta berdasarkan jumlah partisipasi kompetisi. 
+                  Anda dapat mencari peserta dan memfilter berdasarkan kategori.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">📝 Mengajukan Partisipasi</h4>
+                <p className="text-sm text-muted-foreground">
+                  Klik tombol "Ajukan Partisipasi" di halaman utama. Isi nama kompetisi, 
+                  pilih kategori, dan jelaskan partisipasi Anda. Admin akan meninjau permintaan Anda.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">🔍 Melacak Permintaan</h4>
+                <p className="text-sm text-muted-foreground">
+                  Klik "Permintaan Saya" untuk melihat status permintaan partisipasi Anda 
+                  (Menunggu, Disetujui, atau Ditolak).
+                </p>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">⚙️ Mengatur Profil</h4>
+                <p className="text-sm text-muted-foreground">
+                  Klik avatar Anda lalu pilih "Pengaturan Profil" untuk memperbarui nama dan bidang/biro.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">🏆 Peringkat & Medali</h4>
+                <p className="text-sm text-muted-foreground">
+                  Medali emas, perak, dan perunggu diberikan kepada 3 peserta teratas. 
+                  Peringkat dihitung berdasarkan total partisipasi yang disetujui.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setIsHelpOpen(false)}>Tutup</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* About Modal */}
+        <Dialog open={isAboutOpen} onOpenChange={setIsAboutOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Info className="w-5 h-5 text-primary" />
+                Tentang Aplikasi
+              </DialogTitle>
+              <DialogDescription>
+                Informasi tentang Papan Peringkat ARSC
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="text-center py-4">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+                  <Trophy className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-lg font-bold">ARSC Leaderboard</h3>
+                <p className="text-sm text-muted-foreground">Versi 1.0.0</p>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">📌 Tentang Aplikasi</h4>
+                <p className="text-sm text-muted-foreground">
+                  ARSC Leaderboard adalah platform papan peringkat kompetisi yang dirancang untuk 
+                  melacak dan menampilkan partisipasi anggota dalam berbagai kompetisi. 
+                  Aplikasi ini membantu memotivasi anggota untuk aktif berpartisipasi dalam kompetisi.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">🎯 Tujuan</h4>
+                <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                  <li>Mendorong partisipasi aktif dalam kompetisi</li>
+                  <li>Memberikan pengakuan kepada anggota berprestasi</li>
+                  <li>Memudahkan pelacakan partisipasi kompetisi</li>
+                  <li>Membangun semangat kompetitif yang sehat</li>
+                </ul>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">👨‍💻 Pengembang</h4>
+                <p className="text-sm text-muted-foreground">
+                  Dikembangkan oleh Tim ARSC dengan teknologi Next.js 16, React 19, 
+                  Tailwind CSS, dan Supabase.
+                </p>
+              </div>
+              <div className="pt-2 border-t">
+                <p className="text-xs text-center text-muted-foreground">
+                  © {new Date().getFullYear()} ARSC. Seluruh hak cipta dilindungi.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setIsAboutOpen(false)}>Tutup</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
+    )}
+    </>
   );
 }
