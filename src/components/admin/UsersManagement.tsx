@@ -242,8 +242,9 @@ export function UsersManagement() {
           fetchProfiles();
         }
       }
-    } catch (error: any) {
-      toast({ title: 'Gagal', description: error.message || 'Terjadi kesalahan', variant: 'destructive' });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan';
+      toast({ title: 'Gagal', description: errorMessage, variant: 'destructive' });
     }
 
     setIsAssigningEmail(false);

@@ -37,7 +37,7 @@ export function LeaderboardTable() {
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
-  const [participationData, setParticipationData] = useState<any[]>([]);
+  const [participationData, setParticipationData] = useState<Array<{ id: string; competition?: { id: string; title: string; date: string; category: string } | null; created_at: string }>>([]);
   const [isLoadingParticipation, setIsLoadingParticipation] = useState(false);
 
   useEffect(() => {
@@ -74,19 +74,22 @@ export function LeaderboardTable() {
     if (!error && data) {
       // Calculate global ranks based on total participation count
       // Handle ties by maintaining the same rank for equal participation counts
-      const profilesWithRanks = data.map((profile, index, array) => {
+      type ProfileWithRank = typeof data[0] & { globalRank: number };
+      const profilesWithRanks: ProfileWithRank[] = [];
+      
+      data.forEach((profile, index) => {
         let globalRank = index + 1;
 
         // If this profile has the same participation count as the previous one,
         // they should have the same rank
-        if (index > 0 && profile.total_participation_count === array[index - 1].total_participation_count) {
-          globalRank = (array[index - 1] as any).globalRank;
+        if (index > 0 && profile.total_participation_count === data[index - 1].total_participation_count) {
+          globalRank = profilesWithRanks[index - 1].globalRank;
         }
 
-        return {
+        profilesWithRanks.push({
           ...profile,
           globalRank
-        };
+        });
       });
 
       setProfiles(profilesWithRanks);
@@ -185,15 +188,16 @@ export function LeaderboardTable() {
           comparison = a.full_name.localeCompare(b.full_name);
           break;
         case 'total_participation_count':
-          comparison = (a as any).effectiveParticipationCount - (b as any).effectiveParticipationCount;
+          comparison = a.effectiveParticipationCount - b.effectiveParticipationCount;
           break;
-        case 'last_activity_at':
+        case 'last_activity_at': {
           const dateA = a.last_activity_at ? new Date(a.last_activity_at).getTime() : 0;
           const dateB = b.last_activity_at ? new Date(b.last_activity_at).getTime() : 0;
           comparison = dateA - dateB;
           break;
+        }
         default:
-          comparison = (b as any).effectiveParticipationCount - (a as any).effectiveParticipationCount;
+          comparison = b.effectiveParticipationCount - a.effectiveParticipationCount;
       }
 
       return sortDirection === 'desc' ? -comparison : comparison;
@@ -203,7 +207,7 @@ export function LeaderboardTable() {
     const rankedEntries = filtered.map((profile) => ({
       ...profile,
       rank: profile.globalRank || 999,
-      displayParticipationCount: (profile as any).effectiveParticipationCount
+      displayParticipationCount: profile.effectiveParticipationCount
     })) as LeaderboardEntry[];
 
     // Apply top 10 limit only when not searching and category is 'all'
@@ -365,7 +369,7 @@ export function LeaderboardTable() {
                   </TableCell>
                   <TableCell className="text-center">
                     <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1 bg-primary/10 text-primary font-semibold rounded-full">
-                      {(entry as any).displayParticipationCount}
+                      {(entry as LeaderboardEntry & { displayParticipationCount: number }).displayParticipationCount}
                     </span>
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
