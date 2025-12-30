@@ -198,7 +198,7 @@ export function Header() {
                 </Dialog>
               )}
               
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full">
                     <Avatar className="w-8 h-8">
