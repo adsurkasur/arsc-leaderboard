@@ -2,13 +2,30 @@
 
 ## Current Task Status
 - **Phase**: ✅ COMPLETE
-- **Task**: Language Consistency - Bahasa Indonesia Only
+- **Task**: UX Fixes - Modal Animations, Overlay, and Ranking Tiebreaker
 - **Last Updated**: 2025-12-31
 
-## Latest Implementation: Language Consistency Fix
+## Latest Implementation: UX Fixes
 
-### ✅ 9. Language Consistency - Bahasa Indonesia Only
-All English text has been translated to Bahasa Indonesia:
+### ✅ 10. Modal Animation & Overlay Fix
+**File: src/components/ui/dialog.tsx**
+- Simplified animation from complex zoom+slide to clean fade+scale
+- Updated overlay: `bg-black/50 backdrop-blur-sm` with smooth fade transition
+- Updated content: Uses `scale-95`/`scale-100` transition for spawn/despawn
+- Added `transition-all duration-200` for smooth animations
+- This fixes both the weird animation and the overlay lingering issue
+
+### ✅ 11. Ranking Tiebreaker - Earlier Activity = Better Rank
+**File: src/components/leaderboard/LeaderboardTable.tsx**
+- Added secondary sort by `last_activity_at` (ascending) in Supabase query
+- Updated ranking logic to only share rank if BOTH count AND activity time are exactly the same
+- Added tiebreaker in local sort function for `total_participation_count` sort field
+- Earlier last_activity_at = better rank when participation counts are equal
+
+---
+
+## Previous Implementation: Language Consistency - Bahasa Indonesia Only
+- **Last Updated**: 2025-12-31
 
 **UsersManagement.tsx:**
 - Toast titles: Error → Gagal, Success → Berhasil

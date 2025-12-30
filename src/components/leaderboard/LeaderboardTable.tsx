@@ -69,11 +69,12 @@ export function LeaderboardTable() {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .order('total_participation_count', { ascending: false });
+      .order('total_participation_count', { ascending: false })
+      .order('last_activity_at', { ascending: true }); // Earlier activity = better rank (tiebreaker)
 
     if (!error && data) {
       // Calculate global ranks based on total participation count
-      // Handle ties by maintaining the same rank for equal participation counts
+      // With tiebreaker: earlier last_activity_at = better rank when counts are equal
       type ProfileWithRank = typeof data[0] & { globalRank: number };
       const profilesWithRanks: ProfileWithRank[] = [];
       
@@ -81,9 +82,16 @@ export function LeaderboardTable() {
         let globalRank = index + 1;
 
         // If this profile has the same participation count as the previous one,
-        // they should have the same rank
-        if (index > 0 && profile.total_participation_count === data[index - 1].total_participation_count) {
-          globalRank = profilesWithRanks[index - 1].globalRank;
+        // compare last_activity_at - if also the same, share the rank
+        if (index > 0) {
+          const prevProfile = data[index - 1];
+          const sameCount = profile.total_participation_count === prevProfile.total_participation_count;
+          const sameActivity = profile.last_activity_at === prevProfile.last_activity_at;
+          
+          if (sameCount && sameActivity) {
+            // Only share rank if both count AND activity time are exactly the same
+            globalRank = profilesWithRanks[index - 1].globalRank;
+          }
         }
 
         profilesWithRanks.push({
@@ -189,6 +197,12 @@ export function LeaderboardTable() {
           break;
         case 'total_participation_count':
           comparison = a.effectiveParticipationCount - b.effectiveParticipationCount;
+          // Tiebreaker: earlier last_activity_at = better rank
+          if (comparison === 0) {
+            const dateA = a.last_activity_at ? new Date(a.last_activity_at).getTime() : Infinity;
+            const dateB = b.last_activity_at ? new Date(b.last_activity_at).getTime() : Infinity;
+            comparison = dateA - dateB;
+          }
           break;
         case 'last_activity_at': {
           const dateA = a.last_activity_at ? new Date(a.last_activity_at).getTime() : 0;
@@ -198,6 +212,12 @@ export function LeaderboardTable() {
         }
         default:
           comparison = b.effectiveParticipationCount - a.effectiveParticipationCount;
+          // Tiebreaker: earlier last_activity_at = better rank
+          if (comparison === 0) {
+            const dateA = a.last_activity_at ? new Date(a.last_activity_at).getTime() : Infinity;
+            const dateB = b.last_activity_at ? new Date(b.last_activity_at).getTime() : Infinity;
+            comparison = dateA - dateB;
+          }
       }
 
       return sortDirection === 'desc' ? -comparison : comparison;
