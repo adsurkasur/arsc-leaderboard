@@ -22,8 +22,7 @@ const DialogOverlay = React.forwardRef<
     ref={ref}
     className={cn(
       "fixed inset-0 z-50 bg-black/60",
-      "data-[state=open]:animate-in data-[state=closed]:animate-out",
-      "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "data-[state=open]:animate-overlay-show data-[state=closed]:animate-overlay-hide",
       className,
     )}
     {...props}
@@ -45,12 +44,9 @@ const DialogContent = React.forwardRef<
         onCloseAutoFocus?.(e);
       }}
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2",
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg",
         "gap-4 border bg-background p-6 shadow-xl sm:rounded-lg",
-        "data-[state=open]:animate-in data-[state=closed]:animate-out",
-        "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-        "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-        "duration-200",
+        "data-[state=open]:animate-dialog-show data-[state=closed]:animate-dialog-hide",
         className,
       )}
       {...props}

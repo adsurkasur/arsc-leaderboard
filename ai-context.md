@@ -2,8 +2,44 @@
 
 ## Current Task Status
 - **Phase**: ✅ COMPLETE
-- **Task**: Enterprise-Grade Modal Animations & Standardization
+- **Task**: Enterprise-Grade Modal Animations & Default Leaderboard Sorting
 - **Last Updated**: 2025-12-31
+
+---
+
+## Latest Session Update
+
+### ✅ 13. Modal Animation Fix - Final Resolution
+
+**Problem:** 
+- Modal animations had "weird offset pop ins and outs"
+- The `zoom-in-95`/`zoom-out-95` from tailwindcss-animate were conflicting with `-translate-x-1/2 -translate-y-1/2`
+
+**Root Cause:**
+- CSS transforms don't stack - they override each other
+- When `zoom-in-95` applied `scale(0.95)`, it removed the translate, causing offset
+
+**Solution:**
+- Switched all modals to use custom `animate-dialog-show` and `animate-dialog-hide` animations
+- These custom keyframes include `translate(-50%, -50%)` in BOTH start and end states
+- Removed the static `-translate-x-1/2 -translate-y-1/2` classes since transform is now fully controlled by animation
+- Applied same pattern to overlay with `animate-overlay-show` and `animate-overlay-hide`
+
+**Files Modified:**
+- [src/components/ui/dialog.tsx](src/components/ui/dialog.tsx) - Custom dialog animations
+- [src/components/ui/alert-dialog.tsx](src/components/ui/alert-dialog.tsx) - Same treatment
+- [src/components/ui/sheet.tsx](src/components/ui/sheet.tsx) - Overlay animation fix
+
+### ✅ 14. Leaderboard Default Sort by Rank
+
+**Change:**
+- Default `sortField` changed from `'total_participation_count'` to `'rank'`
+- Leaderboard now automatically sorts by "Peringkat" on page load
+
+**File Modified:**
+- [src/components/leaderboard/LeaderboardTable.tsx](src/components/leaderboard/LeaderboardTable.tsx)
+
+---
 
 ## Latest Implementation: Enterprise-Grade Modal System
 

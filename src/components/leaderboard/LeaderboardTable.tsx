@@ -29,8 +29,8 @@ export function LeaderboardTable() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [sortField, setSortField] = useState<SortField>('total_participation_count');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [sortField, setSortField] = useState<SortField>('rank');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [categoryParticipationCounts, setCategoryParticipationCounts] = useState<Record<string, number>>({});
   const [isLoadingCategoryData, setIsLoadingCategoryData] = useState(false);
   
@@ -243,7 +243,9 @@ export function LeaderboardTable() {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
-      setSortDirection(field === 'full_name' ? 'asc' : 'desc');
+      // For rank and full_name, ascending is natural order (1 first, A first)
+      // For participation count and activity, descending is natural (highest first, most recent first)
+      setSortDirection(field === 'full_name' || field === 'rank' ? 'asc' : 'desc');
     }
   };
 
@@ -455,7 +457,7 @@ export function LeaderboardTable() {
                       </p>
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {format(new Date(participation.created_at), 'MMM d')}
+                      {format(new Date(participation.created_at), 'MMM d, HH:mm')}
                     </div>
                   </div>
                 ))}
