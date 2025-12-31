@@ -23,7 +23,7 @@ export function CompetitionsManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCompetition, setEditingCompetition] = useState<Competition | null>(null);
-  const [formData, setFormData] = useState({ title: '', date: '', description: '', category: 'General' });
+  const [formData, setFormData] = useState({ title: '', date: '', description: '', category: 'other' });
   const [isSaving, setIsSaving] = useState(false);
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -88,7 +88,7 @@ export function CompetitionsManagement() {
 
   const openCreateDialog = () => {
     setEditingCompetition(null);
-    setFormData({ title: '', date: new Date().toISOString().split('T')[0], description: '', category: 'General' });
+    setFormData({ title: '', date: new Date().toISOString().split('T')[0], description: '', category: 'other' });
     setIsDialogOpen(true);
   };
 

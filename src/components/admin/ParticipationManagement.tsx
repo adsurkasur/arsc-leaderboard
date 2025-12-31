@@ -162,7 +162,7 @@ export function ParticipationManagement() {
           .from('competitions')
           .insert({
             title: competitionName.trim(),
-            category: 'General',
+            category: 'other',
             date: new Date().toISOString().split('T')[0],
           })
           .select('id')
