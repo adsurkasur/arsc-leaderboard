@@ -182,15 +182,10 @@ export function ParticipationModal({ user }: ParticipationModalProps) {
                 <SelectValue placeholder="Pilih kategori" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Academic">Akademik</SelectItem>
-                <SelectItem value="Sports">Olahraga</SelectItem>
-                <SelectItem value="Innovation">Inovasi</SelectItem>
-                <SelectItem value="Art">Seni</SelectItem>
-                <SelectItem value="Technology">Teknologi</SelectItem>
-                <SelectItem value="Science">Sains</SelectItem>
-                <SelectItem value="Business">Bisnis</SelectItem>
-                <SelectItem value="Culture">Budaya</SelectItem>
-                <SelectItem value="Other">Lainnya</SelectItem>
+                <SelectItem value="funding">Pendanaan</SelectItem>
+                <SelectItem value="national">Nasional</SelectItem>
+                <SelectItem value="international">Internasional</SelectItem>
+                <SelectItem value="other">Lainnya</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground mt-1">
