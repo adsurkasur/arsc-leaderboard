@@ -24,8 +24,8 @@ export function AboutModal({ open, onOpenChange }: AboutModalProps) {
         </DialogHeader>
         <div className="space-y-4">
           <div className="text-center py-4">
-            <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-primary/10 mb-4 overflow-hidden">
-              <Image src="/arsc-logo.png" alt="ARSC Logo" width={96} height={96} className="rounded-2xl" />
+            <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-primary/10 border-2 border-primary/20 shadow-sm mb-4 overflow-hidden">
+              <Image src="/arsc-logo.png" alt="ARSC Logo" width={96} height={96} className="rounded-xl" />
             </div>
             <h3 className="text-lg font-bold">ARSC Leaderboard</h3>
             <p className="text-sm text-muted-foreground">Versi 1.0.0</p>

@@ -198,16 +198,16 @@ export function ParticipationModal({ user }: ParticipationModalProps) {
             </p>
           </div>
           <div>
-            <Label htmlFor="participationDate">Waktu Partisipasi</Label>
+            <Label htmlFor="participationDate">Tanggal Partisipasi</Label>
             <Input
               id="participationDate"
-              type="datetime-local"
+              type="date"
               value={participationDate}
               onChange={(e) => setParticipationDate(e.target.value)}
-              className="border-primary/20 focus:border-primary"
+              className="border-primary/20 focus:border-primary [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Waktu Anda berpartisipasi dalam kompetisi.
+              Tanggal Anda berpartisipasi dalam kompetisi.
             </p>
           </div>
           <div>

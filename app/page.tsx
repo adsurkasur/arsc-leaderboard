@@ -22,7 +22,7 @@ export default function HomePage() {
               <span className="text-primary"> Ahli Lomba</span> ARSC
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: '100ms' }}>
-              Ayo teman-teman ARSC, pantau dan tingkatkan partisipasi kompetisi kalian di sini!
+              Ayo teman-teman ARSC, pantau dan tingkatkan partisipasi kompetisi kita di sini!
             </p>
           </div>
         </div>
