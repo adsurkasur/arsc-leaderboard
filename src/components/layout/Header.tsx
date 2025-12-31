@@ -141,7 +141,7 @@ export function Header() {
             <div className="p-1 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
               <Image src="/arsc-logo.png" alt="ARSC Logo" width={28} height={28} className="rounded-md" />
             </div>
-            <span className="font-bold text-xl tracking-tight">Papan Peringkat</span>
+            <span className="font-bold text-xl tracking-tight">ARSC Leaderboard</span>
           </Link>
 
           <nav className="flex items-center gap-4">
@@ -365,8 +365,8 @@ export function Header() {
             </DialogHeader>
             <div className="space-y-4">
               <div className="text-center py-4">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4 overflow-hidden">
-                  <Image src="/arsc-logo.png" alt="ARSC Logo" width={48} height={48} className="rounded-xl" />
+                <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-primary/10 mb-4 overflow-hidden">
+                  <Image src="/arsc-logo.png" alt="ARSC Logo" width={96} height={96} className="rounded-2xl" />
                 </div>
                 <h3 className="text-lg font-bold">ARSC Leaderboard</h3>
                 <p className="text-sm text-muted-foreground">Versi 1.0.0</p>
@@ -401,9 +401,7 @@ export function Header() {
                 </p>
               </div>
             </div>
-            <DialogFooter>
-              <Button onClick={() => setIsAboutOpen(false)}>Tutup</Button>
-            </DialogFooter>
+            
           </DialogContent>
         </Dialog>
       </>
