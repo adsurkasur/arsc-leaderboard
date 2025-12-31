@@ -11,7 +11,8 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Trophy, Mail, Lock, ArrowLeft, Loader2 } from 'lucide-react';
+import { Mail, Lock, ArrowLeft, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import { z } from 'zod';
 
 const emailSchema = z.string().email('Silakan masukkan alamat email yang valid');
@@ -159,8 +160,8 @@ export default function AuthPage() {
         <div className="w-full max-w-md space-y-6 animate-fade-in">
           {/* Logo */}
           <div className="text-center space-y-2">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-              <Trophy className="w-8 h-8 text-primary" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4 overflow-hidden">
+              <Image src="/arsc-logo.png" alt="ARSC Logo" width={48} height={48} className="rounded-xl" />
             </div>
             <h1 className="text-2xl font-bold">Papan Peringkat</h1>
             <p className="text-muted-foreground">Masuk untuk melihat peringkat Anda dan mengajukan partisipasi baru.</p>

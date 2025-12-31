@@ -155,10 +155,10 @@ export default function HomePage() {
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-balance animate-slide-up">
               Temukan Para
-              <span className="text-primary"> Performer Terbaik</span> Kami
+              <span className="text-primary"> Ahli Lomba</span> ARSC
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: '100ms' }}>
-              Lacak partisipasi, rayakan pencapaian, dan lihat siapa yang memimpin dalam komunitas kompetitif kami.
+              Ayo teman-teman ARSC, pantau dan tingkatkan partisipasi kompetisi kalian di sini!
             </p>
           </div>
         </div>
@@ -269,13 +269,6 @@ export default function HomePage() {
           </div>
         )}
       </main>
-
-      {/* Footer */}
-      <footer className="border-t py-8 bg-muted/30">
-        <div className="container text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Agritech Research and Study Club (ARSC). Seluruh hak cipta dilindungi.</p>
-        </div>
-      </footer>
     </div>
   );
 }

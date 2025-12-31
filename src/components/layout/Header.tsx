@@ -14,7 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { VerificationRequest, Competition, Profile } from '@/lib/types';
-import { Trophy, Shield, LogOut, User, Clock, Loader2, Settings, HelpCircle, Info } from 'lucide-react';
+import { Shield, LogOut, User, Clock, Loader2, Settings, HelpCircle, Info } from 'lucide-react';
+import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
@@ -137,8 +138,8 @@ export function Header() {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-              <Trophy className="w-5 h-5 text-primary" />
+            <div className="p-1 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+              <Image src="/arsc-logo.png" alt="ARSC Logo" width={28} height={28} className="rounded-md" />
             </div>
             <span className="font-bold text-xl tracking-tight">Papan Peringkat</span>
           </Link>
@@ -364,8 +365,8 @@ export function Header() {
             </DialogHeader>
             <div className="space-y-4">
               <div className="text-center py-4">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-                  <Trophy className="w-8 h-8 text-primary" />
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4 overflow-hidden">
+                  <Image src="/arsc-logo.png" alt="ARSC Logo" width={48} height={48} className="rounded-xl" />
                 </div>
                 <h3 className="text-lg font-bold">ARSC Leaderboard</h3>
                 <p className="text-sm text-muted-foreground">Versi 1.0.0</p>
@@ -396,7 +397,7 @@ export function Header() {
               </div>
               <div className="pt-2 border-t">
                 <p className="text-xs text-center text-muted-foreground">
-                  © {new Date().getFullYear()} ARSC. Seluruh hak cipta dilindungi.
+                  © {new Date().getFullYear()} Agritech Research and Study Club (ARSC). Seluruh hak cipta dilindungi.
                 </p>
               </div>
             </div>

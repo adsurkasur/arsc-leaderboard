@@ -11,7 +11,7 @@ import { UsersManagement } from '@/components/admin/UsersManagement';
 import { ParticipationManagement } from '@/components/admin/ParticipationManagement';
 import { NotificationInbox } from '@/components/admin/NotificationInbox';
 import { CompetitionsManagement } from '@/components/admin/CompetitionsManagement';
-import { Loader2, Users, ClipboardList, Bell, Trophy } from 'lucide-react';
+import { Loader2, Users, ClipboardList, Bell, Award } from 'lucide-react';
 
 export default function AdminPage() {
   const { user, isAdmin, isLoading } = useAuth();
@@ -55,7 +55,7 @@ export default function AdminPage() {
               Pengguna
             </TabsTrigger>
             <TabsTrigger value="competitions" className="gap-2">
-              <Trophy className="w-4 h-4 hidden sm:inline" />
+              <Award className="w-4 h-4 hidden sm:inline" />
               Kompetisi
             </TabsTrigger>
             <TabsTrigger value="participation" className="gap-2">
