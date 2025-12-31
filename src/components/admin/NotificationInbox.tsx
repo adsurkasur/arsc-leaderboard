@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { VerificationRequest, Profile, Competition } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X, Loader2, Inbox } from 'lucide-react';
+import { Check, X, Loader2, Inbox, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
+
+type SortField = 'user' | 'status' | 'created_at';
+type SortDirection = 'asc' | 'desc';
 
 interface VerificationRequestWithRelations extends VerificationRequest {
   profile?: Profile;
@@ -21,6 +24,8 @@ export function NotificationInbox() {
   const [requests, setRequests] = useState<VerificationRequestWithRelations[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -99,6 +104,41 @@ export function NotificationInbox() {
     setProcessingId(null);
   };
 
+  const sortedRequests = useMemo(() => {
+    const sorted = [...requests].sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case 'user':
+          comparison = (a.profile?.full_name || '').localeCompare(b.profile?.full_name || '');
+          break;
+        case 'status':
+          comparison = a.status.localeCompare(b.status);
+          break;
+        case 'created_at':
+          comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          break;
+      }
+      return sortDirection === 'desc' ? -comparison : comparison;
+    });
+    return sorted;
+  }, [requests, sortField, sortDirection]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection(field === 'user' ? 'asc' : 'desc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-4 h-4 ml-1 opacity-50" />;
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="w-4 h-4 ml-1" /> 
+      : <ArrowDown className="w-4 h-4 ml-1" />;
+  };
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
@@ -143,15 +183,27 @@ export function NotificationInbox() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Pengguna</TableHead>
+            <TableHead>
+              <Button variant="ghost" size="sm" onClick={() => handleSort('user')} className="font-semibold -ml-2">
+                Pengguna <SortIcon field="user" />
+              </Button>
+            </TableHead>
             <TableHead>Pesan</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Waktu</TableHead>
+            <TableHead>
+              <Button variant="ghost" size="sm" onClick={() => handleSort('status')} className="font-semibold -ml-2">
+                Status <SortIcon field="status" />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button variant="ghost" size="sm" onClick={() => handleSort('created_at')} className="font-semibold -ml-2">
+                Waktu <SortIcon field="created_at" />
+              </Button>
+            </TableHead>
             <TableHead className="text-right">Aksi</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {requests.map((request) => (
+          {sortedRequests.map((request) => (
             <TableRow key={request.id} className="table-row-hover">
               <TableCell>
                 <div className="flex items-center gap-3">

@@ -160,7 +160,7 @@
   }
 
   .table-row-hover {
-    @apply transition-all duration-200 hover:bg-accent/50 hover:scale-[1.01] hover:shadow-sm;
+    @apply transition-colors duration-200 hover:bg-accent/50;
   }
 
   .skeleton-pulse {

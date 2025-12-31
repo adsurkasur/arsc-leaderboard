@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Competition } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -10,9 +10,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, Loader2, Search, Calendar } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Search, Calendar, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+
+type SortField = 'title' | 'category' | 'date';
+type SortDirection = 'asc' | 'desc';
 
 export function CompetitionsManagement() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
@@ -22,6 +25,8 @@ export function CompetitionsManagement() {
   const [editingCompetition, setEditingCompetition] = useState<Competition | null>(null);
   const [formData, setFormData] = useState({ title: '', date: '', description: '', category: 'General' });
   const [isSaving, setIsSaving] = useState(false);
+  const [sortField, setSortField] = useState<SortField>('date');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -40,10 +45,46 @@ export function CompetitionsManagement() {
     setIsLoading(false);
   };
 
-  const filteredCompetitions = competitions.filter(c => 
-    c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const sortedAndFilteredCompetitions = useMemo(() => {
+    let filtered = competitions.filter(c => 
+      c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.category.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case 'title':
+          comparison = a.title.localeCompare(b.title);
+          break;
+        case 'category':
+          comparison = a.category.localeCompare(b.category);
+          break;
+        case 'date':
+          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+          break;
+      }
+      return sortDirection === 'desc' ? -comparison : comparison;
+    });
+
+    return filtered;
+  }, [competitions, searchQuery, sortField, sortDirection]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection(field === 'title' ? 'asc' : 'desc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-4 h-4 ml-1 opacity-50" />;
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="w-4 h-4 ml-1" /> 
+      : <ArrowDown className="w-4 h-4 ml-1" />;
+  };
 
   const openCreateDialog = () => {
     setEditingCompetition(null);
@@ -217,21 +258,33 @@ export function CompetitionsManagement() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Kompetisi</TableHead>
-              <TableHead>Kategori</TableHead>
-              <TableHead>Tanggal</TableHead>
+              <TableHead>
+                <Button variant="ghost" size="sm" onClick={() => handleSort('title')} className="font-semibold -ml-2">
+                  Kompetisi <SortIcon field="title" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" size="sm" onClick={() => handleSort('category')} className="font-semibold -ml-2">
+                  Kategori <SortIcon field="category" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" size="sm" onClick={() => handleSort('date')} className="font-semibold -ml-2">
+                  Tanggal <SortIcon field="date" />
+                </Button>
+              </TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredCompetitions.length === 0 ? (
+            {sortedAndFilteredCompetitions.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                   Tidak ada kompetisi ditemukan
                 </TableCell>
               </TableRow>
             ) : (
-              filteredCompetitions.map((competition) => (
+              sortedAndFilteredCompetitions.map((competition) => (
                 <TableRow key={competition.id} className="table-row-hover">
                   <TableCell>
                     <div>

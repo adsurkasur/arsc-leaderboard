@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -12,8 +12,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Plus, Pencil, Trash2, Loader2, Search, Shield, Mail } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Search, Shield, Mail, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+
+type SortField = 'full_name' | 'role' | 'total_participation_count';
+type SortDirection = 'asc' | 'desc';
 
 export function UsersManagement() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -24,6 +27,8 @@ export function UsersManagement() {
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [formData, setFormData] = useState({ full_name: '', avatar_url: '' });
   const [isSaving, setIsSaving] = useState(false);
+  const [sortField, setSortField] = useState<SortField>('full_name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   
   // Assign Email dialog state
   const [isAssignEmailDialogOpen, setIsAssignEmailDialogOpen] = useState(false);
@@ -70,9 +75,48 @@ export function UsersManagement() {
     setIsLoading(false);
   };
 
-  const filteredProfiles = profiles.filter(p => 
-    p.full_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const sortedAndFilteredProfiles = useMemo(() => {
+    let filtered = profiles.filter(p => 
+      p.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case 'full_name':
+          comparison = a.full_name.localeCompare(b.full_name);
+          break;
+        case 'role': {
+          const roleA = a.user_id ? (userRoles[a.user_id] || 'user') : 'none';
+          const roleB = b.user_id ? (userRoles[b.user_id] || 'user') : 'none';
+          comparison = roleA.localeCompare(roleB);
+          break;
+        }
+        case 'total_participation_count':
+          comparison = a.total_participation_count - b.total_participation_count;
+          break;
+      }
+      return sortDirection === 'desc' ? -comparison : comparison;
+    });
+
+    return filtered;
+  }, [profiles, searchQuery, sortField, sortDirection, userRoles]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection(field === 'full_name' ? 'asc' : 'desc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-4 h-4 ml-1 opacity-50" />;
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="w-4 h-4 ml-1" /> 
+      : <ArrowDown className="w-4 h-4 ml-1" />;
+  };
 
   const openCreateDialog = () => {
     setEditingProfile(null);
@@ -325,21 +369,33 @@ export function UsersManagement() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Pengguna</TableHead>
-              <TableHead>Peran</TableHead>
-              <TableHead className="text-center">Partisipasi</TableHead>
+              <TableHead>
+                <Button variant="ghost" size="sm" onClick={() => handleSort('full_name')} className="font-semibold -ml-2">
+                  Pengguna <SortIcon field="full_name" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" size="sm" onClick={() => handleSort('role')} className="font-semibold -ml-2">
+                  Peran <SortIcon field="role" />
+                </Button>
+              </TableHead>
+              <TableHead className="text-center">
+                <Button variant="ghost" size="sm" onClick={() => handleSort('total_participation_count')} className="font-semibold">
+                  Partisipasi <SortIcon field="total_participation_count" />
+                </Button>
+              </TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredProfiles.length === 0 ? (
+            {sortedAndFilteredProfiles.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                   Tidak ada pengguna ditemukan
                 </TableCell>
               </TableRow>
             ) : (
-              filteredProfiles.map((profile) => (
+              sortedAndFilteredProfiles.map((profile) => (
                 <TableRow key={profile.id} className="table-row-hover">
                   <TableCell>
                     <div className="flex items-center gap-3">
