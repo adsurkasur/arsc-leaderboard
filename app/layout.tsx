@@ -13,6 +13,9 @@ export const metadata: Metadata = {
   title: "ARSC Leaderboard - Papan Peringkat Kompetisi",
   description: "Lacak partisipasi, rayakan pencapaian, dan lihat siapa yang memimpin dalam komunitas kompetitif kami.",
   keywords: ["leaderboard", "competition", "ranking", "ARSC"],
+  icons: {
+    icon: "/favico.ico",
+  },
 };
 
 export default function RootLayout({
