@@ -37,7 +37,7 @@ export function LeaderboardTable() {
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
-  const [participationData, setParticipationData] = useState<Array<{ id: string; competition?: { id: string; title: string; date: string; category: string } | null; created_at: string }>>([]);
+  const [participationData, setParticipationData] = useState<Array<{ id: string; competition?: { id: string; title: string; date: string; category: string } | null; participation_date: string | null; created_at: string }>>([]);
   const [isLoadingParticipation, setIsLoadingParticipation] = useState(false);
 
   useEffect(() => {
@@ -447,17 +447,32 @@ export function LeaderboardTable() {
                 {participationData.map((participation) => (
                   <div
                     key={participation.id}
-                    className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border"
+                    className="p-3 bg-muted/30 rounded-lg border"
                   >
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{participation.competition?.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {participation.competition?.date && format(new Date(participation.competition.date), 'MMM d, yyyy')}
-                        {participation.competition?.category && ` • ${participation.competition.category}`}
-                      </p>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{participation.competition?.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {participation.competition?.category}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {format(new Date(participation.created_at), 'MMM d, HH:mm')}
+                    <div className="mt-2 pt-2 border-t border-border/50 grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">Waktu Partisipasi: </span>
+                        <span className="font-medium">
+                          {participation.participation_date 
+                            ? format(new Date(participation.participation_date), 'dd MMM yyyy, HH:mm')
+                            : '-'
+                          }
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Diajukan: </span>
+                        <span className="font-medium">
+                          {format(new Date(participation.created_at), 'dd MMM yyyy, HH:mm')}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}

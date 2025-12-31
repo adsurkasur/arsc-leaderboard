@@ -51,6 +51,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          participation_date: string | null
           profile_id: string
           verified_at: string | null
         }
@@ -60,6 +61,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          participation_date?: string | null
           profile_id: string
           verified_at?: string | null
         }
@@ -69,6 +71,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          participation_date?: string | null
           profile_id?: string
           verified_at?: string | null
         }
@@ -152,6 +155,7 @@ export type Database = {
           created_at: string
           id: string
           message: string
+          participation_date: string | null
           profile_id: string
           status: string
           updated_at: string
@@ -161,6 +165,7 @@ export type Database = {
           created_at?: string
           id?: string
           message: string
+          participation_date?: string | null
           profile_id: string
           status?: string
           updated_at?: string
@@ -170,6 +175,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string
+          participation_date?: string | null
           profile_id?: string
           status?: string
           updated_at?: string

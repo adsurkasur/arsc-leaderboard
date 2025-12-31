@@ -25,6 +25,7 @@ export interface ParticipationLog {
   id: string;
   profile_id: string;
   competition_id: string;
+  participation_date: string | null;
   verified_at: string | null;
   admin_id: string | null;
   notes: string | null;
@@ -38,6 +39,7 @@ export interface VerificationRequest {
   profile_id: string;
   competition_id: string | null;
   message: string;
+  participation_date: string | null;
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   updated_at: string;

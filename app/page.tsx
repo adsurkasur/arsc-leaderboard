@@ -22,6 +22,7 @@ export default function HomePage() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [competitionName, setCompetitionName] = useState('');
   const [competitionCategory, setCompetitionCategory] = useState('');
+  const [participationDate, setParticipationDate] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -112,6 +113,7 @@ export default function HomePage() {
           profile_id: profile.id,
           competition_id: competitionId,
           message: message.trim(),
+          participation_date: participationDate ? new Date(participationDate).toISOString() : null,
         });
 
       if (error) {
@@ -128,6 +130,7 @@ export default function HomePage() {
         setIsModalOpen(false);
         setCompetitionName('');
         setCompetitionCategory('');
+        setParticipationDate('');
         setMessage('');
       }
     } catch (error) {
@@ -223,6 +226,19 @@ export default function HomePage() {
                     </p>
                   </div>
                   <div>
+                    <Label htmlFor="participationDate">Waktu Partisipasi</Label>
+                    <Input
+                      id="participationDate"
+                      type="datetime-local"
+                      value={participationDate}
+                      onChange={(e) => setParticipationDate(e.target.value)}
+                      className="border-primary/20 focus:border-primary"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Waktu Anda berpartisipasi dalam kompetisi.
+                    </p>
+                  </div>
+                  <div>
                     <Label htmlFor="message">Pesan</Label>
                     <Textarea
                       id="message"
@@ -257,7 +273,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="border-t py-8 bg-muted/30">
         <div className="container text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Papan Peringkat Kompetisi. Seluruh hak cipta dilindungi.</p>
+          <p>© {new Date().getFullYear()} Agritech Research and Study Club (ARSC). Seluruh hak cipta dilindungi.</p>
         </div>
       </footer>
     </div>

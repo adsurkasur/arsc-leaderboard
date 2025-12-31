@@ -69,7 +69,8 @@ export function NotificationInbox() {
           profile_id: request.profile_id,
           competition_id: request.competition_id,
           admin_id: (await supabase.auth.getUser()).data.user?.id,
-          notes: `Approved via verification request: ${request.message}`
+          notes: `Approved via verification request: ${request.message}`,
+          participation_date: request.participation_date
         });
 
       if (logError) {
