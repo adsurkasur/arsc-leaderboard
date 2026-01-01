@@ -56,7 +56,7 @@ export function AboutModal({ open, onOpenChange }: AboutModalProps) {
           </div>
           <div className="pt-2 border-t">
             <p className="text-xs text-center text-muted-foreground">
-              © {new Date().getFullYear()} Agritech Research and Study Club (ARSC). Seluruh hak cipta dilindungi.
+              © {new Date().getFullYear()} Agritech Research and Study Club (ARSC)
             </p>
           </div>
         </div>
