@@ -46,12 +46,12 @@ export function CompetitionsManagement() {
   };
 
   const sortedAndFilteredCompetitions = useMemo(() => {
-    let filtered = competitions.filter(c => 
+    const filtered = competitions.filter(c => 
       c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.category.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    filtered.sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       let comparison = 0;
       switch (sortField) {
         case 'title':
@@ -66,8 +66,6 @@ export function CompetitionsManagement() {
       }
       return sortDirection === 'desc' ? -comparison : comparison;
     });
-
-    return filtered;
   }, [competitions, searchQuery, sortField, sortDirection]);
 
   const handleSort = (field: SortField) => {

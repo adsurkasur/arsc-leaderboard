@@ -11,9 +11,11 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Lock, ArrowLeft, Loader2 } from 'lucide-react';
+import { Mail, Lock, ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import { z } from 'zod';
+import { m } from 'framer-motion';
+import { pageTransition, staggerContainer, staggerItem, fadeInUp, popIn } from '@/lib/motion';
 
 const emailSchema = z.string().email('Silakan masukkan alamat email yang valid');
 const passwordSchema = z.string().min(6, 'Kata sandi harus minimal 6 karakter');
@@ -144,80 +146,115 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/30">
+    <m.div 
+      className="min-h-screen flex flex-col bg-gradient-to-b from-background via-background to-accent/20"
+      variants={pageTransition}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+    >
+      {/* Decorative background elements */}
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute top-20 left-[10%] w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-[10%] w-64 h-64 bg-violet/5 rounded-full blur-3xl" />
+      </div>
+
       {/* Header */}
-      <header className="p-4">
-        <Button variant="ghost" size="sm" asChild className="gap-2">
-          <Link href="/">
-            <ArrowLeft className="w-4 h-4" />
-            Kembali ke Papan Peringkat
-          </Link>
-        </Button>
-      </header>
+      <m.header 
+        className="p-4"
+        variants={fadeInUp}
+        initial="hidden"
+        animate="visible"
+      >
+        <m.div whileHover={{ x: -3 }} whileTap={{ scale: 0.98 }}>
+          <Button variant="ghost" size="sm" asChild className="gap-2">
+            <Link href="/">
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Kembali ke Papan Peringkat</span>
+              <span className="sm:hidden">Kembali</span>
+            </Link>
+          </Button>
+        </m.div>
+      </m.header>
 
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-6 animate-fade-in">
+        <m.div 
+          className="w-full max-w-md space-y-6"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
           {/* Logo */}
-          <div className="text-center space-y-2">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4 overflow-hidden">
-              <Image src="/arsc-logo.png" alt="ARSC Logo" width={48} height={48} className="rounded-xl" />
-            </div>
-            <h1 className="text-2xl font-bold">Papan Peringkat</h1>
-            <p className="text-muted-foreground">Masuk untuk melihat peringkat Anda dan mengajukan partisipasi baru.</p>
-          </div>
+          <m.div 
+            className="text-center space-y-3"
+            variants={staggerItem}
+          >
+            <m.div 
+              className="inline-flex items-center justify-center w-18 h-18 rounded-2xl bg-primary/10 mb-4 overflow-hidden ring-4 ring-primary/5"
+              variants={popIn}
+              whileHover={{ scale: 1.05, rotate: 3 }}
+            >
+              <Image src="/arsc-logo.png" alt="ARSC Logo" width={52} height={52} className="rounded-xl" />
+            </m.div>
+            <h1 className="text-2xl md:text-3xl font-bold">Selamat Datang</h1>
+            <p className="text-muted-foreground text-sm md:text-base">Masuk untuk melihat peringkat Anda dan mengajukan partisipasi baru.</p>
+          </m.div>
 
           {/* Auth Card */}
-          <Card className="border shadow-card">
-            <Tabs defaultValue="signin" className="w-full">
-              <CardHeader className="pb-4">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="signin">Masuk</TabsTrigger>
-                  <TabsTrigger value="signup">Daftar</TabsTrigger>
-                </TabsList>
-              </CardHeader>
+          <m.div variants={staggerItem}>
+            <Card className="border shadow-card backdrop-blur-sm bg-card/95">
+              <Tabs defaultValue="signin" className="w-full">
+                <CardHeader className="pb-4">
+                  <TabsList className="grid w-full grid-cols-2 h-11">
+                    <TabsTrigger value="signin" className="text-sm font-medium">Masuk</TabsTrigger>
+                    <TabsTrigger value="signup" className="text-sm font-medium">Daftar</TabsTrigger>
+                  </TabsList>
+                </CardHeader>
 
-              <TabsContent value="signin">
-                <form onSubmit={handleSignIn}>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signin-email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="signin-email"
-                          type="email"
-                          placeholder="admin@contoh.com"
-                          value={loginEmail}
-                          onChange={(e) => { setLoginEmail(e.target.value); setLoginErrors({}); }}
-                          className="pl-10"
-                          disabled={isLoading}
-                        />
+                <TabsContent value="signin">
+                  <form onSubmit={handleSignIn}>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signin-email">Email</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            id="signin-email"
+                            type="email"
+                            placeholder="admin@contoh.com"
+                            value={loginEmail}
+                            onChange={(e) => { setLoginEmail(e.target.value); setLoginErrors({}); }}
+                            className="pl-10 h-11"
+                            disabled={isLoading}
+                          />
+                        </div>
+                        {loginErrors.email && <p className="text-sm text-destructive">{loginErrors.email}</p>}
                       </div>
-                      {loginErrors.email && <p className="text-sm text-destructive">{loginErrors.email}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signin-password">Kata Sandi</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="signin-password"
-                          type="password"
-                          placeholder="••••••••"
-                          value={loginPassword}
-                          onChange={(e) => { setLoginPassword(e.target.value); setLoginErrors({}); }}
-                          className="pl-10"
-                          disabled={isLoading}
-                        />
+                      <div className="space-y-2">
+                        <Label htmlFor="signin-password">Kata Sandi</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            id="signin-password"
+                            type="password"
+                            placeholder="••••••••"
+                            value={loginPassword}
+                            onChange={(e) => { setLoginPassword(e.target.value); setLoginErrors({}); }}
+                            className="pl-10 h-11"
+                            disabled={isLoading}
+                          />
+                        </div>
+                        {loginErrors.password && <p className="text-sm text-destructive">{loginErrors.password}</p>}
                       </div>
-                      {loginErrors.password && <p className="text-sm text-destructive">{loginErrors.password}</p>}
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                      Masuk
-                    </Button>
+                    </CardContent>
+                    <CardFooter>
+                      <m.div className="w-full" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                        <Button type="submit" className="w-full h-11" disabled={isLoading}>
+                          {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                          Masuk
+                        </Button>
+                      </m.div>
                   </CardFooter>
                 </form>
               </TabsContent>
@@ -235,7 +272,7 @@ export default function AuthPage() {
                           placeholder="email@anda.com"
                           value={registerEmail}
                           onChange={(e) => { setRegisterEmail(e.target.value); setRegisterErrors({}); }}
-                          className="pl-10"
+                          className="pl-10 h-11"
                           disabled={isLoading}
                         />
                       </div>
@@ -249,6 +286,7 @@ export default function AuthPage() {
                         placeholder="Masukkan nama lengkap Anda"
                         value={fullName}
                         onChange={(e) => { setFullName(e.target.value); setRegisterErrors({}); }}
+                        className="h-11"
                         disabled={isLoading}
                       />
                       {registerErrors.fullName && <p className="text-sm text-destructive">{registerErrors.fullName}</p>}
@@ -256,16 +294,16 @@ export default function AuthPage() {
                     <div className="space-y-2">
                       <Label htmlFor="signup-bidangbiro">Bidang/Biro</Label>
                       <Select value={bidangBiro} onValueChange={(value) => { setBidangBiro(value); setRegisterErrors({}); }} disabled={isLoading}>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-11">
                           <SelectValue placeholder="Pilih bidang/biro Anda" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Ketua Umum (KETUM)">Ketua Umum (KETUM)</SelectItem>
-                          <SelectItem value="Biro Pengembangan Sumber Daya Mahasiswa (PSDM)">Biro Pengembangan Sumber Daya Mahasiswa (PSDM)</SelectItem>
-                          <SelectItem value="Biro Administrasi dan Keuangan (ADKEU)">Biro Administrasi dan Keuangan (ADKEU)</SelectItem>
-                          <SelectItem value="Bidang Kepenulisan dan Kompetisi (PENKOM)">Bidang Kepenulisan dan Kompetisi (PENKOM)</SelectItem>
-                          <SelectItem value="Bidang Riset dan Teknologi (RISTEK)">Bidang Riset dan Teknologi (RISTEK)</SelectItem>
-                          <SelectItem value="Bidang Informasi dan Komunikasi (INFOKOM)">Bidang Informasi dan Komunikasi (INFOKOM)</SelectItem>
+                          <SelectItem value="Biro Pengembangan Sumber Daya Mahasiswa (PSDM)">Biro PSDM</SelectItem>
+                          <SelectItem value="Biro Administrasi dan Keuangan (ADKEU)">Biro ADKEU</SelectItem>
+                          <SelectItem value="Bidang Kepenulisan dan Kompetisi (PENKOM)">Bidang PENKOM</SelectItem>
+                          <SelectItem value="Bidang Riset dan Teknologi (RISTEK)">Bidang RISTEK</SelectItem>
+                          <SelectItem value="Bidang Informasi dan Komunikasi (INFOKOM)">Bidang INFOKOM</SelectItem>
                         </SelectContent>
                       </Select>
                       {registerErrors.bidangBiro && <p className="text-sm text-destructive">{registerErrors.bidangBiro}</p>}
@@ -280,7 +318,7 @@ export default function AuthPage() {
                           placeholder="••••••••"
                           value={registerPassword}
                           onChange={(e) => { setRegisterPassword(e.target.value); setRegisterErrors({}); }}
-                          className="pl-10"
+                          className="pl-10 h-11"
                           disabled={isLoading}
                         />
                       </div>
@@ -288,17 +326,21 @@ export default function AuthPage() {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                      Buat Akun
-                    </Button>
+                    <m.div className="w-full" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                      <Button type="submit" className="w-full h-11" disabled={isLoading}>
+                        {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Buat Akun
+                      </Button>
+                    </m.div>
                   </CardFooter>
                 </form>
               </TabsContent>
             </Tabs>
           </Card>
-        </div>
+          </m.div>
+        </m.div>
       </main>
-    </div>
+    </m.div>
   );
 }

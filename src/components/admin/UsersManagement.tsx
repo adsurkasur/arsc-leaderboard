@@ -76,11 +76,11 @@ export function UsersManagement() {
   };
 
   const sortedAndFilteredProfiles = useMemo(() => {
-    let filtered = profiles.filter(p => 
+    const filtered = profiles.filter(p => 
       p.full_name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    filtered.sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       let comparison = 0;
       switch (sortField) {
         case 'full_name':
@@ -98,8 +98,6 @@ export function UsersManagement() {
       }
       return sortDirection === 'desc' ? -comparison : comparison;
     });
-
-    return filtered;
   }, [profiles, searchQuery, sortField, sortDirection, userRoles]);
 
   const handleSort = (field: SortField) => {

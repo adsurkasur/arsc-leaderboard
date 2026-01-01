@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, LeaderboardEntry } from '@/lib/types';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Trophy, Medal, Award, ArrowUpDown, ArrowUp, ArrowDown, Info, Loader2, Sparkles } from 'lucide-react';
+import { Search, Trophy, Medal, Award, ArrowUpDown, ArrowUp, ArrowDown, Info, Loader2 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 
 const TOP_LEADERBOARD_LIMIT = 10;
@@ -56,43 +56,24 @@ export function LeaderboardTable() {
     };
   }, []);
 
-  // Fetch category-specific participation counts when category changes
-  useEffect(() => {
-    if (selectedCategory !== 'all') {
-      fetchCategoryParticipationCounts();
-    } else {
-      setCategoryParticipationCounts({});
-    }
-  }, [selectedCategory, profiles]);
-
   const fetchProfiles = async () => {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .order('total_participation_count', { ascending: false })
-      .order('last_activity_at', { ascending: true }); // Earlier activity = better rank (tiebreaker)
+      .order('last_activity_at', { ascending: true }) // Earlier activity = better rank (tiebreaker 1)
+      .order('created_at', { ascending: true }); // Earlier account = better rank (tiebreaker 2)
 
     if (!error && data) {
       // Calculate global ranks based on total participation count
-      // With tiebreaker: earlier last_activity_at = better rank when counts are equal
+      // With tiebreakers: 1) earlier last_activity_at, 2) earlier created_at
       type ProfileWithRank = typeof data[0] & { globalRank: number };
       const profilesWithRanks: ProfileWithRank[] = [];
       
       data.forEach((profile, index) => {
-        let globalRank = index + 1;
-
-        // If this profile has the same participation count as the previous one,
-        // compare last_activity_at - if also the same, share the rank
-        if (index > 0) {
-          const prevProfile = data[index - 1];
-          const sameCount = profile.total_participation_count === prevProfile.total_participation_count;
-          const sameActivity = profile.last_activity_at === prevProfile.last_activity_at;
-          
-          if (sameCount && sameActivity) {
-            // Only share rank if both count AND activity time are exactly the same
-            globalRank = profilesWithRanks[index - 1].globalRank;
-          }
-        }
+        // Each profile gets a unique rank since we have 3 ordering criteria
+        // Ties are extremely unlikely with participation_count + last_activity_at + created_at
+        const globalRank = index + 1;
 
         profilesWithRanks.push({
           ...profile,
@@ -116,7 +97,7 @@ export function LeaderboardTable() {
     }
   };
 
-  const fetchCategoryParticipationCounts = async () => {
+  const fetchCategoryParticipationCounts = useCallback(async () => {
     if (selectedCategory === 'all') return;
 
     setIsLoadingCategoryData(true);
@@ -142,7 +123,16 @@ export function LeaderboardTable() {
       console.error('Error fetching category participation counts:', error);
     }
     setIsLoadingCategoryData(false);
-  };
+  }, [selectedCategory]);
+
+  // Fetch category-specific participation counts when category changes
+  useEffect(() => {
+    if (selectedCategory !== 'all') {
+      fetchCategoryParticipationCounts();
+    } else {
+      setCategoryParticipationCounts({});
+    }
+  }, [selectedCategory, profiles, fetchCategoryParticipationCounts]);
 
   const handleViewDetails = async (profile: Profile) => {
     setSelectedProfile(profile);
@@ -197,11 +187,17 @@ export function LeaderboardTable() {
           break;
         case 'total_participation_count':
           comparison = a.effectiveParticipationCount - b.effectiveParticipationCount;
-          // Tiebreaker: earlier last_activity_at = better rank
+          // Tiebreaker 1: earlier last_activity_at = better rank
           if (comparison === 0) {
             const dateA = a.last_activity_at ? new Date(a.last_activity_at).getTime() : Infinity;
             const dateB = b.last_activity_at ? new Date(b.last_activity_at).getTime() : Infinity;
             comparison = dateA - dateB;
+          }
+          // Tiebreaker 2: earlier created_at = better rank
+          if (comparison === 0) {
+            const createdA = new Date(a.created_at).getTime();
+            const createdB = new Date(b.created_at).getTime();
+            comparison = createdA - createdB;
           }
           break;
         case 'last_activity_at': {
@@ -212,11 +208,17 @@ export function LeaderboardTable() {
         }
         default:
           comparison = b.effectiveParticipationCount - a.effectiveParticipationCount;
-          // Tiebreaker: earlier last_activity_at = better rank
+          // Tiebreaker 1: earlier last_activity_at = better rank
           if (comparison === 0) {
             const dateA = a.last_activity_at ? new Date(a.last_activity_at).getTime() : Infinity;
             const dateB = b.last_activity_at ? new Date(b.last_activity_at).getTime() : Infinity;
             comparison = dateA - dateB;
+          }
+          // Tiebreaker 2: earlier created_at = better rank
+          if (comparison === 0) {
+            const createdA = new Date(a.created_at).getTime();
+            const createdB = new Date(b.created_at).getTime();
+            comparison = createdA - createdB;
           }
       }
 
@@ -257,10 +259,14 @@ export function LeaderboardTable() {
   };
 
   const getRankBadge = (rank: number) => {
-    if (rank === 1) return <div className="rank-badge rank-gold"><Trophy className="w-4 h-4" /></div>;
-    if (rank === 2) return <div className="rank-badge rank-silver"><Medal className="w-4 h-4" /></div>;
-    if (rank === 3) return <div className="rank-badge rank-bronze"><Award className="w-4 h-4" /></div>;
-    return <div className="rank-badge rank-default">{rank}</div>;
+    return (
+      <div>
+        {rank === 1 && <div className="rank-badge rank-gold"><Trophy className="w-4 h-4" /></div>}
+        {rank === 2 && <div className="rank-badge rank-silver"><Medal className="w-4 h-4" /></div>}
+        {rank === 3 && <div className="rank-badge rank-bronze"><Award className="w-4 h-4" /></div>}
+        {rank > 3 && <div className="rank-badge rank-default">{rank}</div>}
+      </div>
+    );
   };
 
   const getInitials = (name: string) => {
@@ -275,20 +281,23 @@ export function LeaderboardTable() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="flex gap-4">
-          <Skeleton className="h-10 flex-1" />
-          <Skeleton className="h-10 w-48" />
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Skeleton className="h-11 flex-1 rounded-xl" />
+          <Skeleton className="h-11 w-full sm:w-48 rounded-xl" />
         </div>
-        <div className="bg-card rounded-lg border shadow-card">
+        <div className="bg-card rounded-xl border shadow-card overflow-hidden">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex items-center gap-4 p-4 border-b last:border-0">
-              <Skeleton className="w-8 h-8 rounded-full" />
-              <Skeleton className="w-10 h-10 rounded-full" />
-              <div className="flex-1">
-                <Skeleton className="h-4 w-32 mb-2" />
-                <Skeleton className="h-3 w-24" />
+            <div 
+              key={i} 
+              className="flex items-center gap-3 md:gap-4 p-3 md:p-4 border-b last:border-0"
+            >
+              <Skeleton className="w-9 h-9 rounded-full flex-shrink-0" />
+              <Skeleton className="w-10 h-10 rounded-full flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <Skeleton className="h-4 w-24 md:w-32 mb-2 rounded" />
+                <Skeleton className="h-3 w-16 md:w-24 rounded" />
               </div>
-              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-6 w-10 rounded-full flex-shrink-0" />
             </div>
           ))}
         </div>
@@ -297,16 +306,16 @@ export function LeaderboardTable() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-5 md:space-y-6">
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Cari peserta..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-11 rounded-xl"
           />
         </div>
         <Select value={selectedCategory} onValueChange={setSelectedCategory} disabled={isLoadingCategoryData}>
@@ -326,93 +335,103 @@ export function LeaderboardTable() {
       </div>
 
       {/* Table */}
-      <div className="bg-card rounded-xl border shadow-card overflow-hidden">
+      <div className="bg-card rounded-xl border shadow-card overflow-hidden overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30 hover:bg-muted/30">
-              <TableHead className="w-20">
-                <Button variant="ghost" size="sm" onClick={() => handleSort('rank')} className="font-semibold -ml-2">
-                  Peringkat <SortIcon field="rank" />
+              <TableHead className="w-16 md:w-20">
+                <Button variant="ghost" size="sm" onClick={() => handleSort('rank')} className="font-semibold -ml-2 text-xs md:text-sm px-2">
+                  <span className="hidden sm:inline">Peringkat</span>
+                  <span className="sm:hidden">#</span>
+                  <SortIcon field="rank" />
                 </Button>
               </TableHead>
               <TableHead>
-                <Button variant="ghost" size="sm" onClick={() => handleSort('full_name')} className="font-semibold -ml-2">
+                <Button variant="ghost" size="sm" onClick={() => handleSort('full_name')} className="font-semibold -ml-2 text-xs md:text-sm px-2">
                   Peserta <SortIcon field="full_name" />
                 </Button>
               </TableHead>
               <TableHead className="text-center">
-                <Button variant="ghost" size="sm" onClick={() => handleSort('total_participation_count')} className="font-semibold">
-                  Partisipasi <SortIcon field="total_participation_count" />
+                <Button variant="ghost" size="sm" onClick={() => handleSort('total_participation_count')} className="font-semibold text-xs md:text-sm px-2">
+                  <span className="hidden sm:inline">Partisipasi</span>
+                  <span className="sm:hidden">Pts</span>
+                  <SortIcon field="total_participation_count" />
                 </Button>
               </TableHead>
-              <TableHead className="text-right">
-                <Button variant="ghost" size="sm" onClick={() => handleSort('last_activity_at')} className="font-semibold">
+              <TableHead className="text-right hidden md:table-cell">
+                <Button variant="ghost" size="sm" onClick={() => handleSort('last_activity_at')} className="font-semibold text-sm px-2">
                   Aktivitas Terakhir <SortIcon field="last_activity_at" />
                 </Button>
               </TableHead>
-              <TableHead className="w-20 text-center">Detail</TableHead>
+              <TableHead className="w-12 md:w-20 text-center">
+                <span className="sr-only md:not-sr-only">Detail</span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredAndSortedEntries.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
-                  {searchQuery || selectedCategory !== 'all' 
-                    ? 'Tidak ada hasil yang ditemukan sesuai pencarian dan filter Anda'
-                    : 'Tidak ada peserta ditemukan'
-                  }
+                  <div className="flex flex-col items-center gap-2">
+                    <Search className="w-8 h-8 opacity-40" />
+                    <span>
+                      {searchQuery || selectedCategory !== 'all' 
+                        ? 'Tidak ada hasil yang ditemukan sesuai pencarian dan filter Anda'
+                        : 'Tidak ada peserta ditemukan'
+                      }
+                    </span>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
-              filteredAndSortedEntries.map((entry, index) => (
-                <TableRow 
-                  key={entry.id} 
-                  className="table-row-hover animate-stagger-in"
-                  style={{ animationDelay: `${index * 80}ms` }}
-                >
-                  <TableCell>{getRankBadge(entry.rank)}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10 border-2 border-border">
-                        <AvatarImage src={entry.avatar_url || undefined} alt={entry.full_name} />
-                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                          {getInitials(entry.full_name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{entry.full_name}</span>
-                        {entry.bidang_biro && (
-                          <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full w-fit">
-                            {entry.bidang_biro}
-                          </span>
-                        )}
+                filteredAndSortedEntries.map((entry) => (
+                  <TableRow
+                    key={entry.id}
+                    className="table-row-hover border-b last:border-0"
+                  >
+                    <TableCell className="py-3">{getRankBadge(entry.rank)}</TableCell>
+                    <TableCell className="py-3">
+                      <div className="flex items-center gap-2 md:gap-3">
+                        <Avatar className="w-9 h-9 md:w-10 md:h-10 border-2 border-border ring-2 ring-background">
+                          <AvatarImage src={entry.avatar_url || undefined} alt={entry.full_name} />
+                          <AvatarFallback className="bg-primary/10 text-primary font-medium text-sm">
+                            {getInitials(entry.full_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium truncate">{entry.full_name}</span>
+                          {entry.bidang_biro && (
+                            <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full w-fit truncate max-w-[120px] md:max-w-none">
+                              {entry.bidang_biro}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className="inline-flex items-center justify-center min-w-[2.5rem] px-3 py-1 bg-primary/10 text-primary font-semibold rounded-full">
-                      {(entry as LeaderboardEntry & { displayParticipationCount: number }).displayParticipationCount}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right text-muted-foreground">
-                    {entry.last_activity_at 
-                      ? formatDistanceToNow(new Date(entry.last_activity_at), { addSuffix: true })
-                      : 'Belum pernah'
-                    }
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleViewDetails(entry)}
-                      className="w-8 h-8 hover:bg-primary/10 hover:text-primary"
-                      title="Lihat detail partisipasi"
-                    >
-                      <Info className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
+                    </TableCell>
+                    <TableCell className="text-center py-3">
+                      <span className="inline-flex items-center justify-center min-w-[2.5rem] px-2.5 md:px-3 py-1 bg-primary/10 text-primary font-semibold rounded-full text-sm">
+                        {(entry as LeaderboardEntry & { displayParticipationCount: number }).displayParticipationCount}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground text-sm hidden md:table-cell">
+                      {entry.last_activity_at 
+                        ? formatDistanceToNow(new Date(entry.last_activity_at), { addSuffix: true })
+                        : 'Belum pernah'
+                      }
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleViewDetails(entry)}
+                        className="w-9 h-9 hover:bg-primary/10 hover:text-primary rounded-lg touch-target"
+                        title="Lihat detail partisipasi"
+                      >
+                        <Info className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
             )}
           </TableBody>
         </Table>
@@ -481,7 +500,7 @@ export function LeaderboardTable() {
           </div>
 
           <DialogFooter>
-            <Button onClick={() => setIsModalOpen(false)}>
+            <Button onClick={() => setIsModalOpen(false)} className="w-full sm:w-auto">
               Tutup
             </Button>
           </DialogFooter>

@@ -71,7 +71,7 @@ export function ParticipationManagement() {
   };
 
   const sortedAndFilteredLogs = useMemo(() => {
-    let filtered = logs.filter(log => {
+    const filtered = logs.filter(log => {
       const searchLower = searchQuery.toLowerCase();
       return (
         log.profile?.full_name?.toLowerCase().includes(searchLower) ||
@@ -79,7 +79,7 @@ export function ParticipationManagement() {
       );
     });
 
-    filtered.sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       let comparison = 0;
       switch (sortField) {
         case 'user':
@@ -88,21 +88,21 @@ export function ParticipationManagement() {
         case 'competition':
           comparison = (a.competition?.title || '').localeCompare(b.competition?.title || '');
           break;
-        case 'verified_at':
+        case 'verified_at': {
           const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
           const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
           comparison = dateA - dateB;
           break;
-        case 'participation_date':
+        }
+        case 'participation_date': {
           const pDateA = a.participation_date ? new Date(a.participation_date).getTime() : 0;
           const pDateB = b.participation_date ? new Date(b.participation_date).getTime() : 0;
           comparison = pDateA - pDateB;
           break;
+        }
       }
       return sortDirection === 'desc' ? -comparison : comparison;
     });
-
-    return filtered;
   }, [logs, searchQuery, sortField, sortDirection]);
 
   const handleSort = (field: SortField) => {
