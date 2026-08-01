@@ -1,5 +1,7 @@
 export interface Profile {
   id: string;
+  member_id: string | null;
+  link_status: string | null;
   user_id: string | null;
   full_name: string;
   bidang_biro: string | null;
@@ -26,6 +28,10 @@ export interface ParticipationLog {
   profile_id: string;
   competition_id: string;
   participation_date: string | null;
+  achievement: string | null;
+  evidence_url: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  awarded_points: number | null;
   verified_at: string | null;
   admin_id: string | null;
   notes: string | null;
@@ -40,7 +46,12 @@ export interface VerificationRequest {
   competition_id: string | null;
   message: string;
   participation_date: string | null;
+  achievement: string | null;
+  evidence_url: string | null;
   status: 'pending' | 'approved' | 'rejected';
+  reviewed_at: string | null;
+  reviewer_id: string | null;
+  reviewer_notes: string | null;
   created_at: string;
   updated_at: string;
   profile?: Profile;

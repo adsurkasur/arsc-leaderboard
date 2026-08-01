@@ -77,3 +77,6 @@ public/swe-worker-*.js
 supabase/.branches/
 supabase/.temp/
 supabase/.ref
+
+# Data extraction
+.data/

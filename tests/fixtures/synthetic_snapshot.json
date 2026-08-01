@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-28T14:32:37.969462+00:00",
+  "release_code": "RTP_2026",
+  "members": [
+    {
+      "member_id": "4e009b38-6ea7-4fad-99a6-835ed40622a2",
+      "canonical_name": "John Doe",
+      "unit": "IT",
+      "position": "Staf Ahli",
+      "release_code": "RTP_2026",
+      "release_member_code": "RTP_2026_001",
+      "evaluation_status": "Dinilai"
+    },
+    {
+      "member_id": "11e634ee-56b2-4d00-8d95-0a4478f78741",
+      "canonical_name": "Jane Smith",
+      "unit": "PR",
+      "position": "Anggota",
+      "release_code": "RTP_2026",
+      "release_member_code": "RTP_2026_002",
+      "evaluation_status": "Dinilai"
+    }
+  ]
+}

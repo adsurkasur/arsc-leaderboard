@@ -1,14 +1,16 @@
+/* eslint-disable react-refresh/only-export-components */
 'use client';
 
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase/client';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   isAdmin: boolean;
   isLoading: boolean;
+  linkStatus: string | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, metadata?: { full_name: string; bidang_biro: string }) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -20,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [linkStatus, setLinkStatus] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -42,12 +45,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (session?.user) {
         checkAdminRole(session.user.id);
+        fetchLinkStatus(session.user.id);
+      } else {
+        setIsAdmin(false);
+        setLinkStatus(null);
       }
-      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchLinkStatus = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('link_status')
+        .eq('user_id', userId)
+        .single();
+      
+      if (data) {
+        setLinkStatus(data.link_status);
+      }
+    } catch (error) {
+      console.error('Error fetching link status:', error);
+    }
+  };
 
   const checkAdminRole = async (userId: string) => {
     try {
@@ -96,10 +118,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSession(null);
     setIsAdmin(false);
+    setLinkStatus(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isAdmin, isLoading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, isAdmin, isLoading, linkStatus, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

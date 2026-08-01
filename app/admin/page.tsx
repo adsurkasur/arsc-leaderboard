@@ -153,9 +153,9 @@ export default function AdminPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Bell className="w-5 h-5 text-primary" />
-                      Permintaan Verifikasi
+                      Permintaan Verifikasi (Legacy)
                     </CardTitle>
-                    <CardDescription>Tinjau permintaan verifikasi yang tertunda dari pengguna</CardDescription>
+                    <CardDescription>Riwayat permintaan verifikasi (sudah tidak digunakan)</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <NotificationInbox />

@@ -7,10 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -44,11 +64,78 @@ export type Database = {
         }
         Relationships: []
       }
+      member_release_links: {
+        Row: {
+          created_at: string
+          evaluation_status: string | null
+          id: string
+          member_id: string
+          position: string | null
+          release_code: string
+          release_member_code: string
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          evaluation_status?: string | null
+          id?: string
+          member_id: string
+          position?: string | null
+          release_code: string
+          release_member_code: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          evaluation_status?: string | null
+          id?: string
+          member_id?: string
+          position?: string | null
+          release_code?: string
+          release_member_code?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_release_links_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      members: {
+        Row: {
+          canonical_name: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          canonical_name: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          canonical_name?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       participation_logs: {
         Row: {
+          achievement: string | null
           admin_id: string | null
           competition_id: string
           created_at: string
+          evidence_url: string | null
           id: string
           notes: string | null
           participation_date: string | null
@@ -56,9 +143,11 @@ export type Database = {
           verified_at: string | null
         }
         Insert: {
+          achievement?: string | null
           admin_id?: string | null
           competition_id: string
           created_at?: string
+          evidence_url?: string | null
           id?: string
           notes?: string | null
           participation_date?: string | null
@@ -66,9 +155,11 @@ export type Database = {
           verified_at?: string | null
         }
         Update: {
+          achievement?: string | null
           admin_id?: string | null
           competition_id?: string
           created_at?: string
+          evidence_url?: string | null
           id?: string
           notes?: string | null
           participation_date?: string | null
@@ -100,6 +191,8 @@ export type Database = {
           full_name: string
           id: string
           last_activity_at: string | null
+          link_status: string | null
+          member_id: string | null
           total_participation_count: number
           updated_at: string
           user_id: string | null
@@ -111,6 +204,8 @@ export type Database = {
           full_name: string
           id?: string
           last_activity_at?: string | null
+          link_status?: string | null
+          member_id?: string | null
           total_participation_count?: number
           updated_at?: string
           user_id?: string | null
@@ -122,11 +217,21 @@ export type Database = {
           full_name?: string
           id?: string
           last_activity_at?: string | null
+          link_status?: string | null
+          member_id?: string | null
           total_participation_count?: number
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -151,32 +256,47 @@ export type Database = {
       }
       verification_requests: {
         Row: {
+          achievement: string | null
           competition_id: string | null
           created_at: string
+          evidence_url: string | null
           id: string
           message: string
           participation_date: string | null
           profile_id: string
+          reviewed_at: string | null
+          reviewer_id: string | null
+          reviewer_notes: string | null
           status: string
           updated_at: string
         }
         Insert: {
+          achievement?: string | null
           competition_id?: string | null
           created_at?: string
+          evidence_url?: string | null
           id?: string
           message: string
           participation_date?: string | null
           profile_id: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          reviewer_notes?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
+          achievement?: string | null
           competition_id?: string | null
           created_at?: string
+          evidence_url?: string | null
           id?: string
           message?: string
           participation_date?: string | null
           profile_id?: string
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          reviewer_notes?: string | null
           status?: string
           updated_at?: string
         }
@@ -337,9 +457,13 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["admin", "user"],
     },
   },
 } as const
+

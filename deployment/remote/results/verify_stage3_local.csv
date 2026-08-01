@@ -1,0 +1,47 @@
+category,object_name,check_name,hash_value
+--- SHARED / OWNERSHIP UNRESOLVED / PROTECTED TABLES ---,Compare against preflight output,,
+TABLE,rapor_members,Columns Hash,2f0662deb795c80dd0e42b58523433ef
+TABLE,rapor_members,Constraints Hash,dc85e8cacf949ec0278e2b2d5cd9fe3c
+TABLE,rapor_members,RLS Enabled,true
+TABLE,rapor_members,Policies Hash,59c6ed5b6acba93a94445ec96a7ae44f
+TABLE,rapor_members,Table Grants Hash,2b9c091ca1e833bc17c2e2779303b708
+TABLE,rapor_members,Sequence Grants Hash,none
+TABLE,rapor_members,Triggers Hash,none
+TABLE,rapor_releases,Columns Hash,6b8347f0a902af95e374320ca8a8722b
+TABLE,rapor_releases,Constraints Hash,ae24ae7b4afdc70ed6fbacd489babe31
+TABLE,rapor_releases,RLS Enabled,true
+TABLE,rapor_releases,Policies Hash,df97a4aa33ca8c575200970598738ced
+TABLE,rapor_releases,Table Grants Hash,2b9c091ca1e833bc17c2e2779303b708
+TABLE,rapor_releases,Sequence Grants Hash,none
+TABLE,rapor_releases,Triggers Hash,none
+--- SHARED / OWNERSHIP UNRESOLVED / PROTECTED FUNCTIONS ---,Compare against preflight output,,
+FUNCTION,get_leaderboard_reference_members,Signature,
+FUNCTION,get_leaderboard_reference_members,Return Contract,"TABLE(release_member_code text, release_code text, canonical_name text, unit text, ""position"" text)"
+FUNCTION,get_leaderboard_reference_members,Security Definer,true
+FUNCTION,get_leaderboard_reference_members,Volatility,s
+FUNCTION,get_leaderboard_reference_members,Owner,postgres
+FUNCTION,get_leaderboard_reference_members,Config/Search Path,search_path=""
+FUNCTION,get_leaderboard_reference_members,Definition Hash,5b5f777acc1bdfecfc9006f05495aa17
+FUNCTION,get_leaderboard_reference_members,Execute Grants Hash,2176dc033beec03c4b4539374826f674
+FUNCTION,update_updated_at_column,Signature,
+FUNCTION,update_updated_at_column,Return Contract,trigger
+FUNCTION,update_updated_at_column,Security Definer,false
+FUNCTION,update_updated_at_column,Volatility,v
+FUNCTION,update_updated_at_column,Owner,postgres
+FUNCTION,update_updated_at_column,Config/Search Path,search_path=public
+FUNCTION,update_updated_at_column,Definition Hash,45650cfed3c2bdad0108dc58faed820d
+FUNCTION,update_updated_at_column,Execute Grants Hash,e02e9125e7717840b743ddb004710efc
+--- STAGE 3 LEADERBOARD SCHEMA ---,,,
+Table Status,competitions,RLS Enabled: true,Rows: 0
+Table Status,member_release_links,RLS Enabled: true,Rows: 0
+Table Status,members,RLS Enabled: true,Rows: 0
+Table Status,participation_logs,RLS Enabled: true,Rows: 0
+Table Status,participation_submission_events,RLS Enabled: true,Rows: 0
+Table Status,profiles,RLS Enabled: true,Rows: 0
+Table Status,user_roles,RLS Enabled: true,Rows: 0
+Table Status,verification_requests,RLS Enabled: true,Rows: 0
+--- SECURITY POLICY ASSERTIONS ---,,,
+Security Check,Is anon blocked from profiles & user_roles?,,true
+Security Check,Are direct writes blocked for users?,,true
+RPC Permissions,review_participation,Anon/Public execute grants,NONE (Secure)
+RPC Permissions,submit_participation,Anon/Public execute grants,NONE (Secure)

@@ -1,0 +1,205 @@
+category,object_name,check_name,hash_value
+--- SHARED / OWNERSHIP UNRESOLVED / PROTECTED TABLES ---,,,
+TABLE,admin_profiles,Columns Hash,07ccaa21d655b0707ba01bc67ca99ae8
+TABLE,admin_profiles,Constraints Hash,48403532615dc14d5fb3aa01ec1f067f
+TABLE,admin_profiles,RLS Enabled,true
+TABLE,admin_profiles,Policies Hash,223fcf77478f811a73a7025de4d43e58
+TABLE,admin_profiles,Table Grants Hash,2b9c091ca1e833bc17c2e2779303b708
+TABLE,admin_profiles,Sequence Grants Hash,none
+TABLE,admin_profiles,Triggers Hash,b4bba280d33d827d05c0f21974a1afae
+TABLE,appointments,Columns Hash,f121e2ffb16dd65a2eedb211139f7733
+TABLE,appointments,Constraints Hash,b26c9fb06338b0ba88b016eb3198f519
+TABLE,appointments,RLS Enabled,true
+TABLE,appointments,Policies Hash,73a20129427d9d0b0a103bbf703bd571
+TABLE,appointments,Table Grants Hash,2b9c091ca1e833bc17c2e2779303b708
+TABLE,appointments,Sequence Grants Hash,none
+TABLE,appointments,Triggers Hash,none
+TABLE,chat_messages,Columns Hash,3d4de540145620b8c85ecfca43affed9
+TABLE,chat_messages,Constraints Hash,27e2009ed9253a127ce6d1571936da1a
+TABLE,chat_messages,RLS Enabled,true
+TABLE,chat_messages,Policies Hash,82ff11a29db9a28af9e727d54f4e89e9
+TABLE,chat_messages,Table Grants Hash,e7ea4b95a9fca347aaa3d122579a4123
+TABLE,chat_messages,Sequence Grants Hash,none
+TABLE,chat_messages,Triggers Hash,a934edc645a50d368518d2c3f0d548dc
+TABLE,chat_sessions,Columns Hash,e108eca991c14225ef3e873e635eae81
+TABLE,chat_sessions,Constraints Hash,e620b8cde63f024302e4dbb1426415ee
+TABLE,chat_sessions,RLS Enabled,true
+TABLE,chat_sessions,Policies Hash,cb70bbcd5faef1dd6e53bfedc35c7ce6
+TABLE,chat_sessions,Table Grants Hash,e7ea4b95a9fca347aaa3d122579a4123
+TABLE,chat_sessions,Sequence Grants Hash,none
+TABLE,chat_sessions,Triggers Hash,d7c1f05949cb5d739c1b0bc3425fd1f0
+TABLE,key_log,Columns Hash,e0cbdf3d3e65a68d428edb67148bc067
+TABLE,key_log,Constraints Hash,baf8a9c28cc3b837069c8ea6d8ae785f
+TABLE,key_log,RLS Enabled,true
+TABLE,key_log,Policies Hash,fe3800410ca3dd1db09525b316894d31
+TABLE,key_log,Table Grants Hash,2b9c091ca1e833bc17c2e2779303b708
+TABLE,key_log,Sequence Grants Hash,none
+TABLE,key_log,Triggers Hash,none
+TABLE,key_status,Columns Hash,0f02e847d5b329d75da3d15ad8ce9569
+TABLE,key_status,Constraints Hash,36c4fc5324ef0a15813be225d4a7ff6f
+TABLE,key_status,RLS Enabled,true
+TABLE,key_status,Policies Hash,eed8054cc9f923271df6294691de6238
+TABLE,key_status,Table Grants Hash,2b9c091ca1e833bc17c2e2779303b708
+TABLE,key_status,Sequence Grants Hash,none
+TABLE,key_status,Triggers Hash,none
+TABLE,notifications,Columns Hash,68ee87a0ba1af293c7180124b432532f
+TABLE,notifications,Constraints Hash,dd617d62b08225649b5fc78dcdac3cc7
+TABLE,notifications,RLS Enabled,true
+TABLE,notifications,Policies Hash,83d37a37aec8a3f243ea10165312441a
+TABLE,notifications,Table Grants Hash,2b9c091ca1e833bc17c2e2779303b708
+TABLE,notifications,Sequence Grants Hash,none
+TABLE,notifications,Triggers Hash,none
+TABLE,rapor_access_codes,Columns Hash,3e745ad7fa50f598b2f5d43ae93ce5cd
+TABLE,rapor_access_codes,Constraints Hash,86ff1781072089c4a02fd66e30a0786c
+TABLE,rapor_access_codes,RLS Enabled,true
+TABLE,rapor_access_codes,Policies Hash,a09b1509b0bd796be21012d180ac7050
+TABLE,rapor_access_codes,Table Grants Hash,2b9c091ca1e833bc17c2e2779303b708
+TABLE,rapor_access_codes,Sequence Grants Hash,none
+TABLE,rapor_access_codes,Triggers Hash,none
+TABLE,rapor_members,Columns Hash,2f0662deb795c80dd0e42b58523433ef
+TABLE,rapor_members,Constraints Hash,dc85e8cacf949ec0278e2b2d5cd9fe3c
+TABLE,rapor_members,RLS Enabled,true
+TABLE,rapor_members,Policies Hash,59c6ed5b6acba93a94445ec96a7ae44f
+TABLE,rapor_members,Table Grants Hash,2b9c091ca1e833bc17c2e2779303b708
+TABLE,rapor_members,Sequence Grants Hash,none
+TABLE,rapor_members,Triggers Hash,6f2ef464d6908ea530deaacda7a4231c
+TABLE,rapor_payloads,Columns Hash,e4c9ea6a12325cfe1581d159946b06d3
+TABLE,rapor_payloads,Constraints Hash,4be0a5b904a64882efdf1b9478e3aab7
+TABLE,rapor_payloads,RLS Enabled,true
+TABLE,rapor_payloads,Policies Hash,336cd2e97a64af38bdde3faf119c4c5f
+TABLE,rapor_payloads,Table Grants Hash,2b9c091ca1e833bc17c2e2779303b708
+TABLE,rapor_payloads,Sequence Grants Hash,none
+TABLE,rapor_payloads,Triggers Hash,3bf585b698a7ce51cfed5763ac1cf663
+TABLE,rapor_releases,Columns Hash,6b8347f0a902af95e374320ca8a8722b
+TABLE,rapor_releases,Constraints Hash,ae24ae7b4afdc70ed6fbacd489babe31
+TABLE,rapor_releases,RLS Enabled,true
+TABLE,rapor_releases,Policies Hash,bc7d0128c6abf8b2b1bc3aa2e1175b6a
+TABLE,rapor_releases,Table Grants Hash,2b9c091ca1e833bc17c2e2779303b708
+TABLE,rapor_releases,Sequence Grants Hash,none
+TABLE,rapor_releases,Triggers Hash,42c80ece62a5a2983b8176506c35789e
+TABLE,rapor_sync_runs,Columns Hash,bb28d175c515912d0097e2630852986f
+TABLE,rapor_sync_runs,Constraints Hash,2cbe3062d7fc0502bef171a91005dc41
+TABLE,rapor_sync_runs,RLS Enabled,true
+TABLE,rapor_sync_runs,Policies Hash,defe40f4461ded628e878049da73e184
+TABLE,rapor_sync_runs,Table Grants Hash,2b9c091ca1e833bc17c2e2779303b708
+TABLE,rapor_sync_runs,Sequence Grants Hash,none
+TABLE,rapor_sync_runs,Triggers Hash,none
+TABLE,report_status_history,Columns Hash,ac78efcd548825f8bdd805acfef008b2
+TABLE,report_status_history,Constraints Hash,ce9dee002efb48cc2064b93000d2b34a
+TABLE,report_status_history,RLS Enabled,true
+TABLE,report_status_history,Policies Hash,189926322093e49d54ca58c23e2b3657
+TABLE,report_status_history,Table Grants Hash,2b9c091ca1e833bc17c2e2779303b708
+TABLE,report_status_history,Sequence Grants Hash,none
+TABLE,report_status_history,Triggers Hash,none
+TABLE,reports,Columns Hash,c8e3b6af75b6dbd146bebd82e1ec3cf3
+TABLE,reports,Constraints Hash,5d0b8c727a218a975efe5d47e7ad8ed2
+TABLE,reports,RLS Enabled,true
+TABLE,reports,Policies Hash,72cfa08a3c5bc9db28c1cf77378ba9e4
+TABLE,reports,Table Grants Hash,2b9c091ca1e833bc17c2e2779303b708
+TABLE,reports,Sequence Grants Hash,none
+TABLE,reports,Triggers Hash,0f6325246329788b596d8a5c1ad1ef69
+TABLE,users,Columns Hash,0182b3a930c5037c3cb0c3743ae38ffc
+TABLE,users,Constraints Hash,16f7688cb6245c74d9d016bb1b9312f2
+TABLE,users,RLS Enabled,true
+TABLE,users,Policies Hash,bede161ae16559ab83d18fed59b25232
+TABLE,users,Table Grants Hash,2b9c091ca1e833bc17c2e2779303b708
+TABLE,users,Sequence Grants Hash,none
+TABLE,users,Triggers Hash,ecd63dd2174bd9bb941350251931cbb3
+--- SHARED / OWNERSHIP UNRESOLVED / PROTECTED FUNCTIONS ---,,,
+FUNCTION,can_insert_admin_profile,Signature,
+FUNCTION,can_insert_admin_profile,Return Contract,boolean
+FUNCTION,can_insert_admin_profile,Security Definer,true
+FUNCTION,can_insert_admin_profile,Volatility,v
+FUNCTION,can_insert_admin_profile,Owner,postgres
+FUNCTION,can_insert_admin_profile,Config/Search Path,search_path=public
+FUNCTION,can_insert_admin_profile,Definition Hash,7f2a6dff5fb1ac4aa479375865e327e3
+FUNCTION,can_insert_admin_profile,Execute Grants Hash,18ca3c44a1b35eabf782098bd768fa34
+FUNCTION,current_app_role,Signature,
+FUNCTION,current_app_role,Return Contract,text
+FUNCTION,current_app_role,Security Definer,true
+FUNCTION,current_app_role,Volatility,s
+FUNCTION,current_app_role,Owner,postgres
+FUNCTION,current_app_role,Config/Search Path,"search_path=public, pg_temp"
+FUNCTION,current_app_role,Definition Hash,7afe13c46d0425654328d0222d578f76
+FUNCTION,current_app_role,Execute Grants Hash,fbd55ef2d517f7085f38aa07351a96d3
+FUNCTION,get_leaderboard_reference_members,Signature,
+FUNCTION,get_leaderboard_reference_members,Return Contract,"TABLE(release_member_code text, release_code text, canonical_name text, unit text, ""position"" text)"
+FUNCTION,get_leaderboard_reference_members,Security Definer,true
+FUNCTION,get_leaderboard_reference_members,Volatility,s
+FUNCTION,get_leaderboard_reference_members,Owner,postgres
+FUNCTION,get_leaderboard_reference_members,Config/Search Path,"search_path="""""
+FUNCTION,get_leaderboard_reference_members,Definition Hash,2b493e59bc65c16686e6e6afb027ec98
+FUNCTION,get_leaderboard_reference_members,Execute Grants Hash,2176dc033beec03c4b4539374826f674
+FUNCTION,handle_auth_user_email_update,Signature,
+FUNCTION,handle_auth_user_email_update,Return Contract,trigger
+FUNCTION,handle_auth_user_email_update,Security Definer,true
+FUNCTION,handle_auth_user_email_update,Volatility,v
+FUNCTION,handle_auth_user_email_update,Owner,postgres
+FUNCTION,handle_auth_user_email_update,Config/Search Path,search_path=public
+FUNCTION,handle_auth_user_email_update,Definition Hash,ea0510922b59408476a75c15a2882769
+FUNCTION,handle_auth_user_email_update,Execute Grants Hash,7df080e2ba59d17a58391dd3b446f14a
+FUNCTION,handle_new_auth_user,Signature,
+FUNCTION,handle_new_auth_user,Return Contract,trigger
+FUNCTION,handle_new_auth_user,Security Definer,true
+FUNCTION,handle_new_auth_user,Volatility,v
+FUNCTION,handle_new_auth_user,Owner,postgres
+FUNCTION,handle_new_auth_user,Config/Search Path,search_path=public
+FUNCTION,handle_new_auth_user,Definition Hash,bab4eeaf7cd824785dbb94a7b21a354b
+FUNCTION,handle_new_auth_user,Execute Grants Hash,f8f74e754032d6a90dd9b12a5ac77ead
+FUNCTION,is_admin,Signature,
+FUNCTION,is_admin,Return Contract,boolean
+FUNCTION,is_admin,Security Definer,true
+FUNCTION,is_admin,Volatility,s
+FUNCTION,is_admin,Owner,postgres
+FUNCTION,is_admin,Config/Search Path,none
+FUNCTION,is_admin,Definition Hash,3905829c1e3782357ae3e30a3f33ac4e
+FUNCTION,is_admin,Execute Grants Hash,8633a6a0230a1218a641c2d011a52cd5
+FUNCTION,sync_admin_profile,Signature,
+FUNCTION,sync_admin_profile,Return Contract,trigger
+FUNCTION,sync_admin_profile,Security Definer,true
+FUNCTION,sync_admin_profile,Volatility,v
+FUNCTION,sync_admin_profile,Owner,postgres
+FUNCTION,sync_admin_profile,Config/Search Path,none
+FUNCTION,sync_admin_profile,Definition Hash,97b23e268ec13551e8e3520b845fc230
+FUNCTION,sync_admin_profile,Execute Grants Hash,bd8c79f09a7b4325ec9ae65eda9b8283
+FUNCTION,sync_reporter_identity_snapshot,Signature,
+FUNCTION,sync_reporter_identity_snapshot,Return Contract,trigger
+FUNCTION,sync_reporter_identity_snapshot,Security Definer,true
+FUNCTION,sync_reporter_identity_snapshot,Volatility,v
+FUNCTION,sync_reporter_identity_snapshot,Owner,postgres
+FUNCTION,sync_reporter_identity_snapshot,Config/Search Path,none
+FUNCTION,sync_reporter_identity_snapshot,Definition Hash,61d8acba957cb8989be750759b19688a
+FUNCTION,sync_reporter_identity_snapshot,Execute Grants Hash,5b3f0d81d203434f66a473d39b465624
+FUNCTION,sync_whatsapp_to_auth_phone,Signature,
+FUNCTION,sync_whatsapp_to_auth_phone,Return Contract,trigger
+FUNCTION,sync_whatsapp_to_auth_phone,Security Definer,true
+FUNCTION,sync_whatsapp_to_auth_phone,Volatility,v
+FUNCTION,sync_whatsapp_to_auth_phone,Owner,postgres
+FUNCTION,sync_whatsapp_to_auth_phone,Config/Search Path,"search_path=public, auth"
+FUNCTION,sync_whatsapp_to_auth_phone,Definition Hash,cbb00c4b72c8b85a0228c21d65f610da
+FUNCTION,sync_whatsapp_to_auth_phone,Execute Grants Hash,d9a25555e6796348a912e33e63ec449b
+FUNCTION,touch_updated_at,Signature,
+FUNCTION,touch_updated_at,Return Contract,trigger
+FUNCTION,touch_updated_at,Security Definer,false
+FUNCTION,touch_updated_at,Volatility,v
+FUNCTION,touch_updated_at,Owner,postgres
+FUNCTION,touch_updated_at,Config/Search Path,none
+FUNCTION,touch_updated_at,Definition Hash,9b141f76ab14a924a4f7353b3128d507
+FUNCTION,touch_updated_at,Execute Grants Hash,3332a356b78800a40c07ece4908ada1a
+FUNCTION,update_updated_at,Signature,
+FUNCTION,update_updated_at,Return Contract,trigger
+FUNCTION,update_updated_at,Security Definer,false
+FUNCTION,update_updated_at,Volatility,v
+FUNCTION,update_updated_at,Owner,postgres
+FUNCTION,update_updated_at,Config/Search Path,none
+FUNCTION,update_updated_at,Definition Hash,d43299202a0987f3653ec1f6402e7947
+FUNCTION,update_updated_at,Execute Grants Hash,d545dfdaa0f45b51d26cb6991090d4e9
+FUNCTION,update_updated_at_column,Signature,
+FUNCTION,update_updated_at_column,Return Contract,trigger
+FUNCTION,update_updated_at_column,Security Definer,false
+FUNCTION,update_updated_at_column,Volatility,v
+FUNCTION,update_updated_at_column,Owner,postgres
+FUNCTION,update_updated_at_column,Config/Search Path,none
+FUNCTION,update_updated_at_column,Definition Hash,bc2cb0ff807595054a511e65ab0af249
+FUNCTION,update_updated_at_column,Execute Grants Hash,de12b426e57880771ee4ae6ca26a59c6
+--- LEADERBOARD NAMESPACE PRE-CHECK ---,,,

@@ -1,41 +1,41 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase/client';
 import { Profile, Competition, ParticipationLog } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Loader2, CheckCircle, Pencil, ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
+import { Loader2, Pencil, ArrowUpDown, ArrowUp, ArrowDown, Search, ExternalLink } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { reviewParticipation } from '@/lib/actions/stage3_participations';
 
-type SortField = 'user' | 'competition' | 'verified_at' | 'participation_date';
+type SortField = 'user' | 'competition' | 'status' | 'created_at';
 type SortDirection = 'asc' | 'desc';
 
 export function ParticipationManagement() {
   const [logs, setLogs] = useState<ParticipationLog[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedProfile, setSelectedProfile] = useState<string>('');
-  const [competitionName, setCompetitionName] = useState<string>('');
-  const [participationDate, setParticipationDate] = useState<string>('');
-  const [notes, setNotes] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<SortField>('verified_at');
+  const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [editingLog, setEditingLog] = useState<ParticipationLog | null>(null);
-  const { user } = useAuth();
+  
+  // Review state
+  const [reviewingLog, setReviewingLog] = useState<ParticipationLog | null>(null);
+  const [reviewStatus, setReviewStatus] = useState<string>('');
+  const [reviewPoints, setReviewPoints] = useState<number | ''>('');
+  const [reviewNotes, setReviewNotes] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
+  
   const { toast } = useToast();
 
   useEffect(() => {
@@ -43,30 +43,26 @@ export function ParticipationManagement() {
   }, []);
 
   const fetchData = async () => {
-    const [logsRes, profilesRes, competitionsRes] = await Promise.all([
-      supabase
-        .from('participation_logs')
-        .select(`
-          *,
-          profile:profiles(id, full_name, avatar_url),
-          competition:competitions(id, title, date)
-        `)
-        .order('created_at', { ascending: false }),
-      supabase.from('profiles').select('*').order('full_name'),
-      supabase.from('competitions').select('*').order('date', { ascending: false })
-    ]);
+    const { data: logsData, error } = await supabase
+      .from('participation_logs')
+      .select(`
+        *,
+        profile:profiles(id, full_name, avatar_url),
+        competition:competitions(id, title, date)
+      `)
+      .order('created_at', { ascending: false });
 
-    if (!logsRes.error && logsRes.data) {
-      // Transform the data to match our types
-      const transformedLogs = logsRes.data.map(log => ({
-        ...log,
-        profile: log.profile as unknown as Profile,
-        competition: log.competition as unknown as Competition
-      }));
+    if (!error && logsData) {
+      const transformedLogs = logsData.map(log => {
+        const logData = log as unknown as ParticipationLog;
+        return {
+          ...logData,
+          profile: logData.profile as unknown as Profile,
+          competition: logData.competition as unknown as Competition
+        };
+      });
       setLogs(transformedLogs);
     }
-    if (!profilesRes.error && profilesRes.data) setProfiles(profilesRes.data);
-    if (!competitionsRes.error && competitionsRes.data) setCompetitions(competitionsRes.data);
     setIsLoading(false);
   };
 
@@ -88,16 +84,13 @@ export function ParticipationManagement() {
         case 'competition':
           comparison = (a.competition?.title || '').localeCompare(b.competition?.title || '');
           break;
-        case 'verified_at': {
+        case 'status':
+          comparison = (a.status || '').localeCompare(b.status || '');
+          break;
+        case 'created_at': {
           const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
           const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
           comparison = dateA - dateB;
-          break;
-        }
-        case 'participation_date': {
-          const pDateA = a.participation_date ? new Date(a.participation_date).getTime() : 0;
-          const pDateB = b.participation_date ? new Date(b.participation_date).getTime() : 0;
-          comparison = pDateA - pDateB;
           break;
         }
       }
@@ -121,109 +114,39 @@ export function ParticipationManagement() {
       : <ArrowDown className="w-4 h-4 ml-1" />;
   };
 
-  const openCreateDialog = () => {
-    setEditingLog(null);
-    setSelectedProfile('');
-    setCompetitionName('');
-    setParticipationDate('');
-    setNotes('');
+  const openReviewDialog = (log: ParticipationLog) => {
+    setReviewingLog(log);
+    setReviewStatus(log.status || 'pending');
+    setReviewPoints(log.awarded_points ?? '');
+    setReviewNotes(log.notes || '');
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (log: ParticipationLog) => {
-    setEditingLog(log);
-    setSelectedProfile(log.profile_id);
-    setCompetitionName(log.competition?.title || '');
-    setParticipationDate(log.participation_date ? log.participation_date.slice(0, 16) : '');
-    setNotes(log.notes || '');
-    setIsDialogOpen(true);
-  };
-
-  const handleSaveParticipation = async () => {
-    if (!selectedProfile || !competitionName.trim()) {
-      toast({ title: 'Gagal', description: 'Silakan pilih pengguna dan masukkan nama kompetisi', variant: 'destructive' });
+  const handleReviewSubmission = async () => {
+    if (!reviewingLog || !reviewingLog.id) return;
+    if (reviewStatus !== 'approved' && reviewStatus !== 'rejected') {
+      toast({ title: 'Gagal', description: 'Status harus disetujui atau ditolak.', variant: 'destructive' });
       return;
     }
-
+    
     setIsSaving(true);
 
     try {
-      // Check if competition exists, create if not
-      let competitionId: string;
-      const existingCompetition = competitions.find(
-        comp => comp.title.toLowerCase() === competitionName.trim().toLowerCase()
+      const points = reviewPoints === '' ? undefined : Number(reviewPoints);
+      
+      const result = await reviewParticipation(
+        reviewingLog.id, 
+        reviewStatus, 
+        points, 
+        reviewNotes
       );
 
-      if (existingCompetition) {
-        competitionId = existingCompetition.id;
+      if (!result.success) {
+        toast({ title: 'Gagal', description: result.error, variant: 'destructive' });
       } else {
-        // Create new competition
-        const { data: newCompetition, error: createError } = await supabase
-          .from('competitions')
-          .insert({
-            title: competitionName.trim(),
-            category: 'other',
-            date: new Date().toISOString().split('T')[0],
-          })
-          .select('id')
-          .single();
-
-        if (createError) {
-          toast({
-            title: 'Gagal',
-            description: 'Gagal membuat kompetisi: ' + createError.message,
-            variant: 'destructive',
-          });
-          setIsSaving(false);
-          return;
-        }
-
-        competitionId = newCompetition.id;
-        await fetchData();
-      }
-
-      if (editingLog) {
-        // Update existing log
-        const { error } = await supabase
-          .from('participation_logs')
-          .update({
-            profile_id: selectedProfile,
-            competition_id: competitionId,
-            participation_date: participationDate ? new Date(participationDate).toISOString() : null,
-            notes: notes || null
-          })
-          .eq('id', editingLog.id);
-
-        if (error) {
-          toast({ title: 'Gagal', description: error.message, variant: 'destructive' });
-        } else {
-          toast({ title: 'Berhasil', description: 'Log partisipasi berhasil diperbarui' });
-          setIsDialogOpen(false);
-          fetchData();
-        }
-      } else {
-        // Add new participation log
-        const { error } = await supabase
-          .from('participation_logs')
-          .insert({
-            profile_id: selectedProfile,
-            competition_id: competitionId,
-            admin_id: user?.id,
-            participation_date: participationDate ? new Date(participationDate).toISOString() : null,
-            notes: notes || null
-          });
-
-        if (error) {
-          if (error.code === '23505') {
-            toast({ title: 'Gagal', description: 'Pengguna ini sudah terdaftar untuk kompetisi ini', variant: 'destructive' });
-          } else {
-            toast({ title: 'Gagal', description: error.message, variant: 'destructive' });
-          }
-        } else {
-          toast({ title: 'Berhasil', description: 'Partisipasi berhasil ditambahkan' });
-          setIsDialogOpen(false);
-          fetchData();
-        }
+        toast({ title: 'Berhasil', description: 'Ulasan berhasil disimpan.' });
+        setIsDialogOpen(false);
+        fetchData();
       }
     } catch (error) {
       toast({
@@ -236,24 +159,21 @@ export function ParticipationManagement() {
     setIsSaving(false);
   };
 
-  const handleDelete = async (log: ParticipationLog) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus entri partisipasi ini?')) return;
-
-    const { error } = await supabase
-      .from('participation_logs')
-      .delete()
-      .eq('id', log.id);
-
-    if (error) {
-      toast({ title: 'Gagal', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Berhasil', description: 'Partisipasi berhasil dihapus' });
-      fetchData();
-    }
-  };
-
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">Menunggu</Badge>;
+      case 'approved':
+        return <Badge variant="outline" className="bg-success/10 text-success border-success/20">Disetujui</Badge>;
+      case 'rejected':
+        return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">Ditolak</Badge>;
+      default:
+        return null;
+    }
   };
 
   if (isLoading) {
@@ -275,83 +195,12 @@ export function ParticipationManagement() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Cari log partisipasi..."
+            placeholder="Cari pengguna atau kompetisi..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openCreateDialog} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Tambah Partisipasi
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingLog ? 'Edit Log Partisipasi' : 'Tambah Entri Partisipasi'}</DialogTitle>
-              <DialogDescription>
-                {editingLog ? 'Perbarui detail log partisipasi.' : 'Catat partisipasi pengguna dalam kompetisi.'}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Pilih Pengguna</Label>
-                <Select value={selectedProfile} onValueChange={setSelectedProfile}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih pengguna..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {profiles.map((profile) => (
-                      <SelectItem key={profile.id} value={profile.id}>
-                        {profile.full_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Nama Kompetisi</Label>
-                <Input
-                  placeholder="Masukkan nama kompetisi"
-                  value={competitionName}
-                  onChange={(e) => setCompetitionName(e.target.value)}
-                  className="border-primary/20 focus:border-primary"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Jika kompetisi belum ada, akan dibuat otomatis.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label>Waktu Partisipasi</Label>
-                <Input
-                  type="datetime-local"
-                  value={participationDate}
-                  onChange={(e) => setParticipationDate(e.target.value)}
-                  className="border-primary/20 focus:border-primary"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="notes">Catatan (opsional)</Label>
-                <Textarea
-                  id="notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Catatan tambahan..."
-                  rows={2}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Batal</Button>
-              <Button onClick={handleSaveParticipation} disabled={isSaving}>
-                {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {editingLog ? 'Simpan Perubahan' : 'Tambah Entri'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
 
       <div className="border rounded-lg overflow-hidden">
@@ -368,14 +217,15 @@ export function ParticipationManagement() {
                   Kompetisi <SortIcon field="competition" />
                 </Button>
               </TableHead>
+              <TableHead>Bukti</TableHead>
               <TableHead>
-                <Button variant="ghost" size="sm" onClick={() => handleSort('participation_date')} className="font-semibold -ml-2">
-                  Waktu Partisipasi <SortIcon field="participation_date" />
+                <Button variant="ghost" size="sm" onClick={() => handleSort('status')} className="font-semibold -ml-2">
+                  Status <SortIcon field="status" />
                 </Button>
               </TableHead>
               <TableHead>
-                <Button variant="ghost" size="sm" onClick={() => handleSort('verified_at')} className="font-semibold -ml-2">
-                  Diverifikasi Pada <SortIcon field="verified_at" />
+                <Button variant="ghost" size="sm" onClick={() => handleSort('created_at')} className="font-semibold -ml-2">
+                  Waktu Kirim <SortIcon field="created_at" />
                 </Button>
               </TableHead>
               <TableHead className="text-right">Aksi</TableHead>
@@ -384,8 +234,8 @@ export function ParticipationManagement() {
           <TableBody>
             {sortedAndFilteredLogs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  Tidak ada log partisipasi ditemukan
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  Tidak ada data partisipasi
                 </TableCell>
               </TableRow>
             ) : (
@@ -403,48 +253,39 @@ export function ParticipationManagement() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div>
-                      <span>{log.competition?.title || 'Tidak Dikenal'}</span>
-                      {log.competition?.date && (
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(log.competition.date), 'MMM d, yyyy')}
-                        </p>
+                    <span className="font-medium">{log.competition?.title || 'Tidak Dikenal'}</span>
+                  </TableCell>
+                  <TableCell>
+                    {log.evidence_url ? (
+                      <a href={log.evidence_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-primary hover:underline">
+                        Lihat <ExternalLink className="w-3 h-3" />
+                      </a>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1">
+                      {getStatusBadge(log.status || 'pending')}
+                      {log.awarded_points !== null && log.status === 'approved' && (
+                        <span className="text-xs font-semibold text-success">+{log.awarded_points} pts</span>
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
-                    {log.participation_date ? (
-                      <span className="text-sm">
-                        {format(new Date(log.participation_date), 'dd MMM yyyy, HH:mm')}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2 text-success">
-                      <CheckCircle className="w-4 h-4" />
-                      {log.created_at ? format(new Date(log.created_at), 'dd MMM yyyy, HH:mm') : 'N/A'}
-                    </div>
+                    <span className="text-sm">
+                      {log.created_at ? format(new Date(log.created_at), 'dd MMM yyyy, HH:mm') : '-'}
+                    </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => openEditDialog(log)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handleDelete(log)} 
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => openReviewDialog(log)}
+                      disabled={log.status === 'approved'}
+                    >
+                      {log.status === 'approved' ? 'Disetujui' : 'Tinjau'}
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -452,6 +293,72 @@ export function ParticipationManagement() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Tinjau Partisipasi</DialogTitle>
+            <DialogDescription>
+              Tinjau partisipasi oleh {reviewingLog?.profile?.full_name} untuk {reviewingLog?.competition?.title}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Tautan Bukti</Label>
+              <div>
+                <a href={reviewingLog?.evidence_url || '#'} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-2">
+                  Buka Dokumen Bukti <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Status Keputusan *</Label>
+              <Select value={reviewStatus} onValueChange={setReviewStatus}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih keputusan..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="approved">Setujui</SelectItem>
+                  <SelectItem value="rejected">Tolak</SelectItem>
+                  <SelectItem value="pending" disabled>Menunggu</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {reviewStatus === 'approved' && (
+              <div className="space-y-2">
+                <Label>Poin yang Diberikan *</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={reviewPoints}
+                  onChange={(e) => setReviewPoints(e.target.value ? Number(e.target.value) : '')}
+                  placeholder="Contoh: 100"
+                />
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="notes">Catatan (opsional)</Label>
+              <Textarea
+                id="notes"
+                value={reviewNotes}
+                onChange={(e) => setReviewNotes(e.target.value)}
+                placeholder="Alasan penolakan atau catatan tambahan..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Batal</Button>
+            <Button onClick={handleReviewSubmission} disabled={isSaving || reviewStatus === 'pending' || (reviewStatus === 'approved' && reviewPoints === '')}>
+              {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Kirim Tinjauan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

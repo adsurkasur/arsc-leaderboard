@@ -1,0 +1,31 @@
+# Preflight Baseline
+# project_ref = jyznguhencjwtzupxjjk
+# preflight_sql_hash = 1CE3BFE35A5669CE42A215BC50CE521525AE851F1E146EFD0209C3E3236DFA7A
+# scope_note: This is the original baseline. It does not contain the newly expanded shared-object/function categories.
+
+check_name,details,hash_value
+--- PROTECTED SHARED TABLES (rapor_* and psdm_*) ---,,
+rapor_access_codes,Columns Hash,f6c7e193ad9367d71ca2352a75ef72c6
+rapor_access_codes,RLS Enabled,true
+rapor_access_codes,Policies Hash,a09b1509b0bd796be21012d180ac7050
+rapor_access_codes,Triggers Hash,none
+rapor_members,Columns Hash,073af5018ae51975bdbcabe14e4fe076
+rapor_members,RLS Enabled,true
+rapor_members,Policies Hash,59c6ed5b6acba93a94445ec96a7ae44f
+rapor_members,Triggers Hash,773e61d600ceb6665e8f5c0b69a399cd
+rapor_payloads,Columns Hash,1f928003e1a72ad72764fef22b58d16a
+rapor_payloads,RLS Enabled,true
+rapor_payloads,Policies Hash,336cd2e97a64af38bdde3faf119c4c5f
+rapor_payloads,Triggers Hash,cd1fbe11337c746b0f88c4666ec9aeb2
+rapor_releases,Columns Hash,b9e55f71e3f00cb6d0f3159cd98fe57d
+rapor_releases,RLS Enabled,true
+rapor_releases,Policies Hash,e0c7a95c06be35a9d1eddb86d706e1d8
+rapor_releases,Triggers Hash,5f9f97a78fa6c52d548fbe56d7e89370
+rapor_sync_runs,Columns Hash,73af74a0b7a64b6dba5c472c8f37dc93
+rapor_sync_runs,RLS Enabled,true
+rapor_sync_runs,Policies Hash,defe40f4461ded628e878049da73e184
+rapor_sync_runs,Triggers Hash,none
+--- STAGE 2C RPC STATUS ---,,
+public.get_leaderboard_reference_members,SEC DEFINER,true
+public.get_leaderboard_reference_members,Definition Hash,2b493e59bc65c16686e6e6afb027ec98
+--- LEADERBOARD NAMESPACE PRE-CHECK ---,,
