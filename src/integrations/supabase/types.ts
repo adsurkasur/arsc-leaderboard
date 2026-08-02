@@ -133,6 +133,7 @@ export type Database = {
         Row: {
           achievement: string | null
           admin_id: string | null
+          awarded_points: number | null
           competition_id: string
           created_at: string
           evidence_url: string | null
@@ -140,11 +141,13 @@ export type Database = {
           notes: string | null
           participation_date: string | null
           profile_id: string
+          status: string
           verified_at: string | null
         }
         Insert: {
           achievement?: string | null
           admin_id?: string | null
+          awarded_points?: number | null
           competition_id: string
           created_at?: string
           evidence_url?: string | null
@@ -152,11 +155,13 @@ export type Database = {
           notes?: string | null
           participation_date?: string | null
           profile_id: string
+          status?: string
           verified_at?: string | null
         }
         Update: {
           achievement?: string | null
           admin_id?: string | null
+          awarded_points?: number | null
           competition_id?: string
           created_at?: string
           evidence_url?: string | null
@@ -164,6 +169,7 @@ export type Database = {
           notes?: string | null
           participation_date?: string | null
           profile_id?: string
+          status?: string
           verified_at?: string | null
         }
         Relationships: [
@@ -322,6 +328,38 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_leaderboard: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avatar_url: string | null
+          bidang_biro: string | null
+          created_at: string
+          full_name: string
+          is_identity_verified: boolean
+          last_activity_at: string | null
+          profile_id: string
+          total_participation_count: number
+        }[]
+      }
+      get_public_category_participation_counts: {
+        Args: { p_category: string }
+        Returns: {
+          participation_count: number
+          profile_id: string
+        }[]
+      }
+      get_public_member_participations: {
+        Args: { p_profile_id: string }
+        Returns: {
+          competition_category: string
+          competition_date: string
+          competition_id: string
+          competition_title: string
+          created_at: string
+          participation_date: string | null
+          participation_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

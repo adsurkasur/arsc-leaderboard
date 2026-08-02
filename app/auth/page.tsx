@@ -1,260 +1,208 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { m } from 'framer-motion';
+import { ArrowLeft, BadgeCheck, FileCheck2, Link2, Loader2, Lock, Mail } from 'lucide-react';
+import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Lock, ArrowLeft, Loader2, Sparkles } from 'lucide-react';
-import Image from 'next/image';
-import { z } from 'zod';
-import { m } from 'framer-motion';
-import { pageTransition, staggerContainer, staggerItem, fadeInUp, popIn } from '@/lib/motion';
 
-const emailSchema = z.string().email('Silakan masukkan alamat email yang valid');
-const passwordSchema = z.string().min(6, 'Kata sandi harus minimal 6 karakter');
-const fullNameSchema = z.string().min(2, 'Nama lengkap harus minimal 2 karakter');
-const bidangBiroSchema = z.string().min(1, 'Silakan pilih bidang/biro Anda');
+const emailSchema = z.string().email('Masukkan alamat email yang valid');
+const passwordSchema = z.string().min(6, 'Kata sandi minimal 6 karakter');
+
+const identityNotes = [
+  { icon: Link2, text: 'Hubungkan kode akses Rapor satu kali.' },
+  { icon: BadgeCheck, text: 'Nama dan bidang/biro mengikuti data resmi.' },
+  { icon: FileCheck2, text: 'Partisipasi dihitung setelah ditinjau admin.' },
+];
 
 export default function AuthPage() {
-  // Login form state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginErrors, setLoginErrors] = useState<{ email?: string; password?: string }>({});
-  
-  // Register form state
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [bidangBiro, setBidangBiro] = useState('');
-  const [registerErrors, setRegisterErrors] = useState<{ email?: string; password?: string; fullName?: string; bidangBiro?: string }>({});
-  
+  const [registerErrors, setRegisterErrors] = useState<{ email?: string; password?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const { user, signIn, signUp } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
-      router.push('/');
-    }
+    if (user) router.push('/');
   }, [user, router]);
 
-  const validateLoginForm = () => {
-    const newErrors: { email?: string; password?: string } = {};
-    
-    const emailResult = emailSchema.safeParse(loginEmail);
-    if (!emailResult.success) {
-      newErrors.email = emailResult.error.errors[0].message;
-    }
-    
-    const passwordResult = passwordSchema.safeParse(loginPassword);
-    if (!passwordResult.success) {
-      newErrors.password = passwordResult.error.errors[0].message;
-    }
-    
-    setLoginErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const validate = (email: string, password: string) => {
+    const errors: { email?: string; password?: string } = {};
+    const emailResult = emailSchema.safeParse(email);
+    const passwordResult = passwordSchema.safeParse(password);
+    if (!emailResult.success) errors.email = emailResult.error.errors[0].message;
+    if (!passwordResult.success) errors.password = passwordResult.error.errors[0].message;
+    return errors;
   };
 
-  const validateRegisterForm = () => {
-    const newErrors: { email?: string; password?: string; fullName?: string; bidangBiro?: string } = {};
-    
-    const emailResult = emailSchema.safeParse(registerEmail);
-    if (!emailResult.success) {
-      newErrors.email = emailResult.error.errors[0].message;
-    }
-    
-    const passwordResult = passwordSchema.safeParse(registerPassword);
-    if (!passwordResult.success) {
-      newErrors.password = passwordResult.error.errors[0].message;
-    }
-    
-    const fullNameResult = fullNameSchema.safeParse(fullName);
-    if (!fullNameResult.success) {
-      newErrors.fullName = fullNameResult.error.errors[0].message;
-    }
-    
-    const bidangBiroResult = bidangBiroSchema.safeParse(bidangBiro);
-    if (!bidangBiroResult.success) {
-      newErrors.bidangBiro = bidangBiroResult.error.errors[0].message;
-    }
-    
-    setRegisterErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const handleSignIn = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const errors = validate(loginEmail, loginPassword);
+    setLoginErrors(errors);
+    if (Object.keys(errors).length > 0) return;
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateLoginForm()) return;
-    
     setIsLoading(true);
     const { error } = await signIn(loginEmail, loginPassword);
     setIsLoading(false);
 
     if (error) {
       toast({
-        title: 'Gagal masuk',
-        description: error.message === 'Invalid login credentials' 
-          ? 'Email atau kata sandi tidak valid. Silakan coba lagi.'
+        title: 'Belum dapat masuk',
+        description: error.message === 'Invalid login credentials'
+          ? 'Email atau kata sandi tidak cocok.'
           : error.message,
         variant: 'destructive',
       });
-    } else {
-      toast({
-        title: 'Selamat datang kembali!',
-        description: 'Anda telah berhasil masuk.',
-      });
-      router.push('/');
+      return;
     }
+
+    toast({ title: 'Berhasil masuk', description: 'Anda kembali ke ARSC Leaderboard.' });
+    router.push('/');
   };
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateRegisterForm()) return;
-    
+  const handleSignUp = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const errors = validate(registerEmail, registerPassword);
+    setRegisterErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     setIsLoading(true);
-    const { error } = await signUp(registerEmail, registerPassword, {
-      full_name: fullName,
-      bidang_biro: bidangBiro
-    });
+    const { error } = await signUp(registerEmail, registerPassword);
     setIsLoading(false);
 
     if (error) {
-      const errorMessage = error.message.includes('already registered')
-        ? 'Email ini sudah terdaftar. Silakan masuk saja.'
-        : error.message;
-      
       toast({
-        title: 'Gagal mendaftar',
-        description: errorMessage,
+        title: 'Akun belum dibuat',
+        description: error.message.includes('already registered')
+          ? 'Email ini sudah terdaftar. Gunakan tab Masuk.'
+          : error.message,
         variant: 'destructive',
       });
-    } else {
-      toast({
-        title: 'Akun berhasil dibuat!',
-        description: 'Selamat! Anda sekarang dapat masuk ke akun Anda.',
-      });
+      return;
     }
+
+    toast({
+      title: 'Akun berhasil dibuat',
+      description: 'Periksa email bila verifikasi diperlukan, lalu masuk dan hubungkan Rapor.',
+    });
   };
 
   return (
-    <m.div 
-      className="min-h-screen flex flex-col bg-gradient-to-b from-background via-background to-accent/20"
-      variants={pageTransition}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
+    <m.main
+      className="min-h-screen bg-background lg:grid lg:grid-cols-[minmax(24rem,0.9fr)_minmax(32rem,1.1fr)]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.25 }}
     >
-      {/* Decorative background elements */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-20 left-[10%] w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-[10%] w-64 h-64 bg-violet/5 rounded-full blur-3xl" />
-      </div>
+      <section className="relative overflow-hidden bg-[hsl(222_47%_8%)] px-6 py-8 text-white sm:px-10 lg:flex lg:min-h-screen lg:flex-col lg:justify-between lg:px-14 lg:py-12">
+        <div className="pointer-events-none absolute inset-0 opacity-60 [background-image:radial-gradient(circle_at_20%_20%,hsl(217_91%_60%/0.24),transparent_32%),radial-gradient(circle_at_80%_85%,hsl(160_84%_45%/0.14),transparent_30%)]" />
+        <div className="relative">
+          <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-300 transition-colors hover:text-white">
+            <ArrowLeft className="size-4" />
+            Kembali ke Leaderboard
+          </Link>
+        </div>
 
-      {/* Header */}
-      <m.header 
-        className="p-4"
-        variants={fadeInUp}
-        initial="hidden"
-        animate="visible"
-      >
-        <m.div whileHover={{ x: -3 }} whileTap={{ scale: 0.98 }}>
-          <Button variant="ghost" size="sm" asChild className="gap-2">
-            <Link href="/">
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Kembali ke Papan Peringkat</span>
-              <span className="sm:hidden">Kembali</span>
-            </Link>
-          </Button>
-        </m.div>
-      </m.header>
+        <div className="relative mx-auto mt-12 max-w-xl lg:mx-0 lg:mt-16">
+          <div className="flex items-center gap-3">
+            <span className="flex size-12 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white">
+              <Image src="/arsc-logo.png" alt="Logo ARSC" width={42} height={42} className="size-10 object-contain" priority />
+            </span>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-300">ARSC</p>
+              <p className="mt-1 font-semibold">Leaderboard</p>
+            </div>
+          </div>
 
-      {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-4">
-        <m.div 
-          className="w-full max-w-md space-y-6"
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-        >
-          {/* Logo */}
-          <m.div 
-            className="text-center space-y-3"
-            variants={staggerItem}
-          >
-            <m.div 
-              className="inline-flex items-center justify-center w-18 h-18 rounded-2xl bg-primary/10 mb-4 overflow-hidden ring-4 ring-primary/5"
-              variants={popIn}
-              whileHover={{ scale: 1.05, rotate: 3 }}
-            >
-              <Image src="/arsc-logo.png" alt="ARSC Logo" width={52} height={52} className="rounded-xl" />
-            </m.div>
-            <h1 className="text-2xl md:text-3xl font-bold">Selamat Datang</h1>
-            <p className="text-muted-foreground text-sm md:text-base">Masuk untuk melihat peringkat Anda dan mengajukan partisipasi baru.</p>
-          </m.div>
+          <h1 className="mt-8 max-w-lg text-balance text-3xl font-semibold leading-tight tracking-[-0.035em] sm:text-4xl lg:text-5xl">
+            Satu akun untuk mencatat partisipasi kompetisi Anda.
+          </h1>
+          <p className="mt-5 max-w-lg text-sm leading-7 text-slate-300 sm:text-base">
+            Akun menyimpan pengajuan dan status peninjauan. Identitas anggota tetap berasal dari Rapor ARSC.
+          </p>
 
-          {/* Auth Card */}
-          <m.div variants={staggerItem}>
-            <Card className="border shadow-card backdrop-blur-sm bg-card/95">
-              <Tabs defaultValue="signin" className="w-full">
-                <CardHeader className="pb-4">
-                  <TabsList className="grid w-full grid-cols-2 h-11">
-                    <TabsTrigger value="signin" className="text-sm font-medium">Masuk</TabsTrigger>
-                    <TabsTrigger value="signup" className="text-sm font-medium">Daftar</TabsTrigger>
-                  </TabsList>
-                </CardHeader>
+          <ul className="mt-8 space-y-4">
+            {identityNotes.map(({ icon: Icon, text }) => (
+              <li key={text} className="flex items-center gap-3 text-sm text-slate-200">
+                <span className="flex size-8 items-center justify-center rounded-xl bg-white/[0.08] text-blue-300">
+                  <Icon className="size-4" />
+                </span>
+                {text}
+              </li>
+            ))}
+          </ul>
+        </div>
 
-                <TabsContent value="signin">
-                  <form onSubmit={handleSignIn}>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="signin-email">Email</Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="signin-email"
-                            type="email"
-                            placeholder="admin@contoh.com"
-                            value={loginEmail}
-                            onChange={(e) => { setLoginEmail(e.target.value); setLoginErrors({}); }}
-                            className="pl-10 h-11"
-                            disabled={isLoading}
-                          />
-                        </div>
-                        {loginErrors.email && <p className="text-sm text-destructive">{loginErrors.email}</p>}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="signin-password">Kata Sandi</Label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="signin-password"
-                            type="password"
-                            placeholder="••••••••"
-                            value={loginPassword}
-                            onChange={(e) => { setLoginPassword(e.target.value); setLoginErrors({}); }}
-                            className="pl-10 h-11"
-                            disabled={isLoading}
-                          />
-                        </div>
-                        {loginErrors.password && <p className="text-sm text-destructive">{loginErrors.password}</p>}
-                      </div>
-                    </CardContent>
-                    <CardFooter>
-                      <m.div className="w-full" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-                        <Button type="submit" className="w-full h-11" disabled={isLoading}>
-                          {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                          Masuk
-                        </Button>
-                      </m.div>
+        <p className="relative mt-12 hidden text-xs text-slate-500 lg:block">
+          Agritech Research and Study Club · 2025/2026
+        </p>
+      </section>
+
+      <section className="flex min-h-[42rem] items-center px-4 py-10 sm:px-8 lg:min-h-screen lg:px-12">
+        <div className="mx-auto w-full max-w-md">
+          <div className="mb-6">
+            <p className="text-sm font-semibold text-primary">Akses anggota</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em]">Masuk atau buat akun</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Setelah masuk, hubungkan kode akses Rapor dari menu profil.
+            </p>
+          </div>
+
+          <Card className="rounded-3xl border-border/80 shadow-[0_22px_70px_-44px_hsl(var(--foreground)/0.45)]">
+            <Tabs defaultValue="signin" className="w-full">
+              <CardHeader className="pb-3">
+                <TabsList className="grid h-11 w-full grid-cols-2 rounded-xl p-1">
+                  <TabsTrigger value="signin" className="rounded-lg text-sm font-medium">Masuk</TabsTrigger>
+                  <TabsTrigger value="signup" className="rounded-lg text-sm font-medium">Buat akun</TabsTrigger>
+                </TabsList>
+              </CardHeader>
+
+              <TabsContent value="signin">
+                <form onSubmit={handleSignIn}>
+                  <CardContent className="space-y-4">
+                    <AuthField
+                      id="signin-email"
+                      label="Email"
+                      type="email"
+                      placeholder="nama@email.com"
+                      value={loginEmail}
+                      onChange={(value) => { setLoginEmail(value); setLoginErrors({}); }}
+                      error={loginErrors.email}
+                      icon={Mail}
+                      disabled={isLoading}
+                    />
+                    <AuthField
+                      id="signin-password"
+                      label="Kata sandi"
+                      type="password"
+                      placeholder="Masukkan kata sandi"
+                      value={loginPassword}
+                      onChange={(value) => { setLoginPassword(value); setLoginErrors({}); }}
+                      error={loginErrors.password}
+                      icon={Lock}
+                      disabled={isLoading}
+                    />
+                  </CardContent>
+                  <CardFooter>
+                    <Button type="submit" className="h-11 w-full rounded-xl" disabled={isLoading}>
+                      {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
+                      Masuk
+                    </Button>
                   </CardFooter>
                 </form>
               </TabsContent>
@@ -262,85 +210,76 @@ export default function AuthPage() {
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp}>
                   <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="signup-email"
-                          type="email"
-                          placeholder="email@anda.com"
-                          value={registerEmail}
-                          onChange={(e) => { setRegisterEmail(e.target.value); setRegisterErrors({}); }}
-                          className="pl-10 h-11"
-                          disabled={isLoading}
-                        />
-                      </div>
-                      {registerErrors.email && <p className="text-sm text-destructive">{registerErrors.email}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-fullname">Nama Lengkap</Label>
-                      <Input
-                        id="signup-fullname"
-                        type="text"
-                        placeholder="Masukkan nama lengkap Anda"
-                        value={fullName}
-                        onChange={(e) => { setFullName(e.target.value); setRegisterErrors({}); }}
-                        className="h-11"
-                        disabled={isLoading}
-                      />
-                      {registerErrors.fullName && <p className="text-sm text-destructive">{registerErrors.fullName}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-bidangbiro">Bidang/Biro</Label>
-                      <Select value={bidangBiro} onValueChange={(value) => { setBidangBiro(value); setRegisterErrors({}); }} disabled={isLoading}>
-                        <SelectTrigger className="h-11">
-                          <SelectValue placeholder="Pilih bidang/biro Anda" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Ketua Umum (KETUM)">Ketua Umum (KETUM)</SelectItem>
-                          <SelectItem value="Biro Pengembangan Sumber Daya Mahasiswa (PSDM)">Biro PSDM</SelectItem>
-                          <SelectItem value="Biro Administrasi dan Keuangan (ADKEU)">Biro ADKEU</SelectItem>
-                          <SelectItem value="Bidang Kepenulisan dan Kompetisi (PENKOM)">Bidang PENKOM</SelectItem>
-                          <SelectItem value="Bidang Riset dan Teknologi (RISTEK)">Bidang RISTEK</SelectItem>
-                          <SelectItem value="Bidang Informasi dan Komunikasi (INFOKOM)">Bidang INFOKOM</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {registerErrors.bidangBiro && <p className="text-sm text-destructive">{registerErrors.bidangBiro}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Kata Sandi</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="signup-password"
-                          type="password"
-                          placeholder="••••••••"
-                          value={registerPassword}
-                          onChange={(e) => { setRegisterPassword(e.target.value); setRegisterErrors({}); }}
-                          className="pl-10 h-11"
-                          disabled={isLoading}
-                        />
-                      </div>
-                      {registerErrors.password && <p className="text-sm text-destructive">{registerErrors.password}</p>}
+                    <AuthField
+                      id="signup-email"
+                      label="Email"
+                      type="email"
+                      placeholder="nama@email.com"
+                      value={registerEmail}
+                      onChange={(value) => { setRegisterEmail(value); setRegisterErrors({}); }}
+                      error={registerErrors.email}
+                      icon={Mail}
+                      disabled={isLoading}
+                    />
+                    <AuthField
+                      id="signup-password"
+                      label="Kata sandi"
+                      type="password"
+                      placeholder="Minimal 6 karakter"
+                      value={registerPassword}
+                      onChange={(value) => { setRegisterPassword(value); setRegisterErrors({}); }}
+                      error={registerErrors.password}
+                      icon={Lock}
+                      disabled={isLoading}
+                    />
+                    <div className="rounded-xl bg-muted/55 p-3 text-xs leading-5 text-muted-foreground">
+                      Nama dan bidang/biro tidak diisi di sini. Data tersebut akan disinkronkan dari Rapor setelah akun dibuat.
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <m.div className="w-full" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-                      <Button type="submit" className="w-full h-11" disabled={isLoading}>
-                        {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        Buat Akun
-                      </Button>
-                    </m.div>
+                    <Button type="submit" className="h-11 w-full rounded-xl" disabled={isLoading}>
+                      {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
+                      Buat akun
+                    </Button>
                   </CardFooter>
                 </form>
               </TabsContent>
             </Tabs>
           </Card>
-          </m.div>
-        </m.div>
-      </main>
-    </m.div>
+        </div>
+      </section>
+    </m.main>
+  );
+}
+interface AuthFieldProps {
+  id: string;
+  label: string;
+  type: 'email' | 'password';
+  placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+  icon: typeof Mail;
+  disabled: boolean;
+}
+
+function AuthField({ id, label, type, placeholder, value, onChange, error, icon: Icon, disabled }: AuthFieldProps) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="relative">
+        <Icon className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          id={id}
+          type={type}
+          placeholder={placeholder}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="h-11 rounded-xl pl-10"
+          disabled={disabled}
+        />
+      </div>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
   );
 }

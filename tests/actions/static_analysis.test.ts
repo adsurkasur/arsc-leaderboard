@@ -29,3 +29,19 @@ test('Static Analysis: No direct-write paths to protected tables', async (t) => 
     assert.ok(!match, `Found direct write to ${match?.[1]} via ${match?.[2]} in ${file}`);
   }
 });
+
+test('Static Analysis: Stage 4 never mutates Rapor tables or table schemas', () => {
+  const stage4Path = path.join(process.cwd(), 'deployment', 'remote', 'stage4_identity_and_public_reads.sql');
+  const stage4 = fs.readFileSync(stage4Path, 'utf8');
+
+  assert.doesNotMatch(
+    stage4,
+    /\b(?:insert\s+into|update|delete\s+from|alter\s+table|drop\s+table|create\s+table)\s+public\.rapor_/i,
+    'Stage 4 must treat every Rapor table as read-only.',
+  );
+  assert.doesNotMatch(
+    stage4,
+    /\b(?:alter\s+table|drop\s+table|create\s+table)\s+public\./i,
+    'Stage 4 is function-only and must not change any table schema.',
+  );
+});

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import fs from "fs";
 import path from "path";
@@ -57,8 +58,6 @@ export async function syncRaporMembers() {
   return await processSync(remoteData, integrationClient);
 }
 
-import { SupabaseClient } from "@supabase/supabase-js";
-
 async function handleSnapshotFallback(integrationClient: SupabaseClient) {
   console.log("Falling back to local snapshot due to remote failure...");
   try {
@@ -81,68 +80,39 @@ async function handleSnapshotFallback(integrationClient: SupabaseClient) {
 }
 
 async function processSync(remoteData: Record<string, unknown>[], integrationClient: SupabaseClient) {
-  const newIdentities = 0;
+  let newIdentities = 0;
   let linkedIdentities = 0;
-  let ambiguous = 0;
+  const ambiguous = 0;
   const reconciliationErrors: string[] = [];
-  
-  const { data: existingMembers, error: membersErr } = await integrationClient.from("members").select("*");
-  if (membersErr) throw membersErr;
-  
-  const { data: existingLinks, error: linksErr } = await integrationClient.from("member_release_links").select("*");
-  if (linksErr) throw linksErr;
-
-  const membersByName = new Map<string, Record<string, unknown>[]>();
-  for (const m of existingMembers) {
-    const arr = membersByName.get(m.canonical_name as string) || [];
-    arr.push(m);
-    membersByName.set(m.canonical_name as string, arr);
-  }
-
-  const linksByReleaseCode = new Map<string, Record<string, unknown>>();
-  for (const l of existingLinks) {
-    linksByReleaseCode.set(l.release_member_code as string, l);
-  }
 
   for (const row of remoteData) {
-    const release_member_code = row.release_member_code as string;
-    const release_code = row.release_code as string;
-    const canonical_name = row.canonical_name as string;
-    const unit = row.unit as string;
-    const position = row.position as string;
+    const releaseMemberCode = typeof row.release_member_code === 'string' ? row.release_member_code : '';
+    const releaseCode = typeof row.release_code === 'string' ? row.release_code : '';
+    const canonicalName = typeof row.canonical_name === 'string' ? row.canonical_name : '';
+    const unit = typeof row.unit === 'string' ? row.unit : '';
+    const position = typeof row.position === 'string' ? row.position : null;
 
-    if (linksByReleaseCode.has(release_member_code)) {
+    if (!releaseMemberCode || !releaseCode || !canonicalName || !unit) {
+      reconciliationErrors.push('Skipped an incomplete Rapor reference row.');
       continue;
     }
 
-    const possibleMatches = membersByName.get(canonical_name) || [];
-    
-    let stableMemberId = null;
+    const { data, error } = await integrationClient.rpc('upsert_leaderboard_reference_member', {
+      p_release_member_code: releaseMemberCode,
+      p_release_code: releaseCode,
+      p_canonical_name: canonicalName,
+      p_unit: unit,
+      p_position: position,
+    });
 
-    if (possibleMatches.length === 1) {
-      stableMemberId = possibleMatches[0].member_id;
-      linkedIdentities++;
-    } else if (possibleMatches.length > 1) {
-      ambiguous++;
-      reconciliationErrors.push(`Ambiguous identity for ${canonical_name}: multiple stable members found.`);
-      continue;
-    } else {
-      reconciliationErrors.push(`Unmatched identity for ${canonical_name}: not found in stable members.`);
+    if (error) {
+      reconciliationErrors.push(`Failed to synchronize ${releaseMemberCode}: ${error.message}`);
       continue;
     }
 
-    if (stableMemberId) {
-      const { error: insertErr } = await integrationClient.from("member_release_links").insert({
-        member_id: stableMemberId,
-        release_member_code,
-        release_code,
-        unit,
-        position,
-      });
-      if (insertErr) {
-        reconciliationErrors.push(`Failed to insert link for ${release_member_code}: ${insertErr.message}`);
-      }
-    }
+    const result = data && typeof data === 'object' ? data as Record<string, unknown> : null;
+    if (result?.created === true) newIdentities++;
+    else linkedIdentities++;
   }
 
   const report = {

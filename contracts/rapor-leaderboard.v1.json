@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "producer": "Rapor-ARSC-2025-2026",
+  "consumer": "arsc-leaderboard",
+  "referenceRpc": {
+    "schema": "public",
+    "name": "get_leaderboard_reference_members",
+    "columns": [
+      "release_member_code",
+      "release_code",
+      "canonical_name",
+      "unit",
+      "position"
+    ],
+    "eligibility": {
+      "releaseStatus": "published",
+      "releaseActive": true
+    },
+    "executeRole": "service_role"
+  },
+  "accessCode": {
+    "algorithm": "sha256",
+    "normalization": "trim-lowercase",
+    "inputFormat": "normalized_code::pepper",
+    "pepperEnvironmentVariable": "RAPOR_ACCESS_CODE_PEPPER"
+  },
+  "privacy": {
+    "publicRaporTableAccess": false,
+    "accessCodeStoredByConsumer": false
+  }
+}

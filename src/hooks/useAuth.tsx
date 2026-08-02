@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 'use client';
 
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 
@@ -11,6 +11,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isLoading: boolean;
   linkStatus: string | null;
+  refreshIdentityStatus: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, metadata?: { full_name: string; bidang_biro: string }) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -25,55 +26,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [linkStatus, setLinkStatus] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          checkAdminRole(session.user.id);
-        } else {
-          setIsAdmin(false);
-        }
-      }
-    );
+  const fetchLinkStatus = useCallback(async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('link_status')
+      .eq('user_id', userId)
+      .maybeSingle();
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        checkAdminRole(session.user.id);
-        fetchLinkStatus(session.user.id);
-      } else {
-        setIsAdmin(false);
-        setLinkStatus(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    setLinkStatus(error ? null : data?.link_status ?? null);
   }, []);
 
-  const fetchLinkStatus = async (userId: string) => {
+  const checkAdminRole = useCallback(async (userId: string) => {
     try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('link_status')
-        .eq('user_id', userId)
-        .single();
-      
-      if (data) {
-        setLinkStatus(data.link_status);
-      }
-    } catch (error) {
-      console.error('Error fetching link status:', error);
-    }
-  };
-
-  const checkAdminRole = async (userId: string) => {
-    try {
-      // Check for admin role
       const { data: adminData, error: adminError } = await supabase
         .from('user_roles')
         .select('role')
@@ -81,16 +45,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('role', 'admin')
         .maybeSingle();
 
-      if (!adminError && adminData) {
-        setIsAdmin(true);
-      } else {
-        setIsAdmin(false);
-      }
+      setIsAdmin(!adminError && Boolean(adminData));
     } catch (error) {
       console.error('Error in checkAdminRole:', error);
       setIsAdmin(false);
     }
-  };
+  }, []);
+
+  const refreshIdentityStatus = useCallback(async () => {
+    if (!user) {
+      setLinkStatus(null);
+      return;
+    }
+    await fetchLinkStatus(user.id);
+  }, [fetchLinkStatus, user]);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          await Promise.all([
+            checkAdminRole(session.user.id),
+            fetchLinkStatus(session.user.id),
+          ]);
+        } else {
+          setIsAdmin(false);
+          setLinkStatus(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        await Promise.all([
+          checkAdminRole(session.user.id),
+          fetchLinkStatus(session.user.id),
+        ]);
+      } else {
+        setIsAdmin(false);
+        setLinkStatus(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [checkAdminRole, fetchLinkStatus]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -122,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isAdmin, isLoading, linkStatus, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, isAdmin, isLoading, linkStatus, refreshIdentityStatus, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

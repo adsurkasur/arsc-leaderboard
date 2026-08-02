@@ -11,6 +11,7 @@ export interface Profile {
   created_at: string;
   updated_at: string;
   globalRank?: number;
+  is_identity_verified?: boolean;
 }
 
 export interface Competition {

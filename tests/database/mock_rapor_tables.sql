@@ -20,8 +20,16 @@ CREATE TABLE IF NOT EXISTS public.rapor_members (
     updated_at timestamp with time zone NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS public.rapor_access_codes (
+    member_code text PRIMARY KEY REFERENCES public.rapor_members(member_code) ON DELETE CASCADE,
+    release_code text NOT NULL REFERENCES public.rapor_releases(release_code) ON DELETE CASCADE,
+    access_code_hash text UNIQUE NOT NULL,
+    created_at timestamp with time zone NOT NULL DEFAULT now()
+);
+
 ALTER TABLE public.rapor_releases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.rapor_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.rapor_access_codes ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Public read access for active published releases" 
 ON public.rapor_releases FOR SELECT USING (is_active = true AND status = 'published');
@@ -29,8 +37,12 @@ ON public.rapor_releases FOR SELECT USING (is_active = true AND status = 'publis
 CREATE POLICY "Service role full access on rapor_members" 
 ON public.rapor_members TO service_role USING (true) WITH CHECK (true);
 
+CREATE POLICY "Service role full access on rapor_access_codes"
+ON public.rapor_access_codes TO service_role USING (true) WITH CHECK (true);
+
 GRANT ALL ON TABLE public.rapor_releases TO anon, authenticated, service_role;
 GRANT ALL ON TABLE public.rapor_members TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.rapor_access_codes TO service_role;
 
 -- Insert Synthetic Data
 INSERT INTO public.rapor_releases (release_code, title, period, status, is_active) VALUES

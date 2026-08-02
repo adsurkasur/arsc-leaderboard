@@ -10,10 +10,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Trophy, Medal, Award, ArrowUpDown, ArrowUp, ArrowDown, Info, Loader2 } from 'lucide-react';
+import { Search, Trophy, Medal, Award, ArrowUpDown, ArrowUp, ArrowDown, Info, Loader2, BadgeCheck, ChevronDown } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 
-const TOP_LEADERBOARD_LIMIT = 10;
+const INITIAL_LEADERBOARD_LIMIT = 12;
 
 type SortField = 'rank' | 'full_name' | 'total_participation_count' | 'last_activity_at';
 type SortDirection = 'asc' | 'desc';
@@ -33,6 +33,7 @@ export function LeaderboardTable() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [categoryParticipationCounts, setCategoryParticipationCounts] = useState<Record<string, number>>({});
   const [isLoadingCategoryData, setIsLoadingCategoryData] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -57,31 +58,43 @@ export function LeaderboardTable() {
   }, []);
 
   const fetchProfiles = async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('total_participation_count', { ascending: false })
-      .order('last_activity_at', { ascending: true }) // Earlier activity = better rank (tiebreaker 1)
-      .order('created_at', { ascending: true }); // Earlier account = better rank (tiebreaker 2)
+    const { data, error } = await supabase.rpc('get_public_leaderboard');
 
     if (!error && data) {
-      // Calculate global ranks based on total participation count
-      // With tiebreakers: 1) earlier last_activity_at, 2) earlier created_at
-      type ProfileWithRank = typeof data[0] & { globalRank: number };
-      const profilesWithRanks: ProfileWithRank[] = [];
-      
-      data.forEach((profile, index) => {
-        // Each profile gets a unique rank since we have 3 ordering criteria
-        // Ties are extremely unlikely with participation_count + last_activity_at + created_at
-        const globalRank = index + 1;
-
-        profilesWithRanks.push({
-          ...profile,
-          globalRank
-        });
-      });
+      const profilesWithRanks: Profile[] = data.map((profile, index) => ({
+        id: profile.profile_id,
+        member_id: null,
+        link_status: profile.is_identity_verified ? 'linked_exact' : 'unmatched',
+        user_id: null,
+        full_name: profile.full_name,
+        bidang_biro: profile.bidang_biro,
+        avatar_url: profile.avatar_url,
+        total_participation_count: profile.total_participation_count,
+        last_activity_at: profile.last_activity_at,
+        created_at: profile.created_at,
+        updated_at: profile.created_at,
+        globalRank: index + 1,
+        is_identity_verified: profile.is_identity_verified,
+      }));
 
       setProfiles(profilesWithRanks);
+    } else {
+      // Compatibility fallback while the additive Stage 4 read RPC is pending deployment.
+      const { data: legacyProfiles } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('total_participation_count', { ascending: false })
+        .order('last_activity_at', { ascending: true })
+        .order('created_at', { ascending: true });
+
+      if (legacyProfiles) {
+        setProfiles(legacyProfiles.map((profile, index) => ({
+          ...profile,
+          globalRank: index + 1,
+          is_identity_verified: profile.member_id !== null
+            && (profile.link_status === 'linked_exact' || profile.link_status === 'manually_linked'),
+        })));
+      }
     }
     setIsLoading(false);
   };
@@ -102,19 +115,28 @@ export function LeaderboardTable() {
 
     setIsLoadingCategoryData(true);
     try {
-      // Get all participation logs for the selected category
-      const { data, error } = await supabase
-        .from('participation_logs')
-        .select(`
-          profile_id,
-          competition:competitions!inner(category)
-        `)
-        .eq('competition.category', selectedCategory);
+      const { data, error } = await supabase.rpc('get_public_category_participation_counts', {
+        p_category: selectedCategory,
+      });
 
       if (!error && data) {
-        // Count participations per profile for this category
         const counts: Record<string, number> = {};
-        data.forEach(log => {
+        data.forEach(row => {
+          counts[row.profile_id] = Number(row.participation_count);
+        });
+        setCategoryParticipationCounts(counts);
+      } else {
+        const { data: legacyData } = await supabase
+          .from('participation_logs')
+          .select(`
+            profile_id,
+            competition:competitions!inner(category)
+          `)
+          .eq('status', 'approved')
+          .eq('competition.category', selectedCategory);
+
+        const counts: Record<string, number> = {};
+        legacyData?.forEach((log) => {
           counts[log.profile_id] = (counts[log.profile_id] || 0) + 1;
         });
         setCategoryParticipationCounts(counts);
@@ -140,17 +162,34 @@ export function LeaderboardTable() {
     setIsLoadingParticipation(true);
 
     try {
-      const { data, error } = await supabase
-        .from('participation_logs')
-        .select(`
-          *,
-          competition:competitions(id, title, date, category)
-        `)
-        .eq('profile_id', profile.id)
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.rpc('get_public_member_participations', {
+        p_profile_id: profile.id,
+      });
 
       if (!error && data) {
-        setParticipationData(data);
+        setParticipationData(data.map((participation) => ({
+          id: participation.participation_id,
+          competition: {
+            id: participation.competition_id,
+            title: participation.competition_title,
+            date: participation.competition_date,
+            category: participation.competition_category,
+          },
+          participation_date: participation.participation_date,
+          created_at: participation.created_at,
+        })));
+      } else {
+        const { data: legacyData } = await supabase
+          .from('participation_logs')
+          .select(`
+            *,
+            competition:competitions(id, title, date, category)
+          `)
+          .eq('profile_id', profile.id)
+          .eq('status', 'approved')
+          .order('created_at', { ascending: false });
+
+        if (legacyData) setParticipationData(legacyData);
       }
     } catch (error) {
       console.error('Error fetching participation data:', error);
@@ -225,20 +264,19 @@ export function LeaderboardTable() {
       return sortDirection === 'desc' ? -comparison : comparison;
     });
 
-    // Use global rank instead of index-based rank and limit to top 10
+    // Use the global rank even when search/filter changes the visible set.
     const rankedEntries = filtered.map((profile) => ({
       ...profile,
       rank: profile.globalRank || 999,
       displayParticipationCount: profile.effectiveParticipationCount
     })) as LeaderboardEntry[];
 
-    // Apply top 10 limit only when not searching and category is 'all'
-    if (!searchQuery && selectedCategory === 'all') {
-      return rankedEntries.slice(0, TOP_LEADERBOARD_LIMIT);
+    if (!showAll && !searchQuery && selectedCategory === 'all') {
+      return rankedEntries.slice(0, INITIAL_LEADERBOARD_LIMIT);
     }
     
     return rankedEntries;
-  }, [profiles, searchQuery, selectedCategory, categoryParticipationCounts, sortField, sortDirection]);
+  }, [profiles, searchQuery, selectedCategory, categoryParticipationCounts, sortField, sortDirection, showAll]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -280,12 +318,14 @@ export function LeaderboardTable() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Skeleton className="h-11 flex-1 rounded-xl" />
-          <Skeleton className="h-11 w-full sm:w-48 rounded-xl" />
+      <div className="space-y-5">
+        <div className="rounded-2xl border bg-card p-3 sm:p-4">
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Skeleton className="h-11 flex-1 rounded-xl" />
+            <Skeleton className="h-11 w-full rounded-xl sm:w-52" />
+          </div>
         </div>
-        <div className="bg-card rounded-xl border shadow-card overflow-hidden">
+        <div className="overflow-hidden rounded-2xl border bg-card">
           {[...Array(5)].map((_, i) => (
             <div 
               key={i} 
@@ -308,37 +348,45 @@ export function LeaderboardTable() {
   return (
     <div className="space-y-5 md:space-y-6">
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Cari peserta..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-11 rounded-xl"
-          />
+      <div className="rounded-2xl border border-border/80 bg-card p-3 shadow-sm sm:p-4">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Cari nama anggota"
+              aria-label="Cari nama anggota"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-11 rounded-xl border-transparent bg-muted/55 pl-10 shadow-none focus-visible:border-primary/30 focus-visible:bg-background"
+            />
+          </div>
+          <Select value={selectedCategory} onValueChange={setSelectedCategory} disabled={isLoadingCategoryData}>
+            <SelectTrigger className="h-11 w-full rounded-xl border-transparent bg-muted/55 shadow-none sm:w-56" aria-label="Filter kategori kompetisi">
+              <SelectValue placeholder="Semua kategori" />
+              {isLoadingCategoryData && <Loader2 className="ml-2 size-4 animate-spin" />}
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua kategori</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={selectedCategory} onValueChange={setSelectedCategory} disabled={isLoadingCategoryData}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Semua Kategori" />
-            {isLoadingCategoryData && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Semua Kategori</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category} value={category}>
-                {category}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <p className="mt-3 px-1 text-xs text-muted-foreground">
+          {searchQuery || selectedCategory !== 'all'
+            ? `${filteredAndSortedEntries.length} hasil ditampilkan`
+            : `${profiles.length} anggota tercatat`}
+        </p>
       </div>
 
       {/* Table */}
-      <div className="bg-card rounded-xl border shadow-card overflow-hidden overflow-x-auto">
+      <div className="overflow-hidden overflow-x-auto rounded-2xl border border-border/80 bg-card shadow-[0_16px_50px_-36px_hsl(var(--foreground)/0.28)]">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/30 hover:bg-muted/30">
+            <TableRow className="border-b bg-muted/35 hover:bg-muted/35">
               <TableHead className="w-16 md:w-20">
                 <Button variant="ghost" size="sm" onClick={() => handleSort('rank')} className="font-semibold -ml-2 text-xs md:text-sm px-2">
                   <span className="hidden sm:inline">Peringkat</span>
@@ -389,8 +437,8 @@ export function LeaderboardTable() {
                     key={entry.id}
                     className="table-row-hover border-b last:border-0"
                   >
-                    <TableCell className="py-3">{getRankBadge(entry.rank)}</TableCell>
-                    <TableCell className="py-3">
+                    <TableCell className="py-4">{getRankBadge(entry.rank)}</TableCell>
+                    <TableCell className="py-4">
                       <div className="flex items-center gap-2 md:gap-3">
                         <Avatar className="w-9 h-9 md:w-10 md:h-10 border-2 border-border ring-2 ring-background">
                           <AvatarImage src={entry.avatar_url || undefined} alt={entry.full_name} />
@@ -398,18 +446,23 @@ export function LeaderboardTable() {
                             {getInitials(entry.full_name)}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex flex-col min-w-0">
-                          <span className="font-medium truncate">{entry.full_name}</span>
+                        <div className="flex min-w-0 flex-col">
+                          <span className="flex min-w-0 items-center gap-1.5 font-medium">
+                            <span className="truncate">{entry.full_name}</span>
+                            {entry.is_identity_verified && (
+                              <BadgeCheck className="size-3.5 shrink-0 text-primary" aria-label="Identitas Rapor terverifikasi" />
+                            )}
+                          </span>
                           {entry.bidang_biro && (
-                            <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full w-fit truncate max-w-[120px] md:max-w-none">
+                            <span className="mt-1 max-w-[150px] truncate text-xs text-muted-foreground md:max-w-none">
                               {entry.bidang_biro}
                             </span>
                           )}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-center py-3">
-                      <span className="inline-flex items-center justify-center min-w-[2.5rem] px-2.5 md:px-3 py-1 bg-primary/10 text-primary font-semibold rounded-full text-sm">
+                    <TableCell className="py-4 text-center">
+                      <span className="inline-flex min-w-[2.5rem] items-center justify-center rounded-lg bg-primary/[0.08] px-2.5 py-1 text-sm font-semibold text-primary md:px-3">
                         {(entry as LeaderboardEntry & { displayParticipationCount: number }).displayParticipationCount}
                       </span>
                     </TableCell>
@@ -436,6 +489,15 @@ export function LeaderboardTable() {
           </TableBody>
         </Table>
       </div>
+
+      {!searchQuery && selectedCategory === 'all' && profiles.length > INITIAL_LEADERBOARD_LIMIT && !showAll && (
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={() => setShowAll(true)} className="gap-2 rounded-full px-5">
+            Lihat semua {profiles.length} anggota
+            <ChevronDown className="size-4" />
+          </Button>
+        </div>
+      )}
 
       {/* Participation Details Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>

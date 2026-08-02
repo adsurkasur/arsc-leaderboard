@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Competition } from '@/lib/types';
 import { User } from '@supabase/supabase-js';
 import { submitParticipation } from '@/lib/actions/stage3_participations';
+import { RaporLinkForm } from '@/components/profile/RaporLinkForm';
 
 interface ParticipationModalProps {
   user: User | null;
@@ -27,13 +28,7 @@ export function ParticipationModal({ user }: ParticipationModalProps) {
   const [linkStatus, setLinkStatus] = useState<string | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
-  useEffect(() => {
-    if (isModalOpen && user) {
-      fetchProfileAndCompetitions();
-    }
-  }, [isModalOpen, user]);
-
-  const fetchProfileAndCompetitions = async () => {
+  const fetchProfileAndCompetitions = useCallback(async () => {
     setIsLoadingProfile(true);
     // Fetch profile
     const { data: profileData } = await supabase
@@ -56,7 +51,13 @@ export function ParticipationModal({ user }: ParticipationModalProps) {
       setCompetitions(compData);
     }
     setIsLoadingProfile(false);
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (isModalOpen && user) {
+      void fetchProfileAndCompetitions();
+    }
+  }, [isModalOpen, user, fetchProfileAndCompetitions]);
 
   const handleSubmit = async () => {
     if (!competitionId || !evidenceUrl.trim()) {
@@ -105,7 +106,7 @@ export function ParticipationModal({ user }: ParticipationModalProps) {
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogTrigger asChild>
-        <Button size="lg" className="gap-2">
+        <Button size="lg" className="h-12 gap-2 rounded-full bg-white px-6 text-slate-950 hover:bg-blue-50">
           <Plus className="w-5 h-5" />
           Ajukan Partisipasi
         </Button>
@@ -123,17 +124,15 @@ export function ParticipationModal({ user }: ParticipationModalProps) {
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin" />
           </div>
-        ) : linkStatus !== 'linked_exact' ? (
-          <div className="py-6 text-center space-y-4">
-            <div className="bg-destructive/10 text-destructive p-4 rounded-md text-sm text-left">
-              <strong>Identitas Belum Terverifikasi</strong>
-              <p className="mt-1">
-                Anda hanya dapat mengajukan partisipasi jika identitas Anda telah diverifikasi dan tertaut dengan Rapor (status: linked_exact).
+        ) : linkStatus !== 'linked_exact' && linkStatus !== 'manually_linked' ? (
+          <div className="space-y-4 py-2">
+            <div className="rounded-2xl border border-warning/20 bg-warning/5 p-4 text-sm">
+              <p className="font-semibold text-foreground">Hubungkan Rapor sebelum mengajukan</p>
+              <p className="mt-1 leading-relaxed text-muted-foreground">
+                Ini memastikan pengajuan masuk ke identitas anggota yang benar. Anda tidak perlu menunggu admin.
               </p>
             </div>
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-              Tutup
-            </Button>
+            <RaporLinkForm compact onLinked={() => setLinkStatus('linked_exact')} />
           </div>
         ) : (
           <>

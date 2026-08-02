@@ -11,9 +11,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "ARSC Leaderboard - Papan Peringkat Kompetisi",
-  description: "Lacak partisipasi, rayakan pencapaian, dan lihat siapa yang memimpin dalam komunitas kompetitif kami.",
-  keywords: ["leaderboard", "competition", "ranking", "ARSC"],
+  title: "ARSC Leaderboard | Rekam Prestasi Kompetisi",
+  description: "Peringkat partisipasi kompetisi anggota ARSC yang sudah diverifikasi, dengan identitas resmi dari Rapor ARSC.",
+  keywords: ["ARSC", "kompetisi", "partisipasi", "prestasi", "leaderboard"],
   icons: {
     icon: "/favico.ico",
   },

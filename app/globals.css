@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    --background: 220 20% 98%;
-    --foreground: 222 47% 11%;
+    --background: 220 24% 97%;
+    --foreground: 222 43% 12%;
 
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
@@ -13,27 +13,26 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* Vibrant primary blue with energy */
-    --primary: 217 91% 50%;
+    --primary: 218 86% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
+    --secondary: 220 18% 94%;
     --secondary-foreground: 222 47% 20%;
 
-    --muted: 220 14% 94%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 220 17% 93%;
+    --muted-foreground: 220 9% 43%;
 
-    --accent: 217 91% 95%;
-    --accent-foreground: 217 91% 45%;
+    --accent: 218 70% 94%;
+    --accent-foreground: 218 76% 43%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 217 91% 50%;
+    --border: 220 15% 87%;
+    --input: 220 15% 87%;
+    --ring: 218 86% 55%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
     /* Custom tokens - Vibrant palette */
     --primary-light: 217 91% 60%;
@@ -64,19 +63,19 @@
     --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(217 91% 45%) 100%);
     --gradient-hero: linear-gradient(180deg, hsl(220 20% 98%) 0%, hsl(220 30% 95%) 50%, hsl(217 91% 97%) 100%);
     --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(220 20% 99%) 100%);
-    --gradient-vibrant: linear-gradient(135deg, hsl(217 91% 55%) 0%, hsl(262 83% 58%) 50%, hsl(330 81% 60%) 100%);
+    --gradient-vibrant: linear-gradient(135deg, hsl(218 86% 55%) 0%, hsl(201 88% 48%) 100%);
     --gradient-success: linear-gradient(135deg, hsl(160 84% 45%) 0%, hsl(160 84% 35%) 100%);
     --gradient-warm: linear-gradient(135deg, hsl(25 95% 53%) 0%, hsl(330 81% 60%) 100%);
     --gradient-cool: linear-gradient(135deg, hsl(189 94% 43%) 0%, hsl(217 91% 55%) 100%);
 
     /* Enhanced Shadows - softer, more modern */
     --shadow-sm: 0 1px 2px 0 hsl(222 47% 11% / 0.04);
-    --shadow-md: 0 4px 6px -1px hsl(222 47% 11% / 0.08), 0 2px 4px -2px hsl(222 47% 11% / 0.06);
-    --shadow-lg: 0 10px 15px -3px hsl(222 47% 11% / 0.08), 0 4px 6px -4px hsl(222 47% 11% / 0.04);
-    --shadow-xl: 0 20px 25px -5px hsl(222 47% 11% / 0.1), 0 8px 10px -6px hsl(222 47% 11% / 0.06);
+    --shadow-md: 0 8px 24px -18px hsl(222 47% 11% / 0.28);
+    --shadow-lg: 0 18px 44px -28px hsl(222 47% 11% / 0.32);
+    --shadow-xl: 0 28px 70px -38px hsl(222 47% 11% / 0.4);
     --shadow-glow: 0 0 20px hsl(217 91% 50% / 0.2);
-    --shadow-card: 0 2px 8px hsl(222 47% 11% / 0.06), 0 1px 2px hsl(222 47% 11% / 0.04);
-    --shadow-card-hover: 0 12px 24px hsl(222 47% 11% / 0.1), 0 4px 8px hsl(222 47% 11% / 0.06);
+    --shadow-card: 0 10px 30px -24px hsl(222 47% 11% / 0.3);
+    --shadow-card-hover: 0 20px 44px -30px hsl(222 47% 11% / 0.38);
     
     /* Colored glows for fun effects */
     --shadow-glow-primary: 0 0 24px hsl(217 91% 50% / 0.25);
@@ -157,6 +156,7 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    letter-spacing: -0.01em;
     /* Prevent layout shift when modals hide scrollbars */
     scrollbar-gutter: stable;
   }
@@ -186,7 +186,7 @@
     @apply transition-all duration-300 ease-out;
   }
   .hover-lift:hover {
-    @apply -translate-y-1;
+    @apply -translate-y-0.5;
     box-shadow: var(--shadow-card-hover);
   }
 
@@ -206,51 +206,31 @@
     @apply text-white font-medium shadow-md transition-all duration-200;
   }
   .btn-vibrant-gradient:hover {
-    @apply shadow-lg brightness-110 scale-[1.02];
+    @apply shadow-lg brightness-105;
   }
 
-  /* Rank badges - shiny and motivating */
+  /* Rank badges */
   .rank-badge {
-    @apply inline-flex items-center justify-center w-9 h-9 rounded-full font-bold text-sm transition-all duration-300;
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-xl text-sm font-semibold transition-colors duration-200;
   }
 
   .rank-gold {
-    @apply text-amber-900;
-    background: linear-gradient(135deg, hsl(48 100% 65%) 0%, hsl(45 100% 51%) 50%, hsl(38 100% 45%) 100%);
-    box-shadow: 0 2px 8px hsl(45 100% 51% / 0.4), inset 0 1px 0 hsl(48 100% 75% / 0.5);
+    @apply border border-amber-300/70 bg-amber-100 text-amber-800;
+    box-shadow: none;
   }
 
   .rank-silver {
-    @apply text-slate-700;
-    background: linear-gradient(135deg, hsl(220 10% 80%) 0%, hsl(220 9% 70%) 50%, hsl(220 8% 60%) 100%);
-    box-shadow: 0 2px 8px hsl(220 9% 50% / 0.3), inset 0 1px 0 hsl(220 10% 90% / 0.5);
+    @apply border border-slate-300 bg-slate-100 text-slate-700;
+    box-shadow: none;
   }
 
   .rank-bronze {
-    @apply text-orange-900;
-    background: linear-gradient(135deg, hsl(30 70% 55%) 0%, hsl(25 67% 47%) 50%, hsl(20 65% 40%) 100%);
-    box-shadow: 0 2px 8px hsl(25 67% 47% / 0.35), inset 0 1px 0 hsl(30 70% 65% / 0.5);
+    @apply border border-orange-300/80 bg-orange-100 text-orange-800;
+    box-shadow: none;
   }
 
   .rank-default {
     @apply bg-muted text-muted-foreground font-semibold;
-  }
-
-  /* Interactive rank badge hover effects */
-  .rank-gold:hover {
-    @apply scale-110;
-    animation: gold-shimmer 1.5s ease-in-out infinite;
-    box-shadow: var(--shadow-glow-gold);
-  }
-  
-  .rank-silver:hover {
-    @apply scale-110;
-    box-shadow: 0 4px 16px hsl(220 9% 50% / 0.4);
-  }
-  
-  .rank-bronze:hover {
-    @apply scale-110;
-    box-shadow: 0 4px 16px hsl(25 67% 47% / 0.45);
   }
 
   /* Table row with smooth hover */
@@ -258,7 +238,7 @@
     @apply transition-colors duration-200;
   }
   .table-row-hover:hover {
-    @apply bg-accent/50;
+    @apply bg-muted/45;
   }
 
   /* Enhanced skeleton with shimmer effect */

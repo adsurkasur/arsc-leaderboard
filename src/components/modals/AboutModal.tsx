@@ -1,8 +1,8 @@
 'use client';
 
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Info } from 'lucide-react';
 import Image from 'next/image';
+import { Info } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface AboutModalProps {
   open: boolean;
@@ -15,50 +15,35 @@ export function AboutModal({ open, onOpenChange }: AboutModalProps) {
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Info className="w-5 h-5 text-primary" />
-            Tentang Aplikasi
+            <Info className="size-5 text-primary" />
+            Tentang ARSC Leaderboard
           </DialogTitle>
-          <DialogDescription>
-            Informasi tentang Papan Peringkat ARSC
-          </DialogDescription>
+          <DialogDescription>Rekam partisipasi kompetisi anggota ARSC.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="text-center py-4">
-            <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-primary/10 border-2 border-primary/20 shadow-sm mb-4 overflow-hidden">
-              <Image src="/arsc-logo.png" alt="ARSC Logo" width={96} height={96} className="rounded-xl" />
+
+        <div className="space-y-5">
+          <div className="flex items-center gap-4 rounded-2xl border bg-muted/25 p-4">
+            <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-card">
+              <Image src="/arsc-logo.png" alt="Logo ARSC" width={56} height={56} className="size-14 object-contain" />
             </div>
-            <h3 className="text-lg font-bold">ARSC Leaderboard</h3>
-            <p className="text-sm text-muted-foreground">Versi 1.0.0</p>
+            <div>
+              <p className="font-semibold">Agritech Research and Study Club</p>
+              <p className="mt-1 text-sm text-muted-foreground">Periode 2025/2026</p>
+            </div>
           </div>
-          <div className="space-y-2">
-            <h4 className="font-semibold text-sm">📌 Tentang Aplikasi</h4>
-            <p className="text-sm text-muted-foreground">
-              ARSC Leaderboard adalah platform papan peringkat kompetisi yang dirancang untuk 
-              melacak dan menampilkan partisipasi anggota dalam berbagai kompetisi. 
-              Aplikasi ini membantu memotivasi anggota untuk aktif berpartisipasi dalam kompetisi.
+
+          <div className="space-y-2 text-sm leading-6 text-muted-foreground">
+            <p>
+              Leaderboard mencatat pengajuan kompetisi, proses peninjauan, dan urutan partisipasi anggota dalam satu alur.
+            </p>
+            <p>
+              Identitas nama dan bidang/biro disinkronkan dari Rapor ARSC. Bukti kompetisi baru dihitung setelah disetujui administrator.
             </p>
           </div>
-          <div className="space-y-2">
-            <h4 className="font-semibold text-sm">🎯 Tujuan</h4>
-            <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-              <li>Mendorong partisipasi aktif dalam kompetisi</li>
-              <li>Memberikan pengakuan kepada anggota berprestasi</li>
-              <li>Memudahkan pelacakan partisipasi kompetisi</li>
-              <li>Membangun semangat kompetitif yang sehat</li>
-            </ul>
-          </div>
-          <div className="space-y-2">
-            <h4 className="font-semibold text-sm">👨‍💻 Pengembang</h4>
-            <p className="text-sm text-muted-foreground">
-              Dikembangkan oleh Tim ARSC dengan teknologi Next.js 16, React 19, 
-              Tailwind CSS, dan Supabase.
-            </p>
-          </div>
-          <div className="pt-2 border-t">
-            <p className="text-xs text-center text-muted-foreground">
-              © {new Date().getFullYear()} Agritech Research and Study Club (ARSC)
-            </p>
-          </div>
+
+          <p className="border-t pt-4 text-xs text-muted-foreground">
+            © {new Date().getFullYear()} Agritech Research and Study Club
+          </p>
         </div>
       </DialogContent>
     </Dialog>

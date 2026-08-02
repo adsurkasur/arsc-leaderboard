@@ -1,65 +1,66 @@
 'use client';
 
+import { BadgeCheck, FileUp, HelpCircle, ListChecks, Link2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { HelpCircle } from 'lucide-react';
 
 interface HelpModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+const guidance = [
+  {
+    icon: Link2,
+    title: 'Hubungkan identitas',
+    body: 'Buka Profil anggota dan masukkan kode akses Rapor. Nama serta bidang/biro akan diambil dari rilis Rapor aktif.',
+  },
+  {
+    icon: FileUp,
+    title: 'Ajukan partisipasi',
+    body: 'Pilih kompetisi yang sudah terdaftar, lalu lampirkan tautan HTTPS menuju sertifikat, pengumuman, atau bukti lain.',
+  },
+  {
+    icon: ListChecks,
+    title: 'Pantau peninjauan',
+    body: 'Menu Permintaan saya menampilkan status menunggu, disetujui, atau ditolak beserta catatan admin.',
+  },
+  {
+    icon: BadgeCheck,
+    title: 'Masuk ke peringkat',
+    body: 'Hanya partisipasi yang disetujui yang dihitung. Peringkat global tetap sama saat daftar dicari atau difilter.',
+  },
+];
+
 export function HelpModal({ open, onOpenChange }: HelpModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <HelpCircle className="w-5 h-5 text-primary" />
-            Bantuan - Panduan Penggunaan
+            <HelpCircle className="size-5 text-primary" />
+            Cara menggunakan Leaderboard
           </DialogTitle>
-          <DialogDescription>
-            Panduan lengkap untuk menggunakan Papan Peringkat ARSC
-          </DialogDescription>
+          <DialogDescription>Empat langkah dari identitas Rapor hingga partisipasi tercatat.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 max-h-96 overflow-y-auto">
-          <div className="space-y-2">
-            <h4 className="font-semibold text-sm">📊 Melihat Papan Peringkat</h4>
-            <p className="text-sm text-muted-foreground">
-              Papan peringkat menampilkan Top 10 peserta berdasarkan jumlah partisipasi kompetisi. 
-              Anda dapat mencari peserta dan memfilter berdasarkan kategori.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <h4 className="font-semibold text-sm">📝 Mengajukan Partisipasi</h4>
-            <p className="text-sm text-muted-foreground">
-              Klik tombol "Ajukan Partisipasi" di halaman utama. Isi nama kompetisi, 
-              pilih kategori, dan jelaskan partisipasi Anda. Admin akan meninjau permintaan Anda.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <h4 className="font-semibold text-sm">🔍 Melacak Permintaan</h4>
-            <p className="text-sm text-muted-foreground">
-              Klik "Permintaan Saya" untuk melihat status permintaan partisipasi Anda 
-              (Menunggu, Disetujui, atau Ditolak).
-            </p>
-          </div>
-          <div className="space-y-2">
-            <h4 className="font-semibold text-sm">⚙️ Mengatur Profil</h4>
-            <p className="text-sm text-muted-foreground">
-              Klik avatar Anda lalu pilih "Pengaturan Profil" untuk memperbarui nama dan bidang/biro.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <h4 className="font-semibold text-sm">🏆 Peringkat & Medali</h4>
-            <p className="text-sm text-muted-foreground">
-              Medali emas, perak, dan perunggu diberikan kepada 3 peserta teratas. 
-              Peringkat dihitung berdasarkan total partisipasi yang disetujui.
-            </p>
-          </div>
+        <div className="space-y-3">
+          {guidance.map(({ icon: Icon, title, body }, index) => (
+            <div key={title} className="grid grid-cols-[2.5rem_1fr] gap-3 rounded-2xl border p-4">
+              <div className="relative flex size-10 items-center justify-center rounded-xl bg-primary/[0.08] text-primary">
+                <Icon className="size-4" />
+                <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                  {index + 1}
+                </span>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold">{title}</h4>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">{body}</p>
+              </div>
+            </div>
+          ))}
         </div>
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>Tutup</Button>
+          <Button onClick={() => onOpenChange(false)}>Selesai</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

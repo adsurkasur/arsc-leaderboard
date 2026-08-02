@@ -1,234 +1,249 @@
 'use client';
 
+import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { AnimatePresence, m } from 'framer-motion';
+import {
+  BadgeCheck,
+  HelpCircle,
+  Info,
+  Link2,
+  LogOut,
+  Menu,
+  Settings,
+  Shield,
+  X,
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useState } from 'react';
-import { Shield, LogOut, User, Settings, HelpCircle, Info, Menu, X } from 'lucide-react';
-import Image from 'next/image';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { AboutModal, HelpModal, ProfileSettingsModal, RequestsModal } from '@/components/modals';
-import { m, AnimatePresence } from 'framer-motion';
-import { fadeInDown, quickSpring } from '@/lib/motion';
 
 export function Header() {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, isLoading, linkStatus, refreshIdentityStatus, signOut } = useAuth();
   const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  const isIdentityLinked = linkStatus === 'linked_exact' || linkStatus === 'manually_linked';
+
   const handleSignOut = async () => {
     await signOut();
+    setIsMobileMenuOpen(false);
     router.push('/');
   };
 
   return (
     <>
-      <m.header 
-        className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80"
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={quickSpring}
+      <m.header
+        className="sticky top-0 z-50 w-full border-b border-border/70 bg-background/90 backdrop-blur-xl"
+        initial={{ y: -16, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="container flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <m.div 
-              className="p-1.5 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors"
-              whileHover={{ scale: 1.05, rotate: 3 }}
-              whileTap={{ scale: 0.95 }}
-              transition={quickSpring}
-            >
-              <Image src="/arsc-logo.png" alt="ARSC Logo" width={28} height={28} className="rounded-lg" />
-            </m.div>
-            <span className="font-bold text-xl tracking-tight hidden sm:inline">ARSC Leaderboard</span>
-            <span className="font-bold text-xl tracking-tight sm:hidden">ARSC</span>
+        <div className="container flex h-[4.5rem] items-center justify-between gap-4">
+          <Link href="/" className="group flex min-w-0 items-center gap-3" aria-label="ARSC Leaderboard — Beranda">
+            <span className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-card shadow-sm transition-transform duration-200 group-hover:-translate-y-0.5">
+              <Image src="/arsc-logo.png" alt="" width={32} height={32} className="size-8 object-contain" priority />
+            </span>
+            <span className="min-w-0 leading-none">
+              <span className="block text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-primary">ARSC</span>
+              <span className="mt-1 block truncate text-base font-semibold tracking-tight text-foreground sm:text-lg">
+                Leaderboard
+              </span>
+            </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-3">
-            {user ? (
-              <>
-                {isAdmin ? (
-                  <m.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button variant="outline" size="sm" asChild className="gap-2">
-                      <Link href="/admin">
-                        <Shield className="w-4 h-4" />
-                        Panel Admin
-                      </Link>
-                    </Button>
-                  </m.div>
-                ) : (
-                  <RequestsModal user={user} />
-                )}
-              
-                <DropdownMenu modal={false}>
-                  <DropdownMenuTrigger asChild>
-                    <m.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button variant="ghost" size="icon" className="rounded-full">
-                        <Avatar className="w-8 h-8 ring-2 ring-primary/20">
-                          <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
-                            {user.email?.[0].toUpperCase() || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                      </Button>
-                    </m.div>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-52">
-                    <DropdownMenuItem onClick={() => setIsProfileOpen(true)} className="cursor-pointer gap-2">
-                      <Settings className="w-4 h-4" />
-                      Pengaturan Profil
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsHelpOpen(true)} className="cursor-pointer gap-2">
-                      <HelpCircle className="w-4 h-4" />
-                      Bantuan
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsAboutOpen(true)} className="cursor-pointer gap-2">
-                      <Info className="w-4 h-4" />
-                      Tentang
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem disabled className="text-muted-foreground gap-2">
-                      <User className="w-4 h-4" />
-                      <span className="truncate">{user.email}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive gap-2">
-                      <LogOut className="w-4 h-4" />
-                      Keluar
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
+          <nav className="hidden items-center gap-1 md:flex" aria-label="Navigasi utama">
+            <Button variant="ghost" size="sm" asChild className="rounded-full px-4 text-muted-foreground">
+              <Link href="/#leaderboard">Peringkat</Link>
+            </Button>
+
+            {!isLoading && user && !isAdmin && <RequestsModal user={user} />}
+
+            {!isLoading && user && !isIdentityLinked && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-1 gap-2 rounded-full border-primary/25 bg-primary/5 text-primary"
+                onClick={() => setIsProfileOpen(true)}
+              >
+                <Link2 className="size-4" />
+                Hubungkan Rapor
+              </Button>
+            )}
+
+            {!isLoading && user && isAdmin && (
+              <Button variant="outline" size="sm" asChild className="ml-1 gap-2 rounded-full">
+                <Link href="/admin">
+                  <Shield className="size-4" />
+                  Admin
+                </Link>
+              </Button>
+            )}
+
+            {isLoading ? (
+              <div className="ml-2 size-9 animate-pulse rounded-full bg-muted" aria-hidden="true" />
+            ) : user ? (
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="ml-1 size-10 rounded-full" aria-label="Buka menu akun">
+                    <Avatar className="size-9 border border-border">
+                      <AvatarFallback className="bg-foreground text-xs font-semibold text-background">
+                        {user.email?.[0]?.toUpperCase() || 'A'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 rounded-xl p-1.5">
+                  <div className="px-2.5 py-2">
+                    <p className="truncate text-sm font-medium">{user.email}</p>
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                      {isIdentityLinked ? <BadgeCheck className="size-3.5 text-success" /> : <Link2 className="size-3.5" />}
+                      {isIdentityLinked ? 'Terhubung dengan Rapor' : 'Rapor belum terhubung'}
+                    </p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setIsProfileOpen(true)} className="cursor-pointer gap-2 rounded-lg">
+                    <Settings className="size-4" />
+                    Profil anggota
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsHelpOpen(true)} className="cursor-pointer gap-2 rounded-lg">
+                    <HelpCircle className="size-4" />
+                    Panduan
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsAboutOpen(true)} className="cursor-pointer gap-2 rounded-lg">
+                    <Info className="size-4" />
+                    Tentang
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="gap-2 rounded-lg text-destructive focus:text-destructive">
+                    <LogOut className="size-4" />
+                    Keluar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
-              <m.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button asChild size="sm" className="px-6">
-                  <Link href="/auth">Masuk</Link>
-                </Button>
-              </m.div>
+              <Button asChild size="sm" className="ml-2 rounded-full px-5 shadow-sm">
+                <Link href="/auth">Masuk</Link>
+              </Button>
             )}
           </nav>
 
-          {/* Mobile Menu Button */}
-          <div className="flex md:hidden items-center gap-2">
-            {user && !isAdmin && <RequestsModal user={user} />}
-            <m.button
-              className="p-2 rounded-lg hover:bg-accent transition-colors touch-target"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              whileTap={{ scale: 0.95 }}
-              aria-label="Toggle menu"
+          <div className="flex items-center gap-1 md:hidden">
+            {!isLoading && !user && (
+              <Button asChild size="sm" className="rounded-full px-4">
+                <Link href="/auth">Masuk</Link>
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-11 rounded-full"
+              onClick={() => setIsMobileMenuOpen((open) => !open)}
+              aria-label={isMobileMenuOpen ? 'Tutup menu' : 'Buka menu'}
+              aria-expanded={isMobileMenuOpen}
             >
-              <AnimatePresence mode="wait">
-                {isMobileMenuOpen ? (
-                  <m.div
-                    key="close"
-                    initial={{ rotate: -90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: 90, opacity: 0 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    <X className="w-6 h-6" />
-                  </m.div>
-                ) : (
-                  <m.div
-                    key="menu"
-                    initial={{ rotate: 90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: -90, opacity: 0 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    <Menu className="w-6 h-6" />
-                  </m.div>
-                )}
-              </AnimatePresence>
-            </m.button>
+              {isMobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            </Button>
           </div>
         </div>
 
-        {/* Mobile Menu */}
-        <AnimatePresence>
+        <AnimatePresence initial={false}>
           {isMobileMenuOpen && (
             <m.div
-              className="md:hidden border-t bg-background/98 backdrop-blur-md"
-              variants={fadeInDown}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
+              className="border-t bg-background md:hidden"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             >
-              <div className="container py-4 space-y-3">
-                {user ? (
+              <div className="container space-y-2 py-4">
+                <Link
+                  href="/#leaderboard"
+                  className="flex min-h-11 items-center rounded-xl px-3 text-sm font-medium hover:bg-muted"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Peringkat anggota
+                </Link>
+
+                {user && (
                   <>
-                    {/* User info */}
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
-                      <Avatar className="w-10 h-10 ring-2 ring-primary/20">
-                        <AvatarFallback className="bg-primary text-primary-foreground font-medium">
-                          {user.email?.[0].toUpperCase() || 'U'}
+                    <div className="flex items-center gap-3 rounded-2xl border bg-card p-3">
+                      <Avatar className="size-10">
+                        <AvatarFallback className="bg-foreground text-sm font-semibold text-background">
+                          {user.email?.[0]?.toUpperCase() || 'A'}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{user.email}</p>
-                        <p className="text-xs text-muted-foreground">{isAdmin ? 'Administrator' : 'Member'}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{user.email}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{isAdmin ? 'Administrator' : 'Anggota ARSC'}</p>
                       </div>
                     </div>
 
-                    {/* Menu items */}
-                    <div className="space-y-1">
-                      {isAdmin && (
-                        <Link 
-                          href="/admin" 
-                          className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent transition-colors touch-target"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          <Shield className="w-5 h-5 text-primary" />
-                          <span className="font-medium">Panel Admin</span>
-                        </Link>
-                      )}
-                      <button 
-                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent transition-colors w-full touch-target"
+                    {!isIdentityLinked && (
+                      <button
+                        className="flex min-h-11 w-full items-center gap-3 rounded-xl bg-primary/[0.08] px-3 text-left text-sm font-medium text-primary"
                         onClick={() => { setIsProfileOpen(true); setIsMobileMenuOpen(false); }}
                       >
-                        <Settings className="w-5 h-5 text-muted-foreground" />
-                        <span>Pengaturan Profil</span>
+                        <Link2 className="size-4" />
+                        Hubungkan Rapor
                       </button>
-                      <button 
-                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent transition-colors w-full touch-target"
-                        onClick={() => { setIsHelpOpen(true); setIsMobileMenuOpen(false); }}
-                      >
-                        <HelpCircle className="w-5 h-5 text-muted-foreground" />
-                        <span>Bantuan</span>
-                      </button>
-                      <button 
-                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-accent transition-colors w-full touch-target"
-                        onClick={() => { setIsAboutOpen(true); setIsMobileMenuOpen(false); }}
-                      >
-                        <Info className="w-5 h-5 text-muted-foreground" />
-                        <span>Tentang</span>
-                      </button>
-                    </div>
+                    )}
 
-                    {/* Sign out */}
-                    <div className="pt-2 border-t">
-                      <button 
-                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-destructive/10 transition-colors w-full text-destructive touch-target"
-                        onClick={() => { handleSignOut(); setIsMobileMenuOpen(false); }}
+                    {!isAdmin && <div className="px-1 py-1"><RequestsModal user={user} /></div>}
+
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium hover:bg-muted"
+                        onClick={() => setIsMobileMenuOpen(false)}
                       >
-                        <LogOut className="w-5 h-5" />
-                        <span className="font-medium">Keluar</span>
-                      </button>
-                    </div>
+                        <Shield className="size-4" />
+                        Panel admin
+                      </Link>
+                    )}
+
+                    <button
+                      className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium hover:bg-muted"
+                      onClick={() => { setIsProfileOpen(true); setIsMobileMenuOpen(false); }}
+                    >
+                      <Settings className="size-4" />
+                      Profil anggota
+                    </button>
+                    <button
+                      className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium hover:bg-muted"
+                      onClick={() => { setIsHelpOpen(true); setIsMobileMenuOpen(false); }}
+                    >
+                      <HelpCircle className="size-4" />
+                      Panduan
+                    </button>
+                    <button
+                      className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium hover:bg-muted"
+                      onClick={() => { setIsAboutOpen(true); setIsMobileMenuOpen(false); }}
+                    >
+                      <Info className="size-4" />
+                      Tentang
+                    </button>
+                    <button
+                      className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium text-destructive hover:bg-destructive/5"
+                      onClick={handleSignOut}
+                    >
+                      <LogOut className="size-4" />
+                      Keluar
+                    </button>
                   </>
-                ) : (
-                  <Link 
-                    href="/auth" 
-                    className="flex items-center justify-center gap-2 p-3 rounded-xl bg-primary text-primary-foreground font-medium touch-target"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Masuk
-                  </Link>
                 )}
               </div>
             </m.div>
@@ -236,10 +251,14 @@ export function Header() {
         </AnimatePresence>
       </m.header>
 
-      {/* Modals */}
       {user && (
         <>
-          <ProfileSettingsModal open={isProfileOpen} onOpenChange={setIsProfileOpen} user={user} />
+          <ProfileSettingsModal
+            open={isProfileOpen}
+            onOpenChange={setIsProfileOpen}
+            user={user}
+            onProfileChanged={refreshIdentityStatus}
+          />
           <HelpModal open={isHelpOpen} onOpenChange={setIsHelpOpen} />
           <AboutModal open={isAboutOpen} onOpenChange={setIsAboutOpen} />
         </>

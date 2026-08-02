@@ -1,58 +1,144 @@
-import test from 'node:test';
-import assert from 'node:assert';
+import test, { mock } from 'node:test';
+import assert from 'node:assert/strict';
 
-// Global mock state variables mapped to our custom mocks
-declare global {
-  var mockUser: Record<string, unknown> | null;
-  var mockUserError: Error | null;
-  var mockProfile: Record<string, unknown> | null;
-  var mockProfileError: Error | null;
-  var createdIntegrationClient: boolean;
-}
+type ReferenceRow = {
+  release_member_code: string;
+  release_code: string;
+  canonical_name: string;
+  unit: string;
+  position: string | null;
+};
 
-// Ensure env vars are present BEFORE importing syncRapor.ts
-process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
-process.env.SUPABASE_INTEGRATION_SERVICE_KEY = 'mock_secret_key';
+const state: {
+  user: { id: string } | null;
+  userError: Error | null;
+  adminRole: { role: string } | null;
+  adminError: Error | null;
+  references: ReferenceRow[];
+  integrationClientCreated: boolean;
+  rpcCalls: Array<{ name: string; args?: Record<string, unknown> }>;
+} = {
+  user: null,
+  userError: null,
+  adminRole: null,
+  adminError: null,
+  references: [],
+  integrationClientCreated: false,
+  rpcCalls: [],
+};
 
-// Dynamically import to ensure env vars are picked up at module load time
+mock.module('@/lib/supabase/server', {
+  namedExports: {
+    createClient: async () => ({
+      auth: {
+        getUser: async () => ({
+          data: { user: state.user },
+          error: state.userError,
+        }),
+      },
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({ data: state.adminRole, error: state.adminError }),
+            }),
+          }),
+        }),
+      }),
+    }),
+  },
+});
+
+mock.module('@supabase/supabase-js', {
+  namedExports: {
+    createClient: () => {
+      state.integrationClientCreated = true;
+      return {
+        rpc: async (name: string, args?: Record<string, unknown>) => {
+          state.rpcCalls.push({ name, args });
+          if (name === 'get_leaderboard_reference_members') {
+            return { data: state.references, error: null };
+          }
+          if (name === 'upsert_leaderboard_reference_member') {
+            return { data: { created: true }, error: null };
+          }
+          return { data: null, error: new Error(`Unexpected RPC: ${name}`) };
+        },
+      };
+    },
+  },
+});
+
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://127.0.0.1:54321';
+process.env.SUPABASE_INTEGRATION_SERVICE_KEY = 'local-test-service-key';
+
 const { syncRaporMembers } = await import('../../src/lib/actions/syncRapor.ts');
 
-test('syncRaporMembers Auth Flow Tests', async (t) => {
+test('syncRaporMembers keeps the Rapor integration behind the admin boundary', async (t) => {
   t.beforeEach(() => {
-    globalThis.createdIntegrationClient = false;
-    globalThis.mockUser = null;
-    globalThis.mockUserError = null;
-    globalThis.mockProfile = null;
-    globalThis.mockProfileError = null;
+    state.user = null;
+    state.userError = null;
+    state.adminRole = null;
+    state.adminError = null;
+    state.references = [];
+    state.integrationClientCreated = false;
+    state.rpcCalls = [];
   });
 
-  await t.test('1. Missing/Invalid session is rejected', async () => {
-    globalThis.mockUser = null;
-    globalThis.mockUserError = new Error('Auth session missing!');
+  await t.test('rejects an invalid session before creating the integration client', async () => {
+    state.userError = new Error('session missing');
 
     const result = await syncRaporMembers();
-    assert.strictEqual(result.success, false);
+
+    assert.equal(result.success, false);
     assert.match(result.error || '', /Missing or invalid authenticated session/);
-    assert.strictEqual(globalThis.createdIntegrationClient, false, 'Integration client should not be instantiated');
+    assert.equal(state.integrationClientCreated, false);
   });
 
-  await t.test('2. Authenticated non-admin is rejected', async () => {
-    globalThis.mockUser = { id: 'user_123' };
-    globalThis.mockProfile = { role: 'user' };
+  await t.test('rejects a non-admin before reading the Rapor reference RPC', async () => {
+    state.user = { id: 'member-1' };
 
     const result = await syncRaporMembers();
-    assert.strictEqual(result.success, false);
+
+    assert.equal(result.success, false);
     assert.match(result.error || '', /Requires Leaderboard admin role/);
-    assert.strictEqual(globalThis.createdIntegrationClient, false, 'Integration client should not be instantiated');
+    assert.equal(state.integrationClientCreated, false);
   });
 
-  await t.test('3. Authenticated admin reaches the sync path', async () => {
-    globalThis.mockUser = { id: 'admin_123' };
-    globalThis.mockProfile = { role: 'admin' };
+  await t.test('accepts an admin and handles an empty active release', async () => {
+    state.user = { id: 'admin-1' };
+    state.adminRole = { role: 'admin' };
 
     const result = await syncRaporMembers();
-    // It should succeed or fail at RPC, but we mocked RPC to return empty []
-    assert.strictEqual(result.success, true);
-    assert.strictEqual(globalThis.createdIntegrationClient, true, 'Integration client MUST be instantiated for admin');
+
+    assert.equal(result.success, true);
+    assert.equal(state.integrationClientCreated, true);
+    assert.deepEqual(state.rpcCalls.map((call) => call.name), ['get_leaderboard_reference_members']);
+  });
+
+  await t.test('maps the producer contract into the Leaderboard upsert RPC', async () => {
+    state.user = { id: 'admin-1' };
+    state.adminRole = { role: 'admin' };
+    state.references = [{
+      release_member_code: 'RTP_2026_001',
+      release_code: 'RTP_2026',
+      canonical_name: 'Anggota Contoh',
+      unit: 'RISTEK',
+      position: 'Staf',
+    }];
+
+    const result = await syncRaporMembers();
+
+    assert.equal(result.success, true);
+    assert.deepEqual(state.rpcCalls[1], {
+      name: 'upsert_leaderboard_reference_member',
+      args: {
+        p_release_member_code: 'RTP_2026_001',
+        p_release_code: 'RTP_2026',
+        p_canonical_name: 'Anggota Contoh',
+        p_unit: 'RISTEK',
+        p_position: 'Staf',
+      },
+    });
   });
 });
