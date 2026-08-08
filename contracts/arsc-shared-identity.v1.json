@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "name": "ARSC shared identity",
+  "auth": {
+    "provider": "Supabase Auth",
+    "canonicalKey": "auth.users.id",
+    "credentialConsumers": [
+      "halo-psdm",
+      "arsc-leaderboard"
+    ],
+    "passwordStorage": "auth.users only"
+  },
+  "projections": {
+    "canonicalIdentity": "public.arsc_identities.auth_user_id",
+    "haloProfile": "public.users.id",
+    "leaderboardProfile": "public.profiles.user_id",
+    "canonicalMember": "public.members.id",
+    "raporReference": [
+      "public.member_release_links.release_code",
+      "public.member_release_links.release_member_code"
+    ]
+  },
+  "ownership": {
+    "emailPassword": "Supabase Auth",
+    "canonicalNameUnitPosition": "Rapor ARSC after verification",
+    "avatarWhatsapp": "Halo PSDM user-managed profile",
+    "leaderboardActivity": "ARSC Leaderboard"
+  },
+  "verification": {
+    "method": "Rapor access code",
+    "linkRpc": "public.link_arsc_account_from_reference",
+    "oneAuthAccountPerMember": true,
+    "oneMemberPerAuthAccount": true,
+    "accessCodeStoredByConsumers": false
+  }
+}

@@ -30,7 +30,7 @@ test('Static Analysis: No direct-write paths to protected tables', async (t) => 
   }
 });
 
-test('Static Analysis: Stage 4 never mutates Rapor tables or table schemas', () => {
+test('Static Analysis: Stage 4 changes only the additive shared-identity namespace', () => {
   const stage4Path = path.join(process.cwd(), 'deployment', 'remote', 'stage4_identity_and_public_reads.sql');
   const stage4 = fs.readFileSync(stage4Path, 'utf8');
 
@@ -41,7 +41,15 @@ test('Static Analysis: Stage 4 never mutates Rapor tables or table schemas', () 
   );
   assert.doesNotMatch(
     stage4,
-    /\b(?:alter\s+table|drop\s+table|create\s+table)\s+public\./i,
-    'Stage 4 is function-only and must not change any table schema.',
+    /\b(?:alter\s+table|drop\s+table|create\s+table)\s+public\.(?:users|profiles|members|member_release_links|participation_logs|competitions|rapor_[a-z_]+)/i,
+    'Stage 4 must not alter, drop, or recreate any protected existing table.',
   );
+
+  const createdPublicTables = [...stage4.matchAll(/\bcreate\s+table\s+public\.([a-z_]+)/gi)]
+    .map((match) => match[1]);
+  assert.deepEqual(createdPublicTables, ['arsc_identities']);
+
+  assert.match(stage4, /references\s+auth\.users\s*\(id\)/i);
+  assert.match(stage4, /references\s+public\.members\s*\(id\)/i);
+  assert.match(stage4, /Rapor identity is already linked to another account/i);
 });

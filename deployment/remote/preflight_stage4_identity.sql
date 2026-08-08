@@ -1,5 +1,5 @@
--- Enhanced read-only preflight for Stage 4 identity and public reads.
--- Run manually in the Supabase SQL Editor only after explicit approval.
+-- Read-only preflight for Stage 4 shared ARSC identity.
+-- Catalog inspection only. No rows or schemas are changed.
 
 BEGIN TRANSACTION READ ONLY;
 
@@ -14,6 +14,8 @@ SELECT
   END AS status
 FROM (
   VALUES
+    ('auth.users'),
+    ('public.users'),
     ('public.profiles'),
     ('public.members'),
     ('public.member_release_links'),
@@ -22,9 +24,15 @@ FROM (
     ('public.rapor_releases'),
     ('public.rapor_members'),
     ('public.rapor_access_codes'),
-    ('public.get_leaderboard_reference_members()')
+    ('public.get_leaderboard_reference_members()'),
+    ('public.leaderboard_update_updated_at()')
 ) AS required(required_object)
 ORDER BY required_object;
+
+SELECT
+  'stage4_table_collision' AS category,
+  'public.arsc_identities' AS object_name,
+  CASE WHEN to_regclass('public.arsc_identities') IS NULL THEN 'NONE' ELSE 'COLLISION' END AS status;
 
 SELECT
   'stage4_function_collision' AS category,
@@ -38,12 +46,65 @@ WHERE n.nspname = 'public'
     'get_public_member_participations',
     'get_public_category_participation_counts',
     'upsert_leaderboard_reference_member',
-    'link_leaderboard_profile_from_reference'
+    'link_arsc_account_from_reference',
+    'get_my_arsc_identity',
+    'set_shared_profile_avatar',
+    'protect_verified_arsc_identity_fields',
+    'protect_verified_leaderboard_identity_fields',
+    'sync_halo_avatar_to_leaderboard'
   ])
 ORDER BY p.oid::regprocedure::text;
 
+SELECT
+  'stage4_trigger_collision' AS category,
+  concat_ws('.', n.nspname, c.relname, t.tgname) AS object_name,
+  'COLLISION' AS status
+FROM pg_catalog.pg_trigger t
+INNER JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
+INNER JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public'
+  AND (
+    (c.relname = 'users' AND t.tgname = ANY (ARRAY[
+      'arsc_verified_identity_guard',
+      'arsc_shared_avatar_sync'
+    ]))
+    OR (c.relname = 'profiles' AND t.tgname = 'arsc_verified_profile_guard')
+  )
+  AND NOT t.tgisinternal
+ORDER BY t.tgname;
+
+SELECT
+  'identity_alignment_count' AS category,
+  metric,
+  metric_value
+FROM (
+  SELECT 'auth_users'::text AS metric, count(*)::bigint AS metric_value FROM auth.users
+  UNION ALL
+  SELECT 'halo_profiles', count(*) FROM public.users
+  UNION ALL
+  SELECT 'leaderboard_profiles', count(*) FROM public.profiles
+  UNION ALL
+  SELECT 'auth_with_halo_profile', count(*)
+  FROM auth.users au INNER JOIN public.users hu ON hu.id = au.id
+  UNION ALL
+  SELECT 'auth_with_leaderboard_profile', count(*)
+  FROM auth.users au INNER JOIN public.profiles lp ON lp.user_id = au.id
+  UNION ALL
+  SELECT 'auth_with_both_profiles', count(*)
+  FROM auth.users au
+  INNER JOIN public.users hu ON hu.id = au.id
+  INNER JOIN public.profiles lp ON lp.user_id = au.id
+  UNION ALL
+  SELECT 'halo_email_mismatch', count(*)
+  FROM auth.users au
+  INNER JOIN public.users hu ON hu.id = au.id
+  WHERE lower(COALESCE(hu.email, '')) IS DISTINCT FROM lower(COALESCE(au.email::text, ''))
+) metrics
+ORDER BY metric;
+
 WITH protected_tables(table_name) AS (
   VALUES
+    ('users'),
     ('profiles'),
     ('members'),
     ('member_release_links'),
@@ -155,7 +216,27 @@ FROM pg_catalog.pg_proc p
 INNER JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
 INNER JOIN pg_catalog.pg_roles owner ON owner.oid = p.proowner
 WHERE n.nspname = 'public'
-  AND p.proname = 'get_leaderboard_reference_members'
+  AND p.proname = ANY (ARRAY[
+    'get_leaderboard_reference_members',
+    'handle_new_user',
+    'handle_new_auth_user',
+    'handle_auth_user_email_update',
+    'current_app_role',
+    'sync_admin_profile',
+    'sync_whatsapp_to_auth_phone'
+  ])
 ORDER BY p.oid::regprocedure::text;
+
+SELECT
+  'protected_auth_trigger_fingerprint' AS category,
+  t.tgname AS object_name,
+  md5(pg_get_triggerdef(t.oid, true)) AS hash_value
+FROM pg_catalog.pg_trigger t
+INNER JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
+INNER JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'auth'
+  AND c.relname = 'users'
+  AND NOT t.tgisinternal
+ORDER BY t.tgname;
 
 ROLLBACK;

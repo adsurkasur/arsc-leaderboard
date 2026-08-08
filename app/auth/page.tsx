@@ -19,8 +19,8 @@ const emailSchema = z.string().email('Masukkan alamat email yang valid');
 const passwordSchema = z.string().min(6, 'Kata sandi minimal 6 karakter');
 
 const identityNotes = [
+  { icon: BadgeCheck, text: 'Gunakan akun email dan kata sandi Halo PSDM yang sama.' },
   { icon: Link2, text: 'Hubungkan kode akses Rapor satu kali.' },
-  { icon: BadgeCheck, text: 'Nama dan bidang/biro mengikuti data resmi.' },
   { icon: FileCheck2, text: 'Partisipasi dihitung setelah ditinjau admin.' },
 ];
 
@@ -130,10 +130,10 @@ export default function AuthPage() {
           </div>
 
           <h1 className="mt-8 max-w-lg text-balance text-3xl font-semibold leading-tight tracking-[-0.035em] sm:text-4xl lg:text-5xl">
-            Satu akun untuk mencatat partisipasi kompetisi Anda.
+            Satu akun ARSC untuk Halo PSDM dan Leaderboard.
           </h1>
           <p className="mt-5 max-w-lg text-sm leading-7 text-slate-300 sm:text-base">
-            Akun menyimpan pengajuan dan status peninjauan. Identitas anggota tetap berasal dari Rapor ARSC.
+            Masuk dengan akun Halo PSDM. Nama, bidang/biro, dan jabatan tetap diverifikasi dari Rapor ARSC.
           </p>
 
           <ul className="mt-8 space-y-4">
@@ -159,7 +159,7 @@ export default function AuthPage() {
             <p className="text-sm font-semibold text-primary">Akses anggota</p>
             <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em]">Masuk atau buat akun</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Setelah masuk, hubungkan kode akses Rapor dari menu profil.
+              Sudah punya akun Halo PSDM? Gunakan email dan kata sandi yang sama, lalu hubungkan kode Rapor sekali saja.
             </p>
           </div>
 
@@ -233,7 +233,7 @@ export default function AuthPage() {
                       disabled={isLoading}
                     />
                     <div className="rounded-xl bg-muted/55 p-3 text-xs leading-5 text-muted-foreground">
-                      Nama dan bidang/biro tidak diisi di sini. Data tersebut akan disinkronkan dari Rapor setelah akun dibuat.
+                      Akun yang dibuat di sini juga dapat digunakan di Halo PSDM. Identitas organisasi disinkronkan dari Rapor.
                     </div>
                   </CardContent>
                   <CardFooter>

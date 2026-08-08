@@ -28,7 +28,7 @@ test.describe('ARSC Leaderboard public experience', () => {
     await page.getByRole('tab', { name: 'Buat akun' }).click();
     await expect(page.getByLabel('Email')).toBeVisible();
     await expect(page.getByLabel('Kata sandi')).toBeVisible();
-    await expect(page.getByText(/Nama dan bidang\/biro tidak diisi di sini/i)).toBeVisible();
+    await expect(page.getByText(/Akun yang dibuat di sini juga dapat digunakan di Halo PSDM/i)).toBeVisible();
     await expect(page.getByLabel(/nama lengkap/i)).toHaveCount(0);
   });
 

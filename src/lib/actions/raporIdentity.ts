@@ -67,7 +67,7 @@ async function applyReferenceToProfile(
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data, error } = await integrationClient.rpc('link_leaderboard_profile_from_reference', {
+  const { data, error } = await integrationClient.rpc('link_arsc_account_from_reference', {
     p_user_id: userId,
     p_release_member_code: reference.release_member_code,
     p_release_code: reference.release_code,
@@ -207,10 +207,21 @@ export async function updateProfileAvatar(avatarUrl: string | null) {
     }
   }
 
-  const { error } = await userClient
-    .from('profiles')
-    .update({ avatar_url: normalizedUrl })
-    .eq('user_id', user.id);
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_INTEGRATION_SERVICE_KEY;
+
+  if (!url || !serviceKey) {
+    return { success: false, error: 'Sinkronisasi profil bersama belum dikonfigurasi di server.' };
+  }
+
+  const integrationClient = createIntegrationClient(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const { error } = await integrationClient.rpc('set_shared_profile_avatar', {
+    p_user_id: user.id,
+    p_avatar_url: normalizedUrl,
+  });
 
   if (error) {
     return { success: false, error: error.message };
@@ -219,4 +230,3 @@ export async function updateProfileAvatar(avatarUrl: string | null) {
   revalidatePath('/');
   return { success: true };
 }
-

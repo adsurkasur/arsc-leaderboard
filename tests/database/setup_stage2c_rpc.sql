@@ -34,3 +34,16 @@ REVOKE ALL ON FUNCTION public.get_leaderboard_reference_members() FROM PUBLIC, a
 -- Grant execution explicitly only to service_role
 GRANT EXECUTE ON FUNCTION public.get_leaderboard_reference_members() TO service_role;
 CREATE OR REPLACE FUNCTION public.leaderboard_has_role(p_user_id UUID, p_role TEXT) RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER SET search_path = '' AS 'SELECT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = p_user_id AND role = p_role::public.app_role)'; GRANT EXECUTE ON FUNCTION public.leaderboard_has_role TO authenticated;
+
+-- Bootstrap fixture used by Stage 4 timestamp triggers. The production function
+-- is created by leaderboard_bootstrap_schema.sql before Stage 4 is deployed.
+CREATE OR REPLACE FUNCTION public.leaderboard_update_updated_at()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
+BEGIN
+  NEW.updated_at := now();
+  RETURN NEW;
+END;
+$$;
