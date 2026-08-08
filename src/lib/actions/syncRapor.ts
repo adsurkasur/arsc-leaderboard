@@ -6,9 +6,10 @@ import { createClient } from "@/lib/supabase/server";
 import fs from "fs";
 import path from "path";
 
-// 5. Read the remote secret from a server-only environment variable with no NEXT_PUBLIC_ prefix
-// We use process.env.SUPABASE_INTEGRATION_SERVICE_KEY as instructed.
-const INTEGRATION_KEY = process.env.SUPABASE_INTEGRATION_SERVICE_KEY;
+// Prefer the server-only key injected by the Supabase/Vercel integration.
+// Keep the historical custom name as a local/backwards-compatible fallback.
+const INTEGRATION_KEY = process.env.SUPABASE_SECRET_KEY
+  || process.env.SUPABASE_INTEGRATION_SERVICE_KEY;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 export async function syncRaporMembers() {
@@ -39,7 +40,7 @@ export async function syncRaporMembers() {
     return { success: false, error: "Forbidden: Requires Leaderboard admin role." };
   }
 
-  // 6. Only after successful authorization, create a separate integration client using SUPABASE_INTEGRATION_SERVICE_KEY.
+  // 6. Only after successful authorization, create a separate privileged integration client.
   const integrationClient = createSupabaseClient(SUPABASE_URL, INTEGRATION_KEY);
 
   const { data: remoteData, error: rpcError } = await integrationClient.rpc("get_leaderboard_reference_members");

@@ -27,7 +27,8 @@ type IdentityActionResult =
 
 function getIntegrationConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_INTEGRATION_SERVICE_KEY;
+  const serviceKey = process.env.SUPABASE_SECRET_KEY
+    || process.env.SUPABASE_INTEGRATION_SERVICE_KEY;
   const pepper = process.env.RAPOR_ACCESS_CODE_PEPPER;
 
   if (!url || !serviceKey || !pepper) {
@@ -208,7 +209,8 @@ export async function updateProfileAvatar(avatarUrl: string | null) {
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_INTEGRATION_SERVICE_KEY;
+  const serviceKey = process.env.SUPABASE_SECRET_KEY
+    || process.env.SUPABASE_INTEGRATION_SERVICE_KEY;
 
   if (!url || !serviceKey) {
     return { success: false, error: 'Sinkronisasi profil bersama belum dikonfigurasi di server.' };

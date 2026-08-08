@@ -21,7 +21,10 @@
 ## Before any Stage 4 remote execution
 
 1. Confirm the Halo PSDM and Leaderboard Vercel projects both use Supabase project `jyznguhencjwtzupxjjk`.
-2. Revoke and replace every compromised Supabase secret key. Prefer a separate `sb_secret_...` key for each server application so future rotation can be isolated.
+2. Revoke and replace every compromised Supabase secret key using the actual deployment topology:
+   - Rapor ARSC and ARSC Leaderboard use the Supabase/Vercel connection and consume its integration-managed `SUPABASE_SECRET_KEY`.
+   - Halo PSDM uses a manually managed app-specific secret key through `SUPABASE_SECRET_KEY` (with `SUPABASE_SERVICE_ROLE_KEY` retained only as a legacy fallback).
+   - Redeploy every affected Vercel project before deleting the compromised key.
 3. Generate a new high-entropy `RAPOR_ACCESS_CODE_PEPPER` and new random Rapor access codes.
 4. In the Rapor repository, generate RTP and Suksesi payloads, then build the dedicated atomic rotation artifact:
    - `python scripts/build-rapor-payloads-from-xlsx.py --mode rtp`
@@ -30,9 +33,9 @@
 5. Review and manually execute only the generated `workbook/dist/supabase/rotate_rapor_access_codes_both.sql`. It updates `public.rapor_access_codes` in one transaction and refuses a member-set mismatch. Do not use the general staging uploader to rotate production codes.
 6. Rotate the active Rapor hashes before exposing the Stage 4 link RPC. Do not reuse the legacy predictable codes.
 7. Configure the identical server-only pepper in Rapor ARSC, Halo PSDM, and ARSC Leaderboard. Never use a `NEXT_PUBLIC_` variable for it.
-8. Configure the server-only Supabase service key in both account applications:
-   - Leaderboard: `SUPABASE_INTEGRATION_SERVICE_KEY`
-   - Halo PSDM: `SUPABASE_SERVICE_ROLE_KEY`
+8. Confirm the server-only Supabase secret is available to both account applications:
+   - Leaderboard: integration-managed `SUPABASE_SECRET_KEY` (`SUPABASE_INTEGRATION_SERVICE_KEY` is an optional legacy/local fallback).
+   - Halo PSDM: manually managed `SUPABASE_SECRET_KEY` (`SUPABASE_SERVICE_ROLE_KEY` is an optional legacy fallback).
 9. Confirm no credential or generated Rapor payload is present under a public/static directory or in a deployment artifact.
 
 ## Remote execution sequence
