@@ -21,13 +21,19 @@
 ## Before any Stage 4 remote execution
 
 1. Confirm the Halo PSDM and Leaderboard Vercel projects both use Supabase project `jyznguhencjwtzupxjjk`.
-2. Generate a new high-entropy `RAPOR_ACCESS_CODE_PEPPER` and new random Rapor access codes.
-3. Rotate the active Rapor hashes using the hardened Rapor generator and reviewed sync process. Do not reuse the legacy predictable codes.
-4. Configure the identical server-only pepper in Rapor ARSC, Halo PSDM, and ARSC Leaderboard. Never use a `NEXT_PUBLIC_` variable for it.
-5. Configure the server-only Supabase service key in both account applications:
+2. Revoke and replace every compromised Supabase secret key. Prefer a separate `sb_secret_...` key for each server application so future rotation can be isolated.
+3. Generate a new high-entropy `RAPOR_ACCESS_CODE_PEPPER` and new random Rapor access codes.
+4. In the Rapor repository, generate RTP and Suksesi payloads, then build the dedicated atomic rotation artifact:
+   - `python scripts/build-rapor-payloads-from-xlsx.py --mode rtp`
+   - `python scripts/build-rapor-payloads-from-xlsx.py --mode suksesi`
+   - `python scripts/build-rapor-access-code-rotation-sql.py --mode both`
+5. Review and manually execute only the generated `workbook/dist/supabase/rotate_rapor_access_codes_both.sql`. It updates `public.rapor_access_codes` in one transaction and refuses a member-set mismatch. Do not use the general staging uploader to rotate production codes.
+6. Rotate the active Rapor hashes before exposing the Stage 4 link RPC. Do not reuse the legacy predictable codes.
+7. Configure the identical server-only pepper in Rapor ARSC, Halo PSDM, and ARSC Leaderboard. Never use a `NEXT_PUBLIC_` variable for it.
+8. Configure the server-only Supabase service key in both account applications:
    - Leaderboard: `SUPABASE_INTEGRATION_SERVICE_KEY`
    - Halo PSDM: `SUPABASE_SERVICE_ROLE_KEY`
-6. Confirm no credential or generated Rapor payload is present under a public/static directory or in a deployment artifact.
+9. Confirm no credential or generated Rapor payload is present under a public/static directory or in a deployment artifact.
 
 ## Remote execution sequence
 
