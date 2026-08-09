@@ -6,13 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Competition } from '@/lib/types';
 import { User } from '@supabase/supabase-js';
 import { submitParticipation } from '@/lib/actions/stage3_participations';
 import { RaporLinkForm } from '@/components/profile/RaporLinkForm';
+import { getErrorMessage, withTimeout } from '@/lib/async';
+
+const PARTICIPATION_REQUEST_TIMEOUT_MS = 12_000;
 
 interface ParticipationModalProps {
   user: User | null;
@@ -27,31 +30,41 @@ export function ParticipationModal({ user }: ParticipationModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [linkStatus, setLinkStatus] = useState<string | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const fetchProfileAndCompetitions = useCallback(async () => {
-    setIsLoadingProfile(true);
-    // Fetch profile
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('link_status')
-      .eq('user_id', user?.id)
-      .single();
-      
-    if (profileData) {
-      setLinkStatus(profileData.link_status);
-    }
-    
-    // Fetch competitions
-    const { data: compData, error } = await supabase
-      .from('competitions')
-      .select('*')
-      .order('date', { ascending: false });
+    if (!user) return;
 
-    if (!error && compData) {
-      setCompetitions(compData);
+    setIsLoadingProfile(true);
+    setLoadError(null);
+    try {
+      const [profileResult, competitionsResult] = await withTimeout(
+        Promise.all([
+          supabase
+            .from('profiles')
+            .select('link_status')
+            .eq('user_id', user.id)
+            .maybeSingle(),
+          supabase
+            .from('competitions')
+            .select('*')
+            .order('date', { ascending: false }),
+        ]),
+        PARTICIPATION_REQUEST_TIMEOUT_MS,
+        'Formulir belum merespons. Periksa koneksi lalu coba lagi.',
+      );
+
+      if (profileResult.error) throw profileResult.error;
+      if (competitionsResult.error) throw competitionsResult.error;
+
+      setLinkStatus(profileResult.data?.link_status ?? null);
+      setCompetitions(competitionsResult.data ?? []);
+    } catch (error) {
+      setLoadError(getErrorMessage(error, 'Formulir pengajuan belum dapat dimuat.'));
+    } finally {
+      setIsLoadingProfile(false);
     }
-    setIsLoadingProfile(false);
-  }, [user?.id]);
+  }, [user]);
 
   useEffect(() => {
     if (isModalOpen && user) {
@@ -73,7 +86,11 @@ export function ParticipationModal({ user }: ParticipationModalProps) {
 
     try {
       // Execute the Stage 3 RPC explicitly (never write to participation_logs directly)
-      const result = await submitParticipation(competitionId, evidenceUrl.trim());
+      const result = await withTimeout(
+        submitParticipation(competitionId, evidenceUrl.trim()),
+        PARTICIPATION_REQUEST_TIMEOUT_MS,
+        'Pengajuan belum merespons. Periksa koneksi lalu coba lagi.',
+      );
 
       if (!result.success) {
         toast({
@@ -90,15 +107,15 @@ export function ParticipationModal({ user }: ParticipationModalProps) {
         setCompetitionId('');
         setEvidenceUrl('');
       }
-    } catch {
+    } catch (error) {
       toast({
         title: 'Kesalahan',
-        description: 'Terjadi kesalahan yang tidak terduga.',
+        description: getErrorMessage(error, 'Terjadi kesalahan yang tidak terduga.'),
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
   };
 
   if (!user) return null;
@@ -123,6 +140,20 @@ export function ParticipationModal({ user }: ParticipationModalProps) {
         {isLoadingProfile ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin" />
+          </div>
+        ) : loadError ? (
+          <div className="space-y-4 rounded-2xl border border-destructive/20 bg-destructive/5 p-5">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
+              <div className="space-y-1.5">
+                <p className="font-medium text-destructive">Formulir belum dapat dimuat</p>
+                <p className="text-sm leading-6 text-muted-foreground">{loadError}</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => void fetchProfileAndCompetitions()}>
+              <RefreshCw className="size-4" />
+              Coba lagi
+            </Button>
           </div>
         ) : linkStatus !== 'linked_exact' && linkStatus !== 'manually_linked' ? (
           <div className="space-y-4 py-2">

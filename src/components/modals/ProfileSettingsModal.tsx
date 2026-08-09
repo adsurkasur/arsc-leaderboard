@@ -16,6 +16,9 @@ import { User } from '@supabase/supabase-js';
 import { RaporLinkForm } from '@/components/profile/RaporLinkForm';
 import { refreshProfileFromRapor, updateProfileAvatar } from '@/lib/actions/raporIdentity';
 import { accountUsesRapor, formatHaloPosition, formatHaloUnit } from '@/lib/sharedProfile';
+import { getErrorMessage, withTimeout } from '@/lib/async';
+
+const PROFILE_REQUEST_TIMEOUT_MS = 12_000;
 
 type HaloProfile = Pick<
   Tables<'users'>,
@@ -49,34 +52,43 @@ export function ProfileSettingsModal({
 
     setIsLoadingProfile(true);
     setLoadError(null);
-    const [profileResult, haloResult] = await Promise.all([
-      supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle(),
-      supabase
-        .from('users')
-        .select('id, name, biro, jabatan, role, avatar_url')
-        .eq('id', user.id)
-        .maybeSingle(),
-    ]);
-
-    const leaderboardProfile = profileResult.error ? null : profileResult.data;
-    const sharedProfile = haloResult.error ? null : haloResult.data;
-
-    setProfile(leaderboardProfile);
-    setHaloProfile(sharedProfile);
-    setAvatarUrl(sharedProfile?.avatar_url || leaderboardProfile?.avatar_url || '');
-
-    if (!leaderboardProfile && !sharedProfile) {
-      setLoadError(
-        profileResult.error?.message
-          || haloResult.error?.message
-          || 'Profil akun belum tersedia di Halo PSDM maupun Leaderboard.',
+    try {
+      const [profileResult, haloResult] = await withTimeout(
+        Promise.all([
+          supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .maybeSingle(),
+          supabase
+            .from('users')
+            .select('id, name, biro, jabatan, role, avatar_url')
+            .eq('id', user.id)
+            .maybeSingle(),
+        ]),
+        PROFILE_REQUEST_TIMEOUT_MS,
+        'Profil belum merespons. Periksa koneksi lalu coba lagi.',
       );
+
+      const leaderboardProfile = profileResult.error ? null : profileResult.data;
+      const sharedProfile = haloResult.error ? null : haloResult.data;
+
+      setProfile(leaderboardProfile);
+      setHaloProfile(sharedProfile);
+      setAvatarUrl(sharedProfile?.avatar_url || leaderboardProfile?.avatar_url || '');
+
+      if (!leaderboardProfile && !sharedProfile) {
+        setLoadError(
+          profileResult.error?.message
+            || haloResult.error?.message
+            || 'Profil akun belum tersedia di Halo PSDM maupun Leaderboard.',
+        );
+      }
+    } catch (error) {
+      setLoadError(getErrorMessage(error, 'Profil akun belum dapat dimuat.'));
+    } finally {
+      setIsLoadingProfile(false);
     }
-    setIsLoadingProfile(false);
   }, [user]);
 
   useEffect(() => {
@@ -90,40 +102,66 @@ export function ProfileSettingsModal({
     }
 
     setIsSavingAvatar(true);
-    const result = await updateProfileAvatar(avatarUrl || null);
-    setIsSavingAvatar(false);
+    try {
+      const result = await withTimeout(
+        updateProfileAvatar(avatarUrl || null),
+        PROFILE_REQUEST_TIMEOUT_MS,
+        'Penyimpanan foto belum merespons. Coba lagi.',
+      );
 
-    if (!result.success) {
+      if (!result.success) {
+        toast({
+          title: 'Foto belum tersimpan',
+          description: 'error' in result ? result.error : 'Perubahan belum dapat disimpan.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({ title: 'Foto profil diperbarui', description: 'Perubahan tersimpan di profil akun ARSC.' });
+      await fetchUserProfile();
+      await onProfileChanged?.();
+    } catch (error) {
       toast({
         title: 'Foto belum tersimpan',
-        description: 'error' in result ? result.error : 'Perubahan belum dapat disimpan.',
+        description: getErrorMessage(error, 'Perubahan belum dapat disimpan.'),
         variant: 'destructive',
       });
-      return;
+    } finally {
+      setIsSavingAvatar(false);
     }
-
-    toast({ title: 'Foto profil diperbarui', description: 'Perubahan tersimpan di profil akun ARSC.' });
-    await fetchUserProfile();
-    await onProfileChanged?.();
   };
 
   const handleRefreshIdentity = async () => {
     setIsRefreshing(true);
-    const result = await refreshProfileFromRapor();
-    setIsRefreshing(false);
+    try {
+      const result = await withTimeout(
+        refreshProfileFromRapor(),
+        PROFILE_REQUEST_TIMEOUT_MS,
+        'Sinkronisasi Rapor belum merespons. Coba lagi.',
+      );
 
-    if (!result.success) {
+      if (!result.success) {
+        toast({
+          title: 'Belum dapat disinkronkan',
+          description: 'error' in result ? result.error : 'Integrasi Rapor belum dapat digunakan.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({ title: 'Data Rapor diperbarui', description: 'Nama dan bidang/biro sudah memakai rilis aktif.' });
+      await fetchUserProfile();
+      await onProfileChanged?.();
+    } catch (error) {
       toast({
         title: 'Belum dapat disinkronkan',
-        description: 'error' in result ? result.error : 'Integrasi Rapor belum dapat digunakan.',
+        description: getErrorMessage(error, 'Integrasi Rapor belum dapat digunakan.'),
         variant: 'destructive',
       });
-      return;
+    } finally {
+      setIsRefreshing(false);
     }
-
-    toast({ title: 'Data Rapor diperbarui', description: 'Nama dan bidang/biro sudah memakai rilis aktif.' });
-    await fetchUserProfile();
-    await onProfileChanged?.();
   };
 
   const isLinked = profile?.link_status === 'linked_exact' || profile?.link_status === 'manually_linked';

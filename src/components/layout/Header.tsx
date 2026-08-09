@@ -12,6 +12,7 @@ import {
   Link2,
   LogOut,
   Menu,
+  RefreshCw,
   Settings,
   Shield,
   X,
@@ -45,6 +46,7 @@ export function Header() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isRefreshingAccount, setIsRefreshingAccount] = useState(false);
 
   const isIdentityLinked = linkStatus === 'linked_exact' || linkStatus === 'manually_linked';
   const isHaloOperator = accountRole?.toUpperCase() === 'PH';
@@ -55,6 +57,16 @@ export function Header() {
     await signOut();
     setIsMobileMenuOpen(false);
     router.push('/');
+  };
+
+  const handleRefreshAccount = async () => {
+    setIsRefreshingAccount(true);
+    try {
+      await refreshIdentityStatus();
+      router.refresh();
+    } finally {
+      setIsRefreshingAccount(false);
+    }
   };
 
   return (
@@ -143,6 +155,10 @@ export function Header() {
                   <DropdownMenuItem onClick={() => setIsProfileOpen(true)} className="cursor-pointer gap-2 rounded-lg">
                     <Settings className="size-4" />
                     Profil anggota
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => void handleRefreshAccount()} disabled={isRefreshingAccount} className="cursor-pointer gap-2 rounded-lg">
+                    <RefreshCw className={`size-4 ${isRefreshingAccount ? 'animate-spin' : ''}`} />
+                    Segarkan data akun
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setIsHelpOpen(true)} className="cursor-pointer gap-2 rounded-lg">
                     <HelpCircle className="size-4" />
@@ -254,6 +270,14 @@ export function Header() {
                     >
                       <Settings className="size-4" />
                       Profil anggota
+                    </button>
+                    <button
+                      className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium hover:bg-muted disabled:opacity-50"
+                      onClick={() => void handleRefreshAccount()}
+                      disabled={isRefreshingAccount}
+                    >
+                      <RefreshCw className={`size-4 ${isRefreshingAccount ? 'animate-spin' : ''}`} />
+                      Segarkan data akun
                     </button>
                     <button
                       className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium hover:bg-muted"

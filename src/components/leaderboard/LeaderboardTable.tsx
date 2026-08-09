@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Profile, LeaderboardEntry } from '@/lib/types';
 import { Input } from '@/components/ui/input';
@@ -10,10 +10,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Trophy, Medal, Award, ArrowUpDown, ArrowUp, ArrowDown, Info, Loader2, BadgeCheck, ChevronDown } from 'lucide-react';
+import { Search, Trophy, Medal, Award, ArrowUpDown, ArrowUp, ArrowDown, Info, Loader2, BadgeCheck, ChevronDown, AlertCircle, RefreshCw } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { getErrorMessage, withTimeout } from '@/lib/async';
 
 const INITIAL_LEADERBOARD_LIMIT = 12;
+const LEADERBOARD_REQUEST_TIMEOUT_MS = 12_000;
 
 type SortField = 'rank' | 'full_name' | 'total_participation_count' | 'last_activity_at';
 type SortDirection = 'asc' | 'desc';
@@ -27,6 +29,8 @@ export function LeaderboardTable() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortField, setSortField] = useState<SortField>('rank');
@@ -40,84 +44,126 @@ export function LeaderboardTable() {
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [participationData, setParticipationData] = useState<Array<{ id: string; competition?: { id: string; title: string; date: string; category: string } | null; participation_date: string | null; created_at: string }>>([]);
   const [isLoadingParticipation, setIsLoadingParticipation] = useState(false);
+  const profileRequestRef = useRef(0);
 
-  useEffect(() => {
-    fetchProfiles();
-    fetchCategories();
+  const fetchProfiles = useCallback(async ({ initial = false }: { initial?: boolean } = {}) => {
+    const requestId = ++profileRequestRef.current;
+    if (initial) setIsLoading(true);
+    else setIsRefreshing(true);
+    setLoadError(null);
 
-    const channel = supabase
-      .channel('leaderboard-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
-        fetchProfiles();
-      })
-      .subscribe();
+    try {
+      const { data, error } = await withTimeout(
+        supabase.rpc('get_public_leaderboard'),
+        LEADERBOARD_REQUEST_TIMEOUT_MS,
+        'Peringkat belum merespons. Periksa koneksi lalu coba lagi.',
+      );
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+      let nextProfiles: Profile[];
+      if (!error && data) {
+        nextProfiles = data.map((profile, index) => ({
+          id: profile.profile_id,
+          member_id: null,
+          link_status: profile.is_identity_verified ? 'linked_exact' : 'unmatched',
+          user_id: null,
+          full_name: profile.full_name,
+          bidang_biro: profile.bidang_biro,
+          avatar_url: profile.avatar_url,
+          total_participation_count: profile.total_participation_count,
+          last_activity_at: profile.last_activity_at,
+          created_at: profile.created_at,
+          updated_at: profile.created_at,
+          globalRank: index + 1,
+          is_identity_verified: profile.is_identity_verified,
+        }));
+      } else {
+        // Compatibility fallback while the additive Stage 4 read RPC is pending deployment.
+        const legacyResult = await withTimeout(
+          supabase
+            .from('profiles')
+            .select('*')
+            .order('total_participation_count', { ascending: false })
+            .order('last_activity_at', { ascending: true })
+            .order('created_at', { ascending: true }),
+          LEADERBOARD_REQUEST_TIMEOUT_MS,
+          'Peringkat belum merespons. Periksa koneksi lalu coba lagi.',
+        );
 
-  const fetchProfiles = async () => {
-    const { data, error } = await supabase.rpc('get_public_leaderboard');
-
-    if (!error && data) {
-      const profilesWithRanks: Profile[] = data.map((profile, index) => ({
-        id: profile.profile_id,
-        member_id: null,
-        link_status: profile.is_identity_verified ? 'linked_exact' : 'unmatched',
-        user_id: null,
-        full_name: profile.full_name,
-        bidang_biro: profile.bidang_biro,
-        avatar_url: profile.avatar_url,
-        total_participation_count: profile.total_participation_count,
-        last_activity_at: profile.last_activity_at,
-        created_at: profile.created_at,
-        updated_at: profile.created_at,
-        globalRank: index + 1,
-        is_identity_verified: profile.is_identity_verified,
-      }));
-
-      setProfiles(profilesWithRanks);
-    } else {
-      // Compatibility fallback while the additive Stage 4 read RPC is pending deployment.
-      const { data: legacyProfiles } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('total_participation_count', { ascending: false })
-        .order('last_activity_at', { ascending: true })
-        .order('created_at', { ascending: true });
-
-      if (legacyProfiles) {
-        setProfiles(legacyProfiles.map((profile, index) => ({
+        if (legacyResult.error) throw legacyResult.error;
+        nextProfiles = (legacyResult.data ?? []).map((profile, index) => ({
           ...profile,
           globalRank: index + 1,
           is_identity_verified: profile.member_id !== null
             && (profile.link_status === 'linked_exact' || profile.link_status === 'manually_linked'),
-        })));
+        }));
+      }
+
+      if (requestId === profileRequestRef.current) setProfiles(nextProfiles);
+    } catch (error) {
+      if (requestId === profileRequestRef.current) {
+        setLoadError(getErrorMessage(error, 'Peringkat belum dapat dimuat.'));
+      }
+    } finally {
+      if (requestId === profileRequestRef.current) {
+        setIsLoading(false);
+        setIsRefreshing(false);
       }
     }
-    setIsLoading(false);
-  };
+  }, []);
 
-  const fetchCategories = async () => {
-    const { data, error } = await supabase
-      .from('competitions')
-      .select('category');
+  const fetchCategories = useCallback(async () => {
+    try {
+      const { data, error } = await withTimeout(
+        supabase.from('competitions').select('category'),
+        LEADERBOARD_REQUEST_TIMEOUT_MS,
+      );
 
-    if (!error && data) {
-      const uniqueCategories = [...new Set(data.map(c => c.category))];
+      if (error) throw error;
+      const uniqueCategories = [...new Set((data ?? []).map((competition) => competition.category))];
       setCategories(uniqueCategories);
+    } catch (error) {
+      console.error('Competition categories refresh failed:', getErrorMessage(error, 'Unknown category error'));
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void fetchProfiles({ initial: true });
+    void fetchCategories();
+
+    const refreshProfiles = () => void fetchProfiles();
+    const refreshCategories = () => void fetchCategories();
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible' && navigator.onLine) refreshProfiles();
+    };
+    const channel = supabase
+      .channel('leaderboard-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, refreshProfiles)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'participation_logs' }, refreshProfiles)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'competitions' }, refreshCategories)
+      .subscribe();
+
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    window.addEventListener('online', refreshProfiles);
+
+    return () => {
+      profileRequestRef.current += 1;
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+      window.removeEventListener('online', refreshProfiles);
+      void supabase.removeChannel(channel);
+    };
+  }, [fetchCategories, fetchProfiles]);
 
   const fetchCategoryParticipationCounts = useCallback(async () => {
     if (selectedCategory === 'all') return;
 
     setIsLoadingCategoryData(true);
     try {
-      const { data, error } = await supabase.rpc('get_public_category_participation_counts', {
-        p_category: selectedCategory,
-      });
+      const { data, error } = await withTimeout(
+        supabase.rpc('get_public_category_participation_counts', {
+          p_category: selectedCategory,
+        }),
+        LEADERBOARD_REQUEST_TIMEOUT_MS,
+      );
 
       if (!error && data) {
         const counts: Record<string, number> = {};
@@ -126,14 +172,17 @@ export function LeaderboardTable() {
         });
         setCategoryParticipationCounts(counts);
       } else {
-        const { data: legacyData } = await supabase
-          .from('participation_logs')
-          .select(`
-            profile_id,
-            competition:competitions!inner(category)
-          `)
-          .eq('status', 'approved')
-          .eq('competition.category', selectedCategory);
+        const { data: legacyData } = await withTimeout(
+          supabase
+            .from('participation_logs')
+            .select(`
+              profile_id,
+              competition:competitions!inner(category)
+            `)
+            .eq('status', 'approved')
+            .eq('competition.category', selectedCategory),
+          LEADERBOARD_REQUEST_TIMEOUT_MS,
+        );
 
         const counts: Record<string, number> = {};
         legacyData?.forEach((log) => {
@@ -144,7 +193,9 @@ export function LeaderboardTable() {
     } catch (error) {
       console.error('Error fetching category participation counts:', error);
     }
-    setIsLoadingCategoryData(false);
+    finally {
+      setIsLoadingCategoryData(false);
+    }
   }, [selectedCategory]);
 
   // Fetch category-specific participation counts when category changes
@@ -162,9 +213,12 @@ export function LeaderboardTable() {
     setIsLoadingParticipation(true);
 
     try {
-      const { data, error } = await supabase.rpc('get_public_member_participations', {
-        p_profile_id: profile.id,
-      });
+      const { data, error } = await withTimeout(
+        supabase.rpc('get_public_member_participations', {
+          p_profile_id: profile.id,
+        }),
+        LEADERBOARD_REQUEST_TIMEOUT_MS,
+      );
 
       if (!error && data) {
         setParticipationData(data.map((participation) => ({
@@ -179,23 +233,26 @@ export function LeaderboardTable() {
           created_at: participation.created_at,
         })));
       } else {
-        const { data: legacyData } = await supabase
-          .from('participation_logs')
-          .select(`
-            *,
-            competition:competitions(id, title, date, category)
-          `)
-          .eq('profile_id', profile.id)
-          .eq('status', 'approved')
-          .order('created_at', { ascending: false });
+        const { data: legacyData } = await withTimeout(
+          supabase
+            .from('participation_logs')
+            .select(`
+              *,
+              competition:competitions(id, title, date, category)
+            `)
+            .eq('profile_id', profile.id)
+            .eq('status', 'approved')
+            .order('created_at', { ascending: false }),
+          LEADERBOARD_REQUEST_TIMEOUT_MS,
+        );
 
         if (legacyData) setParticipationData(legacyData);
       }
     } catch (error) {
       console.error('Error fetching participation data:', error);
+    } finally {
+      setIsLoadingParticipation(false);
     }
-
-    setIsLoadingParticipation(false);
   };
 
   const filteredAndSortedEntries = useMemo(() => {
@@ -345,8 +402,39 @@ export function LeaderboardTable() {
     );
   }
 
+  if (loadError && profiles.length === 0) {
+    return (
+      <div className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-destructive/20 bg-card px-6 py-10 text-center shadow-sm">
+        <span className="flex size-11 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+          <AlertCircle className="size-5" />
+        </span>
+        <h3 className="mt-4 font-semibold">Peringkat belum dapat dimuat</h3>
+        <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">{loadError}</p>
+        <Button className="mt-5 gap-2" variant="outline" onClick={() => void fetchProfiles({ initial: true })}>
+          <RefreshCw className="size-4" />
+          Coba lagi
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5 md:space-y-6">
+      {loadError && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-warning/25 bg-warning/5 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 size-4 shrink-0 text-warning" />
+            <p className="leading-6 text-muted-foreground">
+              Data terakhir tetap ditampilkan. Pembaruan terbaru belum berhasil dimuat.
+            </p>
+          </div>
+          <Button size="sm" variant="outline" className="gap-2" onClick={() => void fetchProfiles()} disabled={isRefreshing}>
+            <RefreshCw className={`size-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Segarkan
+          </Button>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="rounded-2xl border border-border/80 bg-card p-3 shadow-sm sm:p-4">
         <div className="flex flex-col gap-3 sm:flex-row">
@@ -375,11 +463,24 @@ export function LeaderboardTable() {
             </SelectContent>
           </Select>
         </div>
-        <p className="mt-3 px-1 text-xs text-muted-foreground">
-          {searchQuery || selectedCategory !== 'all'
-            ? `${filteredAndSortedEntries.length} hasil ditampilkan`
-            : `${profiles.length} anggota tercatat`}
-        </p>
+        <div className="mt-3 flex items-center justify-between gap-3 px-1">
+          <p className="text-xs text-muted-foreground">
+            {searchQuery || selectedCategory !== 'all'
+              ? `${filteredAndSortedEntries.length} hasil ditampilkan`
+              : `${profiles.length} anggota tercatat`}
+          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1.5 rounded-full px-2.5 text-xs text-muted-foreground"
+            onClick={() => void fetchProfiles()}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`size-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Memperbarui' : 'Perbarui data'}
+          </Button>
+        </div>
       </div>
 
       {/* Table */}

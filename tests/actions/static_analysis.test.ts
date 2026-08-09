@@ -68,3 +68,17 @@ test('Static Analysis: admin grant only changes the Leaderboard role assignment'
     'Admin assignment must not mutate Halo, Rapor, profile, or participation records.',
   );
 });
+
+test('Static Analysis: auth callback never waits on database reads while the auth lock is held', () => {
+  const authPath = path.join(process.cwd(), 'src', 'hooks', 'useAuth.tsx');
+  const authSource = fs.readFileSync(authPath, 'utf8');
+
+  assert.doesNotMatch(
+    authSource,
+    /onAuthStateChange\(\s*async/i,
+    'Supabase auth callbacks must remain synchronous to avoid lock contention.',
+  );
+  assert.match(authSource, /setTimeout\([\s\S]*applySession/i);
+  assert.match(authSource, /visibilitychange/);
+  assert.match(authSource, /addEventListener\('online'/);
+});
