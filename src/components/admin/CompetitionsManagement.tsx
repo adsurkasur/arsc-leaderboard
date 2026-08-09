@@ -265,6 +265,17 @@ export function CompetitionsManagement() {
     }));
   };
 
+  const moveRule = (index: number, direction: -1 | 1) => {
+    setFormData((current) => {
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= current.rules.length) return current;
+
+      const rules = [...current.rules];
+      [rules[index], rules[targetIndex]] = [rules[targetIndex], rules[index]];
+      return { ...current, rules };
+    });
+  };
+
   const handleSave = async () => {
     const normalizedRules = formData.rules.map((rule, index) => ({
       id: rule.id,
@@ -515,7 +526,10 @@ export function CompetitionsManagement() {
                   </div>
 
                   {formData.rules.map((rule, index) => (
-                    <div key={rule.id ?? `new-${index}`} className="grid grid-cols-[1fr_7rem_auto] gap-2">
+                    <div
+                      key={rule.id ?? `new-${index}`}
+                      className="grid grid-cols-[minmax(0,1fr)_6rem] gap-2 sm:grid-cols-[minmax(0,1fr)_7rem_auto]"
+                    >
                       <Input
                         aria-label={`Nama capaian ${index + 1}`}
                         value={rule.label}
@@ -533,17 +547,39 @@ export function CompetitionsManagement() {
                           points: event.target.value === '' ? '' : Number(event.target.value),
                         })}
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => removeRule(index)}
-                        disabled={formData.rules.length === 1}
-                        aria-label={`Hapus capaian ${index + 1}`}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
+                      <div className="col-span-2 flex justify-end gap-1 sm:col-span-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => moveRule(index, -1)}
+                          disabled={index === 0}
+                          aria-label={`Naikkan capaian ${index + 1}`}
+                        >
+                          <ArrowUp className="size-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => moveRule(index, 1)}
+                          disabled={index === formData.rules.length - 1}
+                          aria-label={`Turunkan capaian ${index + 1}`}
+                        >
+                          <ArrowDown className="size-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() => removeRule(index)}
+                          disabled={formData.rules.length === 1}
+                          aria-label={`Hapus capaian ${index + 1}`}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
