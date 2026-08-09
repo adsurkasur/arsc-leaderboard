@@ -82,3 +82,18 @@ test('Static Analysis: auth callback never waits on database reads while the aut
   assert.match(authSource, /visibilitychange/);
   assert.match(authSource, /addEventListener\('online'/);
 });
+
+test('Static Analysis: participation form reuses account identity state', () => {
+  const modalPath = path.join(process.cwd(), 'src', 'components', 'modals', 'ParticipationModal.tsx');
+  const pagePath = path.join(process.cwd(), 'app', 'page.tsx');
+  const modalSource = fs.readFileSync(modalPath, 'utf8');
+  const pageSource = fs.readFileSync(pagePath, 'utf8');
+
+  assert.doesNotMatch(
+    modalSource,
+    /\.from\(\s*['"]profiles['"]\s*\)/,
+    'The participation form must not duplicate the account profile query.',
+  );
+  assert.match(modalSource, /linkStatus:\s*string\s*\|\s*null/);
+  assert.match(pageSource, /<ParticipationModal[\s\S]*linkStatus=\{linkStatus\}/);
+});

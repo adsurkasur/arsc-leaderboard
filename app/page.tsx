@@ -42,7 +42,7 @@ const flowSteps = [
 ];
 
 export default function HomePage() {
-  const { user, isLoading, linkStatus, accountRole } = useAuth();
+  const { user, isLoading, linkStatus, accountRole, refreshIdentityStatus } = useAuth();
   const isIdentityLinked = linkStatus === 'linked_exact' || linkStatus === 'manually_linked';
   const usesRapor = accountUsesRapor(accountRole);
 
@@ -91,7 +91,11 @@ export default function HomePage() {
               className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"
             >
               {user && !isLoading && usesRapor ? (
-                <ParticipationModal user={user} />
+                <ParticipationModal
+                  user={user}
+                  linkStatus={linkStatus}
+                  onIdentityLinked={refreshIdentityStatus}
+                />
               ) : !user ? (
                 <Button asChild size="lg" className="h-12 rounded-full bg-white px-6 text-slate-950 hover:bg-blue-50">
                   <Link href="/auth">Masuk untuk mengajukan</Link>

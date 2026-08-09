@@ -19,58 +19,60 @@ const PARTICIPATION_REQUEST_TIMEOUT_MS = 12_000;
 
 interface ParticipationModalProps {
   user: User | null;
+  linkStatus: string | null;
+  onIdentityLinked?: () => void | Promise<void>;
 }
 
-export function ParticipationModal({ user }: ParticipationModalProps) {
+function isLinkedIdentity(status: string | null) {
+  return status === 'linked_exact' || status === 'manually_linked';
+}
+
+export function ParticipationModal({ user, linkStatus, onIdentityLinked }: ParticipationModalProps) {
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [competitionId, setCompetitionId] = useState('');
   const [evidenceUrl, setEvidenceUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [linkStatus, setLinkStatus] = useState<string | null>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [effectiveLinkStatus, setEffectiveLinkStatus] = useState<string | null>(linkStatus);
+  const [isLoadingCompetitions, setIsLoadingCompetitions] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const fetchProfileAndCompetitions = useCallback(async () => {
-    if (!user) return;
+  const fetchCompetitions = useCallback(async () => {
+    if (!user || !isLinkedIdentity(effectiveLinkStatus)) return;
 
-    setIsLoadingProfile(true);
+    setIsLoadingCompetitions(true);
     setLoadError(null);
     try {
-      const [profileResult, competitionsResult] = await withTimeout(
-        Promise.all([
-          supabase
-            .from('profiles')
-            .select('link_status')
-            .eq('user_id', user.id)
-            .maybeSingle(),
-          supabase
-            .from('competitions')
-            .select('*')
-            .order('date', { ascending: false }),
-        ]),
+      const competitionsResult = await withTimeout(
+        supabase
+          .from('competitions')
+          .select('id, title, date, description, category, created_at, updated_at')
+          .order('date', { ascending: false }),
         PARTICIPATION_REQUEST_TIMEOUT_MS,
         'Formulir belum merespons. Periksa koneksi lalu coba lagi.',
       );
 
-      if (profileResult.error) throw profileResult.error;
       if (competitionsResult.error) throw competitionsResult.error;
 
-      setLinkStatus(profileResult.data?.link_status ?? null);
       setCompetitions(competitionsResult.data ?? []);
     } catch (error) {
       setLoadError(getErrorMessage(error, 'Formulir pengajuan belum dapat dimuat.'));
     } finally {
-      setIsLoadingProfile(false);
+      setIsLoadingCompetitions(false);
     }
-  }, [user]);
+  }, [effectiveLinkStatus, user]);
 
   useEffect(() => {
-    if (isModalOpen && user) {
-      void fetchProfileAndCompetitions();
+    setEffectiveLinkStatus(linkStatus);
+    setLoadError(null);
+  }, [linkStatus, user?.id]);
+
+  useEffect(() => {
+    if (isModalOpen && user && isLinkedIdentity(effectiveLinkStatus)) {
+      void fetchCompetitions();
     }
-  }, [isModalOpen, user, fetchProfileAndCompetitions]);
+  }, [effectiveLinkStatus, fetchCompetitions, isModalOpen, user]);
 
   const handleSubmit = async () => {
     if (!competitionId || !evidenceUrl.trim()) {
@@ -137,7 +139,7 @@ export function ParticipationModal({ user }: ParticipationModalProps) {
           </DialogDescription>
         </DialogHeader>
         
-        {isLoadingProfile ? (
+        {isLoadingCompetitions ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin" />
           </div>
@@ -150,12 +152,12 @@ export function ParticipationModal({ user }: ParticipationModalProps) {
                 <p className="text-sm leading-6 text-muted-foreground">{loadError}</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="gap-2" onClick={() => void fetchProfileAndCompetitions()}>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => void fetchCompetitions()}>
               <RefreshCw className="size-4" />
               Coba lagi
             </Button>
           </div>
-        ) : linkStatus !== 'linked_exact' && linkStatus !== 'manually_linked' ? (
+        ) : !isLinkedIdentity(effectiveLinkStatus) ? (
           <div className="space-y-4 py-2">
             <div className="rounded-2xl border border-warning/20 bg-warning/5 p-4 text-sm">
               <p className="font-semibold text-foreground">Hubungkan Rapor sebelum mengajukan</p>
@@ -163,7 +165,13 @@ export function ParticipationModal({ user }: ParticipationModalProps) {
                 Ini memastikan pengajuan masuk ke identitas anggota yang benar. Anda tidak perlu menunggu admin.
               </p>
             </div>
-            <RaporLinkForm compact onLinked={() => setLinkStatus('linked_exact')} />
+            <RaporLinkForm
+              compact
+              onLinked={async () => {
+                setEffectiveLinkStatus('linked_exact');
+                await onIdentityLinked?.();
+              }}
+            />
           </div>
         ) : (
           <>
