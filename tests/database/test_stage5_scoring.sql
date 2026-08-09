@@ -48,6 +48,37 @@ BEGIN
     RAISE EXCEPTION 'Required national and PKM templates were not seeded';
   END IF;
 
+  IF (
+    SELECT count(*)
+    FROM (
+      SELECT template.code
+      FROM public.leaderboard_scoring_templates template
+      JOIN public.leaderboard_scoring_template_rules rule ON rule.template_id = template.id
+      WHERE template.code IN ('internal-ub', 'regional', 'nasional', 'internasional', 'umum')
+      GROUP BY template.code
+      HAVING count(*) = 10
+    ) complete_template
+  ) <> 5 THEN
+    RAISE EXCEPTION 'Every standard scoring template must contain 10 complete placement options';
+  END IF;
+
+  IF (
+    SELECT count(*)
+    FROM public.leaderboard_scoring_template_rules
+    WHERE template_id = v_national_template_id
+  ) <> 10 THEN
+    RAISE EXCEPTION 'National template must contain 10 complete placement options';
+  END IF;
+
+  IF (
+    SELECT count(*)
+    FROM public.leaderboard_scoring_template_rules
+    WHERE template_id = v_national_template_id
+      AND label IN ('Juara Harapan 1', 'Juara Harapan 2', 'Juara Harapan 3')
+  ) <> 3 THEN
+    RAISE EXCEPTION 'National template must contain Harapan 1, 2, and 3';
+  END IF;
+
   IF NOT EXISTS (
     SELECT 1
     FROM public.leaderboard_scoring_template_rules
@@ -141,8 +172,8 @@ BEGIN
   WHERE competition_id = v_competition_id
     AND is_active = true;
 
-  IF v_count <> 6 THEN
-    RAISE EXCEPTION 'National preset should create 6 active rules, found %', v_count;
+  IF v_count <> 10 THEN
+    RAISE EXCEPTION 'National preset should create 10 active rules, found %', v_count;
   END IF;
 
   SELECT id INTO v_rule_id
@@ -155,6 +186,60 @@ BEGIN
   FROM public.leaderboard_competition_scoring_rules
   WHERE competition_id = v_competition_id
     AND label = 'Juara 2';
+
+  -- Editing keeps the competition identity, updates selected rule IDs in place,
+  -- and deactivates omitted rules instead of deleting historical definitions.
+  v_result := public.leaderboard_save_competition(
+    v_competition_id,
+    'National Stage 5 Test - Edited',
+    current_date,
+    'Customized scoring test',
+    'Nasional',
+    true,
+    v_national_template_id,
+    jsonb_build_array(
+      jsonb_build_object(
+        'id', v_rule_id,
+        'label', 'Juara 1 Utama',
+        'points', 55,
+        'sort_order', 10
+      ),
+      jsonb_build_object(
+        'id', v_other_rule_id,
+        'label', 'Juara 2',
+        'points', 44,
+        'sort_order', 20
+      )
+    )
+  );
+
+  IF (v_result->>'competition_id')::uuid IS DISTINCT FROM v_competition_id
+    OR (v_result->>'rule_count')::integer IS DISTINCT FROM 2
+    OR NOT EXISTS (
+      SELECT 1
+      FROM public.competitions
+      WHERE id = v_competition_id
+        AND title = 'National Stage 5 Test - Edited'
+        AND is_active = true
+    )
+    OR NOT EXISTS (
+      SELECT 1
+      FROM public.leaderboard_competition_scoring_rules
+      WHERE id = v_rule_id
+        AND competition_id = v_competition_id
+        AND label = 'Juara 1 Utama'
+        AND points = 55
+        AND is_active = true
+    )
+    OR (
+      SELECT count(*)
+      FROM public.leaderboard_competition_scoring_rules
+      WHERE competition_id = v_competition_id
+        AND is_active = true
+    ) <> 2
+  THEN
+    RAISE EXCEPTION 'Competition scoring edit did not persist safely';
+  END IF;
 
   v_result := public.leaderboard_save_competition(
     NULL,
@@ -221,8 +306,8 @@ BEGIN
     WHERE id = v_log_id
       AND status = 'pending'
       AND requested_scoring_rule_id = v_rule_id
-      AND requested_achievement = 'Juara 1'
-      AND requested_points = 50
+      AND requested_achievement = 'Juara 1 Utama'
+      AND requested_points = 55
       AND awarded_points IS NULL
   ) THEN
     RAISE EXCEPTION 'Submission did not preserve the requested scoring snapshot';
@@ -238,7 +323,7 @@ BEGIN
   PERFORM set_config('request.jwt.claims', '{"sub":"' || v_admin_id || '"}', true);
 
   v_result := public.review_participation_v2(v_log_id, 'approved', v_rule_id, 'Verified');
-  IF (v_result->>'awarded_points')::integer IS DISTINCT FROM 50 THEN
+  IF (v_result->>'awarded_points')::integer IS DISTINCT FROM 55 THEN
     RAISE EXCEPTION 'Configured national score was not applied';
   END IF;
 
@@ -253,8 +338,8 @@ BEGIN
     WHERE log_id = v_log_id
       AND to_status = 'approved'
       AND scoring_rule_id = v_rule_id
-      AND achievement = 'Juara 1'
-      AND awarded_points = 50
+      AND achievement = 'Juara 1 Utama'
+      AND awarded_points = 55
   ) THEN
     RAISE EXCEPTION 'Review audit event did not preserve the scoring snapshot';
   END IF;
@@ -263,24 +348,24 @@ BEGIN
   FROM public.get_public_leaderboard_v2()
   WHERE profile_id = v_profile_id;
 
-  IF v_points IS DISTINCT FROM 50 THEN
-    RAISE EXCEPTION 'Public leaderboard should total 50 points, got %', v_points;
+  IF v_points IS DISTINCT FROM 55 THEN
+    RAISE EXCEPTION 'Public leaderboard should total 55 points, got %', v_points;
   END IF;
 
   SELECT total_points INTO v_points
   FROM public.get_public_category_scores_v2('Nasional')
   WHERE profile_id = v_profile_id;
 
-  IF v_points IS DISTINCT FROM 50 THEN
-    RAISE EXCEPTION 'Category leaderboard should total 50 points, got %', v_points;
+  IF v_points IS DISTINCT FROM 55 THEN
+    RAISE EXCEPTION 'Category leaderboard should total 55 points, got %', v_points;
   END IF;
 
   IF NOT EXISTS (
     SELECT 1
     FROM public.get_public_member_participations_v2(v_profile_id)
     WHERE participation_id = v_log_id
-      AND achievement = 'Juara 1'
-      AND awarded_points = 50
+      AND achievement = 'Juara 1 Utama'
+      AND awarded_points = 55
   ) THEN
     RAISE EXCEPTION 'Public participation detail did not include achievement and points';
   END IF;

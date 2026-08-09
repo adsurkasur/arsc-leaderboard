@@ -41,9 +41,55 @@ SELECT
   'stage5_seed',
   'leaderboard_scoring_template_rules',
   'system_rule_count',
-  CASE WHEN count(*) = 35 THEN 'PASS' ELSE 'FAIL' END,
+  CASE WHEN count(*) = 56 THEN 'PASS' ELSE 'FAIL' END,
   count(*)
 FROM public.leaderboard_scoring_template_rules
+UNION ALL
+SELECT
+  'stage5_seed',
+  'standard_templates',
+  'complete_template_count',
+  CASE WHEN count(*) = 5 THEN 'PASS' ELSE 'FAIL' END,
+  count(*)
+FROM (
+  SELECT template.code
+  FROM public.leaderboard_scoring_templates template
+  JOIN public.leaderboard_scoring_template_rules rule ON rule.template_id = template.id
+  WHERE template.code IN ('internal-ub', 'regional', 'nasional', 'internasional', 'umum')
+  GROUP BY template.code
+  HAVING count(*) = 10
+) complete_template
+UNION ALL
+SELECT
+  'stage5_seed',
+  'nasional',
+  'complete_stage_count',
+  CASE WHEN count(*) = 10 THEN 'PASS' ELSE 'FAIL' END,
+  count(*)
+FROM public.leaderboard_scoring_template_rules rule
+JOIN public.leaderboard_scoring_templates template ON template.id = rule.template_id
+WHERE template.code = 'nasional'
+UNION ALL
+SELECT
+  'stage5_seed',
+  'nasional',
+  'harapan_stage_count',
+  CASE WHEN count(*) = 3 THEN 'PASS' ELSE 'FAIL' END,
+  count(*)
+FROM public.leaderboard_scoring_template_rules rule
+JOIN public.leaderboard_scoring_templates template ON template.id = rule.template_id
+WHERE template.code = 'nasional'
+  AND rule.label IN ('Juara Harapan 1', 'Juara Harapan 2', 'Juara Harapan 3')
+UNION ALL
+SELECT
+  'stage5_seed',
+  'internasional',
+  'complete_stage_count',
+  CASE WHEN count(*) = 10 THEN 'PASS' ELSE 'FAIL' END,
+  count(*)
+FROM public.leaderboard_scoring_template_rules rule
+JOIN public.leaderboard_scoring_templates template ON template.id = rule.template_id
+WHERE template.code = 'internasional'
 UNION ALL
 SELECT
   'stage5_seed',
