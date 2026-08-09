@@ -53,3 +53,18 @@ test('Static Analysis: Stage 4 changes only the additive shared-identity namespa
   assert.match(stage4, /references\s+public\.members\s*\(id\)/i);
   assert.match(stage4, /Rapor identity is already linked to another account/i);
 });
+
+test('Static Analysis: admin grant only changes the Leaderboard role assignment', () => {
+  const grantPath = path.join(process.cwd(), 'deployment', 'remote', 'grant_leaderboard_admin.sql');
+  const grantSql = fs.readFileSync(grantPath, 'utf8');
+
+  assert.match(grantSql, /BEGIN;/i);
+  assert.match(grantSql, /COMMIT;/i);
+  assert.match(grantSql, /INSERT\s+INTO\s+public\.user_roles/i);
+  assert.match(grantSql, /ON\s+CONFLICT\s*\(user_id,\s*role\)\s+DO\s+NOTHING/i);
+  assert.doesNotMatch(
+    grantSql,
+    /\b(?:insert\s+into|update|delete\s+from)\s+public\.(?:users|profiles|rapor_[a-z_]+|participation_logs)/i,
+    'Admin assignment must not mutate Halo, Rapor, profile, or participation records.',
+  );
+});

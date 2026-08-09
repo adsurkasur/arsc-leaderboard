@@ -12,6 +12,8 @@ interface AuthContextType {
   isLoading: boolean;
   linkStatus: string | null;
   accountRole: string | null;
+  accountName: string | null;
+  accountAvatarUrl: string | null;
   refreshIdentityStatus: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, metadata?: { full_name: string; bidang_biro: string }) => Promise<{ error: Error | null }>;
@@ -26,6 +28,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [linkStatus, setLinkStatus] = useState<string | null>(null);
   const [accountRole, setAccountRole] = useState<string | null>(null);
+  const [accountName, setAccountName] = useState<string | null>(null);
+  const [accountAvatarUrl, setAccountAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchIdentityContext = useCallback(async (userId: string) => {
@@ -37,13 +41,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle(),
       supabase
         .from('users')
-        .select('role')
+        .select('role, name, avatar_url')
         .eq('id', userId)
         .maybeSingle(),
     ]);
 
     setLinkStatus(profileResult.error ? null : profileResult.data?.link_status ?? null);
     setAccountRole(accountResult.error ? null : accountResult.data?.role ?? null);
+    setAccountName(accountResult.error ? null : accountResult.data?.name ?? null);
+    setAccountAvatarUrl(accountResult.error ? null : accountResult.data?.avatar_url ?? null);
   }, []);
 
   const checkAdminRole = useCallback(async (userId: string) => {
@@ -66,6 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) {
       setLinkStatus(null);
       setAccountRole(null);
+      setAccountName(null);
+      setAccountAvatarUrl(null);
       return;
     }
     await fetchIdentityContext(user.id);
@@ -86,6 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAdmin(false);
           setLinkStatus(null);
           setAccountRole(null);
+          setAccountName(null);
+          setAccountAvatarUrl(null);
         }
         setIsLoading(false);
       }
@@ -104,6 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAdmin(false);
         setLinkStatus(null);
         setAccountRole(null);
+        setAccountName(null);
+        setAccountAvatarUrl(null);
       }
       setIsLoading(false);
     });
@@ -139,10 +151,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAdmin(false);
     setLinkStatus(null);
     setAccountRole(null);
+    setAccountName(null);
+    setAccountAvatarUrl(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isAdmin, isLoading, linkStatus, accountRole, refreshIdentityStatus, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{
+      user,
+      session,
+      isAdmin,
+      isLoading,
+      linkStatus,
+      accountRole,
+      accountName,
+      accountAvatarUrl,
+      refreshIdentityStatus,
+      signIn,
+      signUp,
+      signOut,
+    }}>
       {children}
     </AuthContext.Provider>
   );

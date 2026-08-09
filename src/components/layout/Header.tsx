@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +29,17 @@ import {
 import { AboutModal, HelpModal, ProfileSettingsModal, RequestsModal } from '@/components/modals';
 
 export function Header() {
-  const { user, isAdmin, isLoading, linkStatus, accountRole, refreshIdentityStatus, signOut } = useAuth();
+  const {
+    user,
+    isAdmin,
+    isLoading,
+    linkStatus,
+    accountRole,
+    accountName,
+    accountAvatarUrl,
+    refreshIdentityStatus,
+    signOut,
+  } = useAuth();
   const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -39,6 +49,7 @@ export function Header() {
   const isIdentityLinked = linkStatus === 'linked_exact' || linkStatus === 'manually_linked';
   const isHaloOperator = accountRole?.toUpperCase() === 'PH';
   const shouldOfferRaporLink = !isIdentityLinked && !isHaloOperator;
+  const accountInitial = (accountName || user?.email || 'A').trim().charAt(0).toUpperCase();
 
   const handleSignOut = async () => {
     await signOut();
@@ -102,8 +113,16 @@ export function Header() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="ml-1 size-10 rounded-full" aria-label="Buka menu akun">
                     <Avatar className="size-9 border border-border">
+                      {accountAvatarUrl && (
+                        <AvatarImage
+                          src={accountAvatarUrl}
+                          alt={`Foto profil ${accountName || 'akun ARSC'}`}
+                          className="object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      )}
                       <AvatarFallback className="bg-foreground text-xs font-semibold text-background">
-                        {user.email?.[0]?.toUpperCase() || 'A'}
+                        {accountInitial}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -188,8 +207,16 @@ export function Header() {
                   <>
                     <div className="flex items-center gap-3 rounded-2xl border bg-card p-3">
                       <Avatar className="size-10">
+                        {accountAvatarUrl && (
+                          <AvatarImage
+                            src={accountAvatarUrl}
+                            alt={`Foto profil ${accountName || 'akun ARSC'}`}
+                            className="object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        )}
                         <AvatarFallback className="bg-foreground text-sm font-semibold text-background">
-                          {user.email?.[0]?.toUpperCase() || 'A'}
+                          {accountInitial}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">

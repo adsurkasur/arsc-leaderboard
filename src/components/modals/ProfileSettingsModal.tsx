@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { CheckCircle2, ImageIcon, Info, Loader2, RefreshCw, UserRound } from 'lucide-react';
+import { CheckCircle2, Info, Loader2, RefreshCw, UserRound } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -134,6 +135,7 @@ export function ProfileSettingsModal({
     ? profile?.bidang_biro || formatHaloUnit(haloProfile?.biro) || 'Belum tersinkron dari Rapor'
     : formatHaloUnit(haloProfile?.biro) || profile?.bidang_biro || 'Belum diatur di Halo PSDM';
   const displayPosition = formatHaloPosition(haloProfile?.jabatan);
+  const profileInitial = displayName.trim().charAt(0).toUpperCase() || 'A';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -255,12 +257,22 @@ export function ProfileSettingsModal({
 
             <section className="space-y-3 rounded-2xl border p-4 sm:p-5">
               <div className="flex items-start gap-3">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">
-                  <ImageIcon className="size-4 text-muted-foreground" />
-                </div>
+                <Avatar className="size-14 border border-border bg-muted shadow-sm">
+                  {avatarUrl && (
+                    <AvatarImage
+                      src={avatarUrl}
+                      alt={`Preview foto profil ${displayName}`}
+                      className="object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  )}
+                  <AvatarFallback className="bg-muted text-sm font-semibold text-muted-foreground">
+                    {profileInitial}
+                  </AvatarFallback>
+                </Avatar>
                 <div>
                   <p className="text-sm font-semibold">Foto profil</p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                     Opsional. Gunakan tautan gambar HTTPS yang dapat diakses publik.
                   </p>
                 </div>
