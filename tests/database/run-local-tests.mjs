@@ -23,8 +23,29 @@ function sqlFile(path) {
 }
 
 runSql(
-  'Resetting local integration fixtures and Stage 4 objects...',
+  'Resetting local integration fixtures and Stage 4/5 objects...',
   `
+    DROP FUNCTION IF EXISTS public.leaderboard_save_competition(uuid, text, date, text, text, boolean, uuid, jsonb);
+    DROP FUNCTION IF EXISTS public.submit_participation_v2(uuid, uuid, text);
+    DROP FUNCTION IF EXISTS public.review_participation_v2(uuid, text, uuid, text);
+    DROP FUNCTION IF EXISTS public.get_public_leaderboard_v2();
+    DROP FUNCTION IF EXISTS public.get_public_member_participations_v2(uuid);
+    DROP FUNCTION IF EXISTS public.get_public_category_scores_v2(text);
+    ALTER TABLE IF EXISTS public.participation_submission_events
+      DROP COLUMN IF EXISTS scoring_rule_id,
+      DROP COLUMN IF EXISTS achievement;
+    ALTER TABLE IF EXISTS public.participation_logs
+      DROP COLUMN IF EXISTS requested_scoring_rule_id,
+      DROP COLUMN IF EXISTS awarded_scoring_rule_id,
+      DROP COLUMN IF EXISTS requested_achievement,
+      DROP COLUMN IF EXISTS requested_points;
+    ALTER TABLE IF EXISTS public.competitions
+      DROP COLUMN IF EXISTS scoring_template_id,
+      DROP COLUMN IF EXISTS is_active;
+    DROP TABLE IF EXISTS public.leaderboard_competition_scoring_rules CASCADE;
+    DROP TABLE IF EXISTS public.leaderboard_scoring_template_rules CASCADE;
+    DROP TABLE IF EXISTS public.leaderboard_scoring_templates CASCADE;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON public.competitions TO authenticated;
     DROP TABLE IF EXISTS public.arsc_identities CASCADE;
     DROP TABLE IF EXISTS public.users CASCADE;
     DROP TABLE IF EXISTS public.rapor_access_codes CASCADE;
@@ -61,6 +82,10 @@ runSql(
 runSql('Applying additive Stage 4 artifact...', sqlFile('deployment/remote/stage4_identity_and_public_reads.sql'));
 runSql('Running Stage 4 shared identity validation...', sqlFile('tests/database/test_stage4_identity.sql'));
 runSql('Running read-only Stage 4 verification...', sqlFile('deployment/remote/verify_stage4_identity.sql'));
+runSql('Running read-only Stage 5 preflight...', sqlFile('deployment/remote/preflight_stage5_scoring.sql'));
+runSql('Applying additive Stage 5 scoring artifact...', sqlFile('deployment/remote/stage5_configurable_scoring.sql'));
+runSql('Running Stage 5 configurable scoring validation...', sqlFile('tests/database/test_stage5_scoring.sql'));
+runSql('Running read-only Stage 5 verification...', sqlFile('deployment/remote/verify_stage5_scoring.sql'));
 runSql('Cleaning local test state...', 'DROP TABLE IF EXISTS public._test_stage3_state;');
 
 process.stdout.write('All database integration tests passed.\n');

@@ -17,11 +17,12 @@ import { getErrorMessage, withTimeout } from '@/lib/async';
 const INITIAL_LEADERBOARD_LIMIT = 12;
 const LEADERBOARD_REQUEST_TIMEOUT_MS = 12_000;
 
-type SortField = 'rank' | 'full_name' | 'total_participation_count' | 'last_activity_at';
+type SortField = 'rank' | 'full_name' | 'total_points' | 'last_activity_at';
 type SortDirection = 'asc' | 'desc';
 
 // Extended profile type for leaderboard calculations
-type ProfileWithEffectiveCount = Profile & {
+type ProfileWithEffectiveScore = Profile & {
+  effectivePoints: number;
   effectiveParticipationCount: number;
 };
 
@@ -35,14 +36,21 @@ export function LeaderboardTable() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortField, setSortField] = useState<SortField>('rank');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [categoryParticipationCounts, setCategoryParticipationCounts] = useState<Record<string, number>>({});
+  const [categoryScores, setCategoryScores] = useState<Record<string, { points: number; count: number }>>({});
   const [isLoadingCategoryData, setIsLoadingCategoryData] = useState(false);
   const [showAll, setShowAll] = useState(false);
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
-  const [participationData, setParticipationData] = useState<Array<{ id: string; competition?: { id: string; title: string; date: string; category: string } | null; participation_date: string | null; created_at: string }>>([]);
+  const [participationData, setParticipationData] = useState<Array<{
+    id: string;
+    competition?: { id: string; title: string; date: string; category: string } | null;
+    achievement: string | null;
+    awarded_points: number;
+    participation_date: string | null;
+    created_at: string;
+  }>>([]);
   const [isLoadingParticipation, setIsLoadingParticipation] = useState(false);
   const profileRequestRef = useRef(0);
 
@@ -54,7 +62,7 @@ export function LeaderboardTable() {
 
     try {
       const { data, error } = await withTimeout(
-        supabase.rpc('get_public_leaderboard'),
+        supabase.rpc('get_public_leaderboard_v2'),
         LEADERBOARD_REQUEST_TIMEOUT_MS,
         'Peringkat belum merespons. Periksa koneksi lalu coba lagi.',
       );
@@ -69,6 +77,7 @@ export function LeaderboardTable() {
           full_name: profile.full_name,
           bidang_biro: profile.bidang_biro,
           avatar_url: profile.avatar_url,
+          total_points: Number(profile.total_points),
           total_participation_count: profile.total_participation_count,
           last_activity_at: profile.last_activity_at,
           created_at: profile.created_at,
@@ -77,24 +86,29 @@ export function LeaderboardTable() {
           is_identity_verified: profile.is_identity_verified,
         }));
       } else {
-        // Compatibility fallback while the additive Stage 4 read RPC is pending deployment.
+        // Compatibility fallback while the additive Stage 5 read RPC awaits manual deployment.
         const legacyResult = await withTimeout(
-          supabase
-            .from('profiles')
-            .select('*')
-            .order('total_participation_count', { ascending: false })
-            .order('last_activity_at', { ascending: true })
-            .order('created_at', { ascending: true }),
+          supabase.rpc('get_public_leaderboard'),
           LEADERBOARD_REQUEST_TIMEOUT_MS,
           'Peringkat belum merespons. Periksa koneksi lalu coba lagi.',
         );
 
         if (legacyResult.error) throw legacyResult.error;
         nextProfiles = (legacyResult.data ?? []).map((profile, index) => ({
-          ...profile,
+          id: profile.profile_id,
+          member_id: null,
+          link_status: profile.is_identity_verified ? 'linked_exact' : 'unmatched',
+          user_id: null,
+          full_name: profile.full_name,
+          bidang_biro: profile.bidang_biro,
+          avatar_url: profile.avatar_url,
+          total_points: 0,
+          total_participation_count: profile.total_participation_count,
+          last_activity_at: profile.last_activity_at,
+          created_at: profile.created_at,
+          updated_at: profile.created_at,
           globalRank: index + 1,
-          is_identity_verified: profile.member_id !== null
-            && (profile.link_status === 'linked_exact' || profile.link_status === 'manually_linked'),
+          is_identity_verified: profile.is_identity_verified,
         }));
       }
 
@@ -153,42 +167,40 @@ export function LeaderboardTable() {
     };
   }, [fetchCategories, fetchProfiles]);
 
-  const fetchCategoryParticipationCounts = useCallback(async () => {
+  const fetchCategoryScores = useCallback(async () => {
     if (selectedCategory === 'all') return;
 
     setIsLoadingCategoryData(true);
     try {
       const { data, error } = await withTimeout(
-        supabase.rpc('get_public_category_participation_counts', {
+        supabase.rpc('get_public_category_scores_v2', {
           p_category: selectedCategory,
         }),
         LEADERBOARD_REQUEST_TIMEOUT_MS,
       );
 
       if (!error && data) {
-        const counts: Record<string, number> = {};
+        const scores: Record<string, { points: number; count: number }> = {};
         data.forEach(row => {
-          counts[row.profile_id] = Number(row.participation_count);
+          scores[row.profile_id] = {
+            points: Number(row.total_points),
+            count: Number(row.participation_count),
+          };
         });
-        setCategoryParticipationCounts(counts);
+        setCategoryScores(scores);
       } else {
-        const { data: legacyData } = await withTimeout(
-          supabase
-            .from('participation_logs')
-            .select(`
-              profile_id,
-              competition:competitions!inner(category)
-            `)
-            .eq('status', 'approved')
-            .eq('competition.category', selectedCategory),
+        const legacyResult = await withTimeout(
+          supabase.rpc('get_public_category_participation_counts', {
+            p_category: selectedCategory,
+          }),
           LEADERBOARD_REQUEST_TIMEOUT_MS,
         );
 
-        const counts: Record<string, number> = {};
-        legacyData?.forEach((log) => {
-          counts[log.profile_id] = (counts[log.profile_id] || 0) + 1;
+        const scores: Record<string, { points: number; count: number }> = {};
+        legacyResult.data?.forEach((row) => {
+          scores[row.profile_id] = { points: 0, count: Number(row.participation_count) };
         });
-        setCategoryParticipationCounts(counts);
+        setCategoryScores(scores);
       }
     } catch (error) {
       console.error('Error fetching category participation counts:', error);
@@ -198,14 +210,14 @@ export function LeaderboardTable() {
     }
   }, [selectedCategory]);
 
-  // Fetch category-specific participation counts when category changes
+  // Fetch category-specific points and participation counts when category changes.
   useEffect(() => {
     if (selectedCategory !== 'all') {
-      fetchCategoryParticipationCounts();
+      fetchCategoryScores();
     } else {
-      setCategoryParticipationCounts({});
+      setCategoryScores({});
     }
-  }, [selectedCategory, profiles, fetchCategoryParticipationCounts]);
+  }, [selectedCategory, profiles, fetchCategoryScores]);
 
   const handleViewDetails = async (profile: Profile) => {
     setSelectedProfile(profile);
@@ -214,7 +226,7 @@ export function LeaderboardTable() {
 
     try {
       const { data, error } = await withTimeout(
-        supabase.rpc('get_public_member_participations', {
+        supabase.rpc('get_public_member_participations_v2', {
           p_profile_id: profile.id,
         }),
         LEADERBOARD_REQUEST_TIMEOUT_MS,
@@ -229,24 +241,34 @@ export function LeaderboardTable() {
             date: participation.competition_date,
             category: participation.competition_category,
           },
+          achievement: participation.achievement,
+          awarded_points: participation.awarded_points,
           participation_date: participation.participation_date,
           created_at: participation.created_at,
         })));
       } else {
-        const { data: legacyData } = await withTimeout(
-          supabase
-            .from('participation_logs')
-            .select(`
-              *,
-              competition:competitions(id, title, date, category)
-            `)
-            .eq('profile_id', profile.id)
-            .eq('status', 'approved')
-            .order('created_at', { ascending: false }),
+        const legacyResult = await withTimeout(
+          supabase.rpc('get_public_member_participations', {
+            p_profile_id: profile.id,
+          }),
           LEADERBOARD_REQUEST_TIMEOUT_MS,
         );
 
-        if (legacyData) setParticipationData(legacyData);
+        if (legacyResult.data) {
+          setParticipationData(legacyResult.data.map((participation) => ({
+            id: participation.participation_id,
+            competition: {
+              id: participation.competition_id,
+              title: participation.competition_title,
+              date: participation.competition_date,
+              category: participation.competition_category,
+            },
+            achievement: null,
+            awarded_points: 0,
+            participation_date: participation.participation_date,
+            created_at: participation.created_at,
+          })));
+        }
       }
     } catch (error) {
       console.error('Error fetching participation data:', error);
@@ -256,13 +278,16 @@ export function LeaderboardTable() {
   };
 
   const filteredAndSortedEntries = useMemo(() => {
-    let filtered: ProfileWithEffectiveCount[] = profiles.filter(profile =>
+    let filtered: ProfileWithEffectiveScore[] = profiles.filter(profile =>
       profile.full_name.toLowerCase().includes(searchQuery.toLowerCase())
     ).map(profile => ({
       ...profile,
+      effectivePoints: selectedCategory === 'all'
+        ? (profile.total_points ?? 0)
+        : (categoryScores[profile.id]?.points ?? 0),
       effectiveParticipationCount: selectedCategory === 'all'
         ? profile.total_participation_count
-        : (categoryParticipationCounts[profile.id] || 0)
+        : (categoryScores[profile.id]?.count ?? 0)
     }));
 
     // Filter out profiles with 0 participations in the selected category
@@ -276,13 +301,20 @@ export function LeaderboardTable() {
 
       switch (sortField) {
         case 'rank':
-          comparison = (a.globalRank || 999) - (b.globalRank || 999);
+          comparison = selectedCategory === 'all'
+            ? (a.globalRank || 999) - (b.globalRank || 999)
+            : b.effectivePoints - a.effectivePoints
+              || b.effectiveParticipationCount - a.effectiveParticipationCount
+              || a.full_name.localeCompare(b.full_name);
           break;
         case 'full_name':
           comparison = a.full_name.localeCompare(b.full_name);
           break;
-        case 'total_participation_count':
-          comparison = a.effectiveParticipationCount - b.effectiveParticipationCount;
+        case 'total_points':
+          comparison = a.effectivePoints - b.effectivePoints;
+          if (comparison === 0) {
+            comparison = a.effectiveParticipationCount - b.effectiveParticipationCount;
+          }
           // Tiebreaker 1: earlier last_activity_at = better rank
           if (comparison === 0) {
             const dateA = a.last_activity_at ? new Date(a.last_activity_at).getTime() : Infinity;
@@ -322,9 +354,10 @@ export function LeaderboardTable() {
     });
 
     // Use the global rank even when search/filter changes the visible set.
-    const rankedEntries = filtered.map((profile) => ({
+    const rankedEntries = filtered.map((profile, index) => ({
       ...profile,
-      rank: profile.globalRank || 999,
+      rank: selectedCategory === 'all' ? (profile.globalRank || 999) : index + 1,
+      displayPoints: profile.effectivePoints,
       displayParticipationCount: profile.effectiveParticipationCount
     })) as LeaderboardEntry[];
 
@@ -333,7 +366,7 @@ export function LeaderboardTable() {
     }
     
     return rankedEntries;
-  }, [profiles, searchQuery, selectedCategory, categoryParticipationCounts, sortField, sortDirection, showAll]);
+  }, [profiles, searchQuery, selectedCategory, categoryScores, sortField, sortDirection, showAll]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -501,10 +534,9 @@ export function LeaderboardTable() {
                 </Button>
               </TableHead>
               <TableHead className="text-center">
-                <Button variant="ghost" size="sm" onClick={() => handleSort('total_participation_count')} className="font-semibold text-xs md:text-sm px-2">
-                  <span className="hidden sm:inline">Partisipasi</span>
-                  <span className="sm:hidden">Pts</span>
-                  <SortIcon field="total_participation_count" />
+                <Button variant="ghost" size="sm" onClick={() => handleSort('total_points')} className="font-semibold text-xs md:text-sm px-2">
+                  <span>Poin</span>
+                  <SortIcon field="total_points" />
                 </Button>
               </TableHead>
               <TableHead className="text-right hidden md:table-cell">
@@ -563,9 +595,14 @@ export function LeaderboardTable() {
                       </div>
                     </TableCell>
                     <TableCell className="py-4 text-center">
-                      <span className="inline-flex min-w-[2.5rem] items-center justify-center rounded-lg bg-primary/[0.08] px-2.5 py-1 text-sm font-semibold text-primary md:px-3">
-                        {(entry as LeaderboardEntry & { displayParticipationCount: number }).displayParticipationCount}
-                      </span>
+                      <div className="inline-flex min-w-[4.5rem] flex-col items-center rounded-lg bg-primary/[0.08] px-2.5 py-1 text-primary md:px-3">
+                        <span className="text-sm font-semibold">
+                          {(entry as LeaderboardEntry & { displayPoints: number }).displayPoints}
+                        </span>
+                        <span className="text-[10px] font-medium text-muted-foreground">
+                          {(entry as LeaderboardEntry & { displayParticipationCount: number }).displayParticipationCount} partisipasi
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground text-sm hidden md:table-cell">
                       {entry.last_activity_at 
@@ -638,7 +675,13 @@ export function LeaderboardTable() {
                           {participation.competition?.category}
                         </p>
                       </div>
+                      <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                        {participation.awarded_points} poin
+                      </span>
                     </div>
+                    {participation.achievement && (
+                      <p className="mt-2 text-sm font-medium">{participation.achievement}</p>
+                    )}
                     <div className="mt-2 pt-2 border-t border-border/50 grid grid-cols-2 gap-2 text-xs">
                       <div>
                         <span className="text-muted-foreground">Waktu Partisipasi: </span>

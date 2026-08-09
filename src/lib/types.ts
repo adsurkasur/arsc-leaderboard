@@ -7,6 +7,7 @@ export interface Profile {
   bidang_biro: string | null;
   avatar_url: string | null;
   total_participation_count: number;
+  total_points?: number;
   last_activity_at: string | null;
   created_at: string;
   updated_at: string;
@@ -20,8 +21,40 @@ export interface Competition {
   date: string;
   description: string | null;
   category: string;
+  is_active: boolean;
+  scoring_template_id: string | null;
   created_at: string;
   updated_at: string;
+  scoring_rules?: CompetitionScoringRule[];
+}
+
+export interface CompetitionScoringRule {
+  id: string;
+  competition_id: string;
+  label: string;
+  points: number;
+  sort_order: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ScoringTemplateRule {
+  id: string;
+  template_id: string;
+  label: string;
+  points: number;
+  sort_order: number;
+}
+
+export interface ScoringTemplate {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  suggested_category: string;
+  is_system: boolean;
+  rules: ScoringTemplateRule[];
 }
 
 export interface ParticipationLog {
@@ -33,6 +66,10 @@ export interface ParticipationLog {
   evidence_url: string | null;
   status: 'pending' | 'approved' | 'rejected';
   awarded_points: number | null;
+  requested_scoring_rule_id: string | null;
+  awarded_scoring_rule_id: string | null;
+  requested_achievement: string | null;
+  requested_points: number | null;
   verified_at: string | null;
   admin_id: string | null;
   notes: string | null;

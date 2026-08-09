@@ -160,6 +160,13 @@ export function RequestsModal({ user }: RequestsModalProps) {
                   </span>
                 </div>
 
+                {request.requested_achievement && (
+                  <p className="text-xs text-muted-foreground">
+                    Diajukan sebagai <span className="font-medium text-foreground">{request.requested_achievement}</span>
+                    {request.requested_points !== null ? ` · ${request.requested_points} poin` : ''}
+                  </p>
+                )}
+
                 {request.notes && (
                   <div className="mt-2 p-2 bg-muted/50 rounded-md text-xs border">
                     <p className="font-semibold mb-1">Catatan Admin:</p>
@@ -168,9 +175,10 @@ export function RequestsModal({ user }: RequestsModalProps) {
                 )}
                 
                 {request.status === 'approved' && request.awarded_points !== null && (
-                  <p className="text-xs font-semibold text-success mt-1">
-                    +{request.awarded_points} Poin
-                  </p>
+                  <div className="mt-1 flex items-center justify-between gap-3 rounded-md bg-success/5 px-2.5 py-2 text-xs">
+                    <span className="font-medium text-foreground">{request.achievement || 'Terverifikasi'}</span>
+                    <span className="font-semibold text-success">+{request.awarded_points} poin</span>
+                  </div>
                 )}
               </div>
             ))

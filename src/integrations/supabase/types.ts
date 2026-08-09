@@ -41,6 +41,8 @@ export type Database = {
           date: string
           description: string | null
           id: string
+          is_active: boolean
+          scoring_template_id: string | null
           title: string
           updated_at: string
         }
@@ -50,6 +52,8 @@ export type Database = {
           date: string
           description?: string | null
           id?: string
+          is_active?: boolean
+          scoring_template_id?: string | null
           title: string
           updated_at?: string
         }
@@ -59,10 +63,20 @@ export type Database = {
           date?: string
           description?: string | null
           id?: string
+          is_active?: boolean
+          scoring_template_id?: string | null
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "competitions_scoring_template_id_fkey"
+            columns: ["scoring_template_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_scoring_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       member_release_links: {
         Row: {
@@ -133,6 +147,7 @@ export type Database = {
         Row: {
           achievement: string | null
           admin_id: string | null
+          awarded_scoring_rule_id: string | null
           awarded_points: number | null
           competition_id: string
           created_at: string
@@ -141,12 +156,16 @@ export type Database = {
           notes: string | null
           participation_date: string | null
           profile_id: string
+          requested_achievement: string | null
+          requested_points: number | null
+          requested_scoring_rule_id: string | null
           status: string
           verified_at: string | null
         }
         Insert: {
           achievement?: string | null
           admin_id?: string | null
+          awarded_scoring_rule_id?: string | null
           awarded_points?: number | null
           competition_id: string
           created_at?: string
@@ -155,12 +174,16 @@ export type Database = {
           notes?: string | null
           participation_date?: string | null
           profile_id: string
+          requested_achievement?: string | null
+          requested_points?: number | null
+          requested_scoring_rule_id?: string | null
           status?: string
           verified_at?: string | null
         }
         Update: {
           achievement?: string | null
           admin_id?: string | null
+          awarded_scoring_rule_id?: string | null
           awarded_points?: number | null
           competition_id?: string
           created_at?: string
@@ -169,6 +192,9 @@ export type Database = {
           notes?: string | null
           participation_date?: string | null
           profile_id?: string
+          requested_achievement?: string | null
+          requested_points?: number | null
+          requested_scoring_rule_id?: string | null
           status?: string
           verified_at?: string | null
         }
@@ -185,6 +211,20 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participation_logs_requested_scoring_rule_id_fkey"
+            columns: ["requested_scoring_rule_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_competition_scoring_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participation_logs_awarded_scoring_rule_id_fkey"
+            columns: ["awarded_scoring_rule_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_competition_scoring_rules"
             referencedColumns: ["id"]
           },
         ]
@@ -284,6 +324,115 @@ export type Database = {
         }
         Relationships: []
       }
+      leaderboard_competition_scoring_rules: {
+        Row: {
+          competition_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          points: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          points: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          points?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_competition_scoring_rules_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leaderboard_scoring_template_rules: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          points: number
+          sort_order: number
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          points: number
+          sort_order?: number
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          points?: number
+          sort_order?: number
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_scoring_template_rules_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_scoring_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leaderboard_scoring_templates: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_system: boolean
+          name: string
+          suggested_category: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          suggested_category: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          suggested_category?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -373,6 +522,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_category_scores_v2: {
+        Args: { p_category: string }
+        Returns: {
+          participation_count: number
+          profile_id: string
+          total_points: number
+        }[]
+      }
       get_public_leaderboard: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -384,6 +541,20 @@ export type Database = {
           last_activity_at: string | null
           profile_id: string
           total_participation_count: number
+        }[]
+      }
+      get_public_leaderboard_v2: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avatar_url: string | null
+          bidang_biro: string | null
+          created_at: string
+          full_name: string
+          is_identity_verified: boolean
+          last_activity_at: string | null
+          profile_id: string
+          total_participation_count: number
+          total_points: number
         }[]
       }
       get_public_category_participation_counts: {
@@ -404,6 +575,50 @@ export type Database = {
           participation_date: string | null
           participation_id: string
         }[]
+      }
+      get_public_member_participations_v2: {
+        Args: { p_profile_id: string }
+        Returns: {
+          achievement: string | null
+          awarded_points: number
+          competition_category: string
+          competition_date: string
+          competition_id: string
+          competition_title: string
+          created_at: string
+          participation_date: string | null
+          participation_id: string
+        }[]
+      }
+      leaderboard_save_competition: {
+        Args: {
+          p_category: string
+          p_competition_id: string | null
+          p_date: string
+          p_description: string | null
+          p_is_active: boolean
+          p_rules: Json | null
+          p_template_id: string | null
+          p_title: string
+        }
+        Returns: Json
+      }
+      review_participation_v2: {
+        Args: {
+          p_log_id: string
+          p_notes: string | null
+          p_scoring_rule_id: string | null
+          p_status: string
+        }
+        Returns: Json
+      }
+      submit_participation_v2: {
+        Args: {
+          p_competition_id: string
+          p_evidence_url: string
+          p_scoring_rule_id: string
+        }
+        Returns: Json
       }
       has_role: {
         Args: {

@@ -37,7 +37,7 @@ const flowSteps = [
   {
     icon: ShieldCheck,
     title: 'Masuk setelah ditinjau',
-    description: 'Peringkat hanya menghitung partisipasi yang disetujui admin.',
+    description: 'Poin mengikuti capaian yang sudah diverifikasi admin.',
   },
 ];
 
@@ -194,7 +194,7 @@ export default function HomePage() {
                 Kontribusi kompetisi yang sudah diverifikasi
               </h2>
               <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
-                Cari nama atau pilih kategori. Urutan didasarkan pada partisipasi yang telah disetujui.
+                Cari nama atau pilih kategori. Urutan didasarkan pada total poin dari capaian yang telah disetujui.
               </p>
             </div>
           </m.div>

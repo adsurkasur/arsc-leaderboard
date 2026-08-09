@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/integrations/supabase/types';
 
-// Create a local extended Database type to include the Stage 3 RPCs without modifying types.ts
+// Keep legacy Stage 3 contracts available while the UI uses the additive Stage 5 RPCs.
 type ExtendedDatabase = Database & {
   public: {
     Functions: Database['public']['Functions'] & {
@@ -24,11 +24,32 @@ type ExtendedDatabase = Database & {
         };
         Returns: { success: boolean; data?: unknown; error?: string };
       };
+      submit_participation_v2: {
+        Args: {
+          p_competition_id: string;
+          p_scoring_rule_id: string;
+          p_evidence_url: string;
+        };
+        Returns: { success: boolean; data?: unknown; error?: string };
+      };
+      review_participation_v2: {
+        Args: {
+          p_log_id: string;
+          p_status: string;
+          p_scoring_rule_id: string | null;
+          p_notes: string | null;
+        };
+        Returns: { success: boolean; data?: unknown; error?: string };
+      };
     };
   };
 };
 
-export async function submitParticipation(competitionId: string, evidenceUrl: string) {
+export async function submitParticipation(
+  competitionId: string,
+  scoringRuleId: string,
+  evidenceUrl: string,
+) {
   const userClient = await createClient();
   const { data: { user }, error: authError } = await userClient.auth.getUser();
 
@@ -36,10 +57,11 @@ export async function submitParticipation(competitionId: string, evidenceUrl: st
     return { success: false, error: 'Unauthorized: Missing or invalid authenticated session.' };
   }
 
-  // Use the RPC which securely enforces member link and state transitions
+  // The RPC validates identity, competition/rule ownership, and state transitions.
   const typedClient = userClient as SupabaseClient<ExtendedDatabase>;
-  const { data, error } = await typedClient.rpc('submit_participation', {
+  const { data, error } = await typedClient.rpc('submit_participation_v2', {
     p_competition_id: competitionId,
+    p_scoring_rule_id: scoringRuleId,
     p_evidence_url: evidenceUrl,
   });
 
@@ -53,7 +75,7 @@ export async function submitParticipation(competitionId: string, evidenceUrl: st
 export async function reviewParticipation(
   logId: string,
   status: 'approved' | 'rejected',
-  points?: number | null,
+  scoringRuleId?: string | null,
   notes?: string | null
 ) {
   const userClient = await createClient();
@@ -64,10 +86,10 @@ export async function reviewParticipation(
   }
 
   const typedClient = userClient as SupabaseClient<ExtendedDatabase>;
-  const { data, error } = await typedClient.rpc('review_participation', {
+  const { data, error } = await typedClient.rpc('review_participation_v2', {
     p_log_id: logId,
     p_status: status,
-    p_points: points ?? null,
+    p_scoring_rule_id: scoringRuleId ?? null,
     p_notes: notes ?? null,
   });
 

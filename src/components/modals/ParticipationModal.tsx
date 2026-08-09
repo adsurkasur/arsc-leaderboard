@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Competition } from '@/lib/types';
+import { Competition, CompetitionScoringRule } from '@/lib/types';
 import { User } from '@supabase/supabase-js';
 import { submitParticipation } from '@/lib/actions/stage3_participations';
 import { RaporLinkForm } from '@/components/profile/RaporLinkForm';
@@ -32,6 +32,7 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [competitionId, setCompetitionId] = useState('');
+  const [scoringRuleId, setScoringRuleId] = useState('');
   const [evidenceUrl, setEvidenceUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [effectiveLinkStatus, setEffectiveLinkStatus] = useState<string | null>(linkStatus);
@@ -47,15 +48,50 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
       const competitionsResult = await withTimeout(
         supabase
           .from('competitions')
-          .select('id, title, date, description, category, created_at, updated_at')
+          .select(`
+            id,
+            title,
+            date,
+            description,
+            category,
+            is_active,
+            scoring_template_id,
+            created_at,
+            updated_at,
+            scoring_rules:leaderboard_competition_scoring_rules(*)
+          `)
+          .eq('is_active', true)
           .order('date', { ascending: false }),
         PARTICIPATION_REQUEST_TIMEOUT_MS,
         'Formulir belum merespons. Periksa koneksi lalu coba lagi.',
       );
 
-      if (competitionsResult.error) throw competitionsResult.error;
+      if (!competitionsResult.error) {
+        setCompetitions((competitionsResult.data ?? []).map((competition) => ({
+          ...competition,
+          scoring_rules: [...((competition.scoring_rules ?? []) as CompetitionScoringRule[])]
+            .filter((rule) => rule.is_active)
+            .sort((a, b) => a.sort_order - b.sort_order),
+        })) as Competition[]);
+        return;
+      }
 
-      setCompetitions(competitionsResult.data ?? []);
+      // Compatibility fallback while the Stage 5 SQL artifact awaits manual execution.
+      const legacyResult = await withTimeout(
+        supabase
+          .from('competitions')
+          .select('id, title, date, description, category, created_at, updated_at')
+          .order('date', { ascending: false }),
+        PARTICIPATION_REQUEST_TIMEOUT_MS,
+      );
+
+      if (legacyResult.error) throw competitionsResult.error;
+      setCompetitions((legacyResult.data ?? []).map((competition) => ({
+        ...competition,
+        is_active: true,
+        scoring_template_id: null,
+        scoring_rules: [],
+      })) as Competition[]);
     } catch (error) {
       setLoadError(getErrorMessage(error, 'Formulir pengajuan belum dapat dimuat.'));
     } finally {
@@ -75,10 +111,10 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
   }, [effectiveLinkStatus, fetchCompetitions, isModalOpen, user]);
 
   const handleSubmit = async () => {
-    if (!competitionId || !evidenceUrl.trim()) {
+    if (!competitionId || !scoringRuleId || !evidenceUrl.trim()) {
       toast({
         title: 'Kesalahan',
-        description: 'Silakan pilih kompetisi dan sertakan URL bukti.',
+        description: 'Silakan pilih kompetisi, capaian, dan sertakan URL bukti.',
         variant: 'destructive',
       });
       return;
@@ -89,7 +125,7 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
     try {
       // Execute the Stage 3 RPC explicitly (never write to participation_logs directly)
       const result = await withTimeout(
-        submitParticipation(competitionId, evidenceUrl.trim()),
+        submitParticipation(competitionId, scoringRuleId, evidenceUrl.trim()),
         PARTICIPATION_REQUEST_TIMEOUT_MS,
         'Pengajuan belum merespons. Periksa koneksi lalu coba lagi.',
       );
@@ -107,6 +143,7 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
         });
         setIsModalOpen(false);
         setCompetitionId('');
+        setScoringRuleId('');
         setEvidenceUrl('');
       }
     } catch (error) {
@@ -134,7 +171,7 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
         <DialogHeader>
           <DialogTitle>Ajukan Partisipasi</DialogTitle>
           <DialogDescription>
-            Pilih kompetisi dan berikan tautan bukti partisipasi Anda. 
+            Pilih kompetisi, capaian yang diraih, dan tautan bukti Anda.
             Permintaan akan ditinjau oleh administrator.
           </DialogDescription>
         </DialogHeader>
@@ -178,7 +215,13 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
             <div className="space-y-4">
               <div>
                 <Label htmlFor="competition">Kompetisi *</Label>
-                <Select value={competitionId} onValueChange={setCompetitionId}>
+                <Select
+                  value={competitionId}
+                  onValueChange={(value) => {
+                    setCompetitionId(value);
+                    setScoringRuleId('');
+                  }}
+                >
                   <SelectTrigger className="border-primary/20 focus:border-primary">
                     <SelectValue placeholder="Pilih kompetisi..." />
                   </SelectTrigger>
@@ -196,6 +239,34 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
                   Hanya kompetisi yang sudah terdaftar yang dapat dipilih.
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="achievement">Capaian yang diajukan *</Label>
+                <Select
+                  value={scoringRuleId}
+                  onValueChange={setScoringRuleId}
+                  disabled={!competitionId}
+                >
+                  <SelectTrigger id="achievement" className="border-primary/20 focus:border-primary">
+                    <SelectValue placeholder={competitionId ? 'Pilih capaian...' : 'Pilih kompetisi dahulu'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(competitions.find((competition) => competition.id === competitionId)?.scoring_rules ?? []).length === 0 ? (
+                      <SelectItem value="empty" disabled>Aturan poin belum tersedia</SelectItem>
+                    ) : (
+                      competitions
+                        .find((competition) => competition.id === competitionId)
+                        ?.scoring_rules?.map((rule) => (
+                          <SelectItem key={rule.id} value={rule.id}>
+                            {rule.label} · {rule.points} poin
+                          </SelectItem>
+                        ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Admin akan mencocokkan capaian ini dengan bukti sebelum poin diberikan.
                 </p>
               </div>
               <div>

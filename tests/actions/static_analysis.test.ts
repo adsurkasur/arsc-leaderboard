@@ -97,3 +97,40 @@ test('Static Analysis: participation form reuses account identity state', () => 
   assert.match(modalSource, /linkStatus:\s*string\s*\|\s*null/);
   assert.match(pageSource, /<ParticipationModal[\s\S]*linkStatus=\{linkStatus\}/);
 });
+
+test('Static Analysis: Stage 5 competition management is non-destructive and RPC-only', () => {
+  const managementPath = path.join(
+    process.cwd(),
+    'src',
+    'components',
+    'admin',
+    'CompetitionsManagement.tsx',
+  );
+  const managementSource = fs.readFileSync(managementPath, 'utf8');
+  const adminPageSource = fs.readFileSync(path.join(process.cwd(), 'app', 'admin', 'page.tsx'), 'utf8');
+
+  assert.doesNotMatch(
+    managementSource,
+    /\.from\(\s*['"]competitions['"]\s*\)\s*\.\s*(insert|update|delete|upsert)/,
+    'Competition mutations must use the restricted Stage 5 RPC.',
+  );
+  assert.match(managementSource, /saveCompetition\(/);
+  assert.match(managementSource, /Kompetisi diarsipkan/);
+  assert.doesNotMatch(adminPageSource, /Kotak Masuk|NotificationInbox|Legacy/);
+});
+
+test('Static Analysis: Stage 5 SQL never mutates Rapor or Halo-owned tables', () => {
+  const stage5 = fs.readFileSync(
+    path.join(process.cwd(), 'deployment', 'remote', 'stage5_configurable_scoring.sql'),
+    'utf8',
+  );
+
+  assert.doesNotMatch(
+    stage5,
+    /\b(?:insert\s+into|update|delete\s+from|alter\s+table|drop\s+table|create\s+table)\s+public\.(?:rapor_[a-z_]+|users|members|member_release_links|profiles|arsc_identities)\b/i,
+    'Stage 5 must treat Rapor, Halo, and shared identity tables as read-only.',
+  );
+  assert.match(stage5, /CREATE FUNCTION public\.submit_participation_v2/i);
+  assert.match(stage5, /CREATE FUNCTION public\.review_participation_v2/i);
+  assert.match(stage5, /CREATE FUNCTION public\.get_public_leaderboard_v2/i);
+});

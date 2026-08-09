@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { Profile, Competition, ParticipationLog } from '@/lib/types';
+import { Profile, Competition, CompetitionScoringRule, ParticipationLog } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -32,8 +32,9 @@ export function ParticipationManagement() {
   // Review state
   const [reviewingLog, setReviewingLog] = useState<ParticipationLog | null>(null);
   const [reviewStatus, setReviewStatus] = useState<string>('');
-  const [reviewPoints, setReviewPoints] = useState<number | ''>('');
+  const [reviewRuleId, setReviewRuleId] = useState('');
   const [reviewNotes, setReviewNotes] = useState<string>('');
+  const [rulesByCompetition, setRulesByCompetition] = useState<Record<string, CompetitionScoringRule[]>>({});
   const [isSaving, setIsSaving] = useState(false);
   
   const { toast } = useToast();
@@ -43,14 +44,20 @@ export function ParticipationManagement() {
   }, []);
 
   const fetchData = async () => {
-    const { data: logsData, error } = await supabase
-      .from('participation_logs')
-      .select(`
-        *,
-        profile:profiles(id, full_name, avatar_url),
-        competition:competitions(id, title, date)
-      `)
-      .order('created_at', { ascending: false });
+    const [{ data: logsData, error }, rulesResult] = await Promise.all([
+      supabase
+        .from('participation_logs')
+        .select(`
+          *,
+          profile:profiles(id, full_name, avatar_url),
+          competition:competitions(id, title, date)
+        `)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('leaderboard_competition_scoring_rules')
+        .select('*')
+        .order('sort_order'),
+    ]);
 
     if (!error && logsData) {
       const transformedLogs = logsData.map(log => {
@@ -62,6 +69,20 @@ export function ParticipationManagement() {
         };
       });
       setLogs(transformedLogs);
+    }
+
+    if (!rulesResult.error) {
+      const grouped = (rulesResult.data ?? []).reduce<Record<string, CompetitionScoringRule[]>>(
+        (result, rule) => {
+          result[rule.competition_id] ??= [];
+          result[rule.competition_id].push(rule);
+          return result;
+        },
+        {},
+      );
+      setRulesByCompetition(grouped);
+    } else {
+      setRulesByCompetition({});
     }
     setIsLoading(false);
   };
@@ -117,7 +138,7 @@ export function ParticipationManagement() {
   const openReviewDialog = (log: ParticipationLog) => {
     setReviewingLog(log);
     setReviewStatus(log.status || 'pending');
-    setReviewPoints(log.awarded_points ?? '');
+    setReviewRuleId(log.awarded_scoring_rule_id ?? log.requested_scoring_rule_id ?? '');
     setReviewNotes(log.notes || '');
     setIsDialogOpen(true);
   };
@@ -132,12 +153,10 @@ export function ParticipationManagement() {
     setIsSaving(true);
 
     try {
-      const points = reviewPoints === '' ? undefined : Number(reviewPoints);
-      
       const result = await reviewParticipation(
         reviewingLog.id, 
         reviewStatus, 
-        points, 
+        reviewStatus === 'approved' ? reviewRuleId : null,
         reviewNotes
       );
 
@@ -253,7 +272,15 @@ export function ParticipationManagement() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="font-medium">{log.competition?.title || 'Tidak Dikenal'}</span>
+                    <div>
+                      <span className="font-medium">{log.competition?.title || 'Tidak Dikenal'}</span>
+                      {log.requested_achievement && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Diajukan: {log.requested_achievement}
+                          {log.requested_points !== null ? ` · ${log.requested_points} poin` : ''}
+                        </p>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {log.evidence_url ? (
@@ -282,9 +309,9 @@ export function ParticipationManagement() {
                       variant="outline" 
                       size="sm" 
                       onClick={() => openReviewDialog(log)}
-                      disabled={log.status === 'approved'}
+                      disabled={log.status !== 'pending'}
                     >
-                      {log.status === 'approved' ? 'Disetujui' : 'Tinjau'}
+                      {log.status === 'pending' ? 'Tinjau' : 'Selesai'}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -328,14 +355,31 @@ export function ParticipationManagement() {
             
             {reviewStatus === 'approved' && (
               <div className="space-y-2">
-                <Label>Poin yang Diberikan *</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={reviewPoints}
-                  onChange={(e) => setReviewPoints(e.target.value ? Number(e.target.value) : '')}
-                  placeholder="Contoh: 100"
-                />
+                <Label>Capaian terverifikasi *</Label>
+                <Select value={reviewRuleId} onValueChange={setReviewRuleId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih capaian sesuai bukti..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(reviewingLog
+                      ? rulesByCompetition[reviewingLog.competition_id] ?? []
+                      : []
+                    )
+                      .filter((rule) => rule.is_active || rule.id === reviewingLog?.requested_scoring_rule_id)
+                      .map((rule) => (
+                      <SelectItem key={rule.id} value={rule.id}>
+                        {rule.label} · {rule.points} poin
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {reviewingLog?.requested_achievement && (
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    Anggota mengajukan <span className="font-medium text-foreground">{reviewingLog.requested_achievement}</span>
+                    {reviewingLog.requested_points !== null ? ` (${reviewingLog.requested_points} poin)` : ''}.
+                    Admin tetap dapat memilih capaian lain jika bukti menunjukkan hasil berbeda.
+                  </p>
+                )}
               </div>
             )}
             
@@ -352,7 +396,7 @@ export function ParticipationManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Batal</Button>
-            <Button onClick={handleReviewSubmission} disabled={isSaving || reviewStatus === 'pending' || (reviewStatus === 'approved' && reviewPoints === '')}>
+            <Button onClick={handleReviewSubmission} disabled={isSaving || reviewStatus === 'pending' || (reviewStatus === 'approved' && !reviewRuleId)}>
               {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Kirim Tinjauan
             </Button>

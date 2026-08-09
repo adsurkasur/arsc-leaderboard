@@ -9,9 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UsersManagement } from '@/components/admin/UsersManagement';
 import { ParticipationManagement } from '@/components/admin/ParticipationManagement';
-import { NotificationInbox } from '@/components/admin/NotificationInbox';
 import { CompetitionsManagement } from '@/components/admin/CompetitionsManagement';
-import { Loader2, Users, ClipboardList, Bell, Award, Shield } from 'lucide-react';
+import { Loader2, Users, ClipboardList, Award, Shield } from 'lucide-react';
 import { m } from 'framer-motion';
 import { pageTransition, staggerContainer, staggerItem, fadeInUp } from '@/lib/motion';
 
@@ -82,7 +81,7 @@ export default function AdminPage() {
         >
           <Tabs defaultValue="users" className="space-y-6">
             <m.div variants={staggerItem}>
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:w-auto lg:inline-grid h-auto p-1 gap-1">
+              <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid h-auto p-1 gap-1">
                 <TabsTrigger value="users" className="gap-2 py-2.5 data-[state=active]:shadow-sm">
                   <Users className="w-4 h-4" />
                   <span className="hidden sm:inline">Pengguna</span>
@@ -94,10 +93,6 @@ export default function AdminPage() {
                 <TabsTrigger value="participation" className="gap-2 py-2.5 data-[state=active]:shadow-sm">
                   <ClipboardList className="w-4 h-4" />
                   <span className="hidden sm:inline">Log</span>
-                </TabsTrigger>
-                <TabsTrigger value="notifications" className="gap-2 py-2.5 data-[state=active]:shadow-sm">
-                  <Bell className="w-4 h-4" />
-                  <span className="hidden sm:inline">Kotak Masuk</span>
                 </TabsTrigger>
               </TabsList>
             </m.div>
@@ -125,7 +120,7 @@ export default function AdminPage() {
                       <Award className="w-5 h-5 text-primary" />
                       Manajemen Kompetisi
                     </CardTitle>
-                    <CardDescription>Buat dan kelola kompetisi</CardDescription>
+                    <CardDescription>Kelola kompetisi, preset, dan aturan poin</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <CompetitionsManagement />
@@ -140,25 +135,10 @@ export default function AdminPage() {
                       <ClipboardList className="w-5 h-5 text-primary" />
                       Log Partisipasi
                     </CardTitle>
-                    <CardDescription>Tambah dan kelola entri partisipasi pengguna</CardDescription>
+                    <CardDescription>Tinjau bukti dan tetapkan capaian terverifikasi</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ParticipationManagement />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="notifications" className="mt-0">
-                <Card className="shadow-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Bell className="w-5 h-5 text-primary" />
-                      Permintaan Verifikasi (Legacy)
-                    </CardTitle>
-                    <CardDescription>Riwayat permintaan verifikasi (sudah tidak digunakan)</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <NotificationInbox />
                   </CardContent>
                 </Card>
               </TabsContent>
