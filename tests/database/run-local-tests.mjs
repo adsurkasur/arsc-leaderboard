@@ -54,7 +54,10 @@ runSql('Applying Stage 2C RPC fixture...', sqlFile('tests/database/setup_stage2c
 runSql('Capturing protected pre-Stage-3 state...', sqlFile('tests/database/capture_pre_stage3.sql'));
 runSql('Applying hardened Stage 3 artifact...', sqlFile('deployment/remote/stage3_restricted_write.sql'));
 runSql('Running Stage 3 validation...', sqlFile('tests/database/test_stage3.sql'));
-runSql('Running read-only Stage 4 preflight...', sqlFile('deployment/remote/preflight_stage4_identity.sql'));
+runSql(
+  'Running exportable read-only Stage 4 preflight...',
+  sqlFile('deployment/remote/preflight_stage4_identity_single_result.sql'),
+);
 runSql('Applying additive Stage 4 artifact...', sqlFile('deployment/remote/stage4_identity_and_public_reads.sql'));
 runSql('Running Stage 4 shared identity validation...', sqlFile('tests/database/test_stage4_identity.sql'));
 runSql('Running read-only Stage 4 verification...', sqlFile('deployment/remote/verify_stage4_identity.sql'));
