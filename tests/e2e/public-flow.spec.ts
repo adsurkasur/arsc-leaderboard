@@ -23,6 +23,7 @@ test.describe('ARSC Leaderboard public experience', () => {
 
   test('keeps account creation short and defers identity fields to Rapor', async ({ page }) => {
     await page.goto('/auth');
+    await page.waitForLoadState('networkidle');
 
     await expect(page.getByRole('heading', { name: 'Masuk atau buat akun' })).toBeVisible();
     await page.getByRole('tab', { name: 'Buat akun' }).click();
@@ -35,6 +36,7 @@ test.describe('ARSC Leaderboard public experience', () => {
   test('uses a compact mobile header without horizontal overflow', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
+    await page.waitForLoadState('networkidle');
 
     const menuButton = page.getByRole('button', { name: 'Buka menu' });
     await expect(menuButton).toBeVisible();

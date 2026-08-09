@@ -239,6 +239,51 @@ export type Database = {
           },
         ]
       }
+      users: {
+        Row: {
+          avatar_url: string | null
+          biro: string
+          created_at: string
+          email: string
+          id: string
+          is_active: boolean
+          jabatan: string
+          name: string
+          role: string
+          theme_preference: string | null
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          biro?: string
+          created_at?: string
+          email: string
+          id: string
+          is_active?: boolean
+          jabatan?: string
+          name: string
+          role?: string
+          theme_preference?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          biro?: string
+          created_at?: string
+          email?: string
+          id?: string
+          is_active?: boolean
+          jabatan?: string
+          name?: string
+          role?: string
+          theme_preference?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

@@ -29,7 +29,7 @@ import {
 import { AboutModal, HelpModal, ProfileSettingsModal, RequestsModal } from '@/components/modals';
 
 export function Header() {
-  const { user, isAdmin, isLoading, linkStatus, refreshIdentityStatus, signOut } = useAuth();
+  const { user, isAdmin, isLoading, linkStatus, accountRole, refreshIdentityStatus, signOut } = useAuth();
   const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -37,6 +37,8 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isIdentityLinked = linkStatus === 'linked_exact' || linkStatus === 'manually_linked';
+  const isHaloOperator = accountRole?.toUpperCase() === 'PH';
+  const shouldOfferRaporLink = !isIdentityLinked && !isHaloOperator;
 
   const handleSignOut = async () => {
     await signOut();
@@ -70,9 +72,9 @@ export function Header() {
               <Link href="/#leaderboard">Peringkat</Link>
             </Button>
 
-            {!isLoading && user && !isAdmin && <RequestsModal user={user} />}
+            {!isLoading && user && !isAdmin && !isHaloOperator && <RequestsModal user={user} />}
 
-            {!isLoading && user && !isIdentityLinked && (
+            {!isLoading && user && shouldOfferRaporLink && (
               <Button
                 variant="outline"
                 size="sm"
@@ -110,8 +112,12 @@ export function Header() {
                   <div className="px-2.5 py-2">
                     <p className="truncate text-sm font-medium">{user.email}</p>
                     <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                      {isIdentityLinked ? <BadgeCheck className="size-3.5 text-success" /> : <Link2 className="size-3.5" />}
-                      {isIdentityLinked ? 'Terhubung dengan Rapor' : 'Rapor belum terhubung'}
+                      {isIdentityLinked || isHaloOperator ? <BadgeCheck className="size-3.5 text-success" /> : <Link2 className="size-3.5" />}
+                      {isIdentityLinked
+                        ? 'Terhubung dengan Rapor'
+                        : isHaloOperator
+                          ? 'Profil Halo PSDM aktif'
+                          : 'Rapor belum terhubung'}
                     </p>
                   </div>
                   <DropdownMenuSeparator />
@@ -192,7 +198,7 @@ export function Header() {
                       </div>
                     </div>
 
-                    {!isIdentityLinked && (
+                    {shouldOfferRaporLink && (
                       <button
                         className="flex min-h-11 w-full items-center gap-3 rounded-xl bg-primary/[0.08] px-3 text-left text-sm font-medium text-primary"
                         onClick={() => { setIsProfileOpen(true); setIsMobileMenuOpen(false); }}
@@ -202,7 +208,7 @@ export function Header() {
                       </button>
                     )}
 
-                    {!isAdmin && <div className="px-1 py-1"><RequestsModal user={user} /></div>}
+                    {!isAdmin && !isHaloOperator && <div className="px-1 py-1"><RequestsModal user={user} /></div>}
 
                     {isAdmin && (
                       <Link

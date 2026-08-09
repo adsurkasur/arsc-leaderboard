@@ -208,25 +208,25 @@ export async function updateProfileAvatar(avatarUrl: string | null) {
     }
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SECRET_KEY
-    || process.env.SUPABASE_INTEGRATION_SERVICE_KEY;
+  const { error: haloError } = await userClient
+    .from('users')
+    .update({ avatar_url: normalizedUrl })
+    .eq('id', user.id);
 
-  if (!url || !serviceKey) {
-    return { success: false, error: 'Sinkronisasi profil bersama belum dikonfigurasi di server.' };
+  if (haloError) {
+    return { success: false, error: `Foto profil Halo PSDM belum dapat diperbarui: ${haloError.message}` };
   }
 
-  const integrationClient = createIntegrationClient(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const { error: leaderboardError } = await userClient
+    .from('profiles')
+    .update({ avatar_url: normalizedUrl })
+    .eq('user_id', user.id);
 
-  const { error } = await integrationClient.rpc('set_shared_profile_avatar', {
-    p_user_id: user.id,
-    p_avatar_url: normalizedUrl,
-  });
-
-  if (error) {
-    return { success: false, error: error.message };
+  if (leaderboardError) {
+    return {
+      success: false,
+      error: `Foto tersimpan di Halo PSDM, tetapi salinan Leaderboard belum tersinkron: ${leaderboardError.message}`,
+    };
   }
 
   revalidatePath('/');

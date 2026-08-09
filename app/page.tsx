@@ -16,6 +16,7 @@ import { Header } from '@/components/layout/Header';
 import { ParticipationModal } from '@/components/modals';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { accountUsesRapor } from '@/lib/sharedProfile';
 
 const reveal = {
   hidden: { opacity: 0, y: 18 },
@@ -41,8 +42,9 @@ const flowSteps = [
 ];
 
 export default function HomePage() {
-  const { user, linkStatus } = useAuth();
+  const { user, isLoading, linkStatus, accountRole } = useAuth();
   const isIdentityLinked = linkStatus === 'linked_exact' || linkStatus === 'manually_linked';
+  const usesRapor = accountUsesRapor(accountRole);
 
   return (
     <m.div
@@ -88,13 +90,13 @@ export default function HomePage() {
               transition={{ duration: 0.52, ease: [0.22, 1, 0.36, 1] }}
               className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"
             >
-              {user ? (
+              {user && !isLoading && usesRapor ? (
                 <ParticipationModal user={user} />
-              ) : (
+              ) : !user ? (
                 <Button asChild size="lg" className="h-12 rounded-full bg-white px-6 text-slate-950 hover:bg-blue-50">
                   <Link href="/auth">Masuk untuk mengajukan</Link>
                 </Button>
-              )}
+              ) : null}
               <Button asChild variant="ghost" size="lg" className="h-12 rounded-full px-5 text-slate-200 hover:bg-white/10 hover:text-white">
                 <Link href="/#leaderboard" className="gap-2">
                   Lihat peringkat
@@ -103,13 +105,18 @@ export default function HomePage() {
               </Button>
             </m.div>
 
-            {user && (
+            {user && !isLoading && (
               <m.div
                 variants={reveal}
                 transition={{ duration: 0.52, ease: [0.22, 1, 0.36, 1] }}
                 className="mt-7 inline-flex items-center gap-2 text-sm text-slate-300"
               >
-                {isIdentityLinked ? (
+                {!usesRapor ? (
+                  <>
+                    <BadgeCheck className="size-4 text-emerald-300" />
+                    Profil Halo PSDM aktif. Akun PH tidak memerlukan kode Rapor.
+                  </>
+                ) : isIdentityLinked ? (
                   <>
                     <BadgeCheck className="size-4 text-emerald-300" />
                     Identitas Anda sudah terhubung dengan Rapor.
