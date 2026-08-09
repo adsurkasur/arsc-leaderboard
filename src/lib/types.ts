@@ -62,7 +62,7 @@ export interface ParticipationLog {
   profile_id: string;
   competition_id: string;
   participation_date: string | null;
-  achievement: string | null;
+  awarded_achievement: string | null;
   evidence_url: string | null;
   status: 'pending' | 'approved' | 'rejected';
   awarded_points: number | null;

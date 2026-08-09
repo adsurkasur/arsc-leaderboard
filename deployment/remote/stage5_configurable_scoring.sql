@@ -81,6 +81,7 @@ BEGIN
             'requested_scoring_rule_id',
             'awarded_scoring_rule_id',
             'requested_achievement',
+            'awarded_achievement',
             'requested_points'
           )
         )
@@ -172,6 +173,7 @@ ALTER TABLE public.participation_logs
   ADD COLUMN awarded_scoring_rule_id uuid
     REFERENCES public.leaderboard_competition_scoring_rules(id) ON DELETE SET NULL,
   ADD COLUMN requested_achievement text,
+  ADD COLUMN awarded_achievement text,
   ADD COLUMN requested_points integer;
 
 ALTER TABLE public.participation_logs
@@ -179,6 +181,11 @@ ALTER TABLE public.participation_logs
     CHECK (
       requested_achievement IS NULL
       OR length(btrim(requested_achievement)) BETWEEN 1 AND 80
+    ),
+  ADD CONSTRAINT participation_logs_awarded_achievement_check
+    CHECK (
+      awarded_achievement IS NULL
+      OR length(btrim(awarded_achievement)) BETWEEN 1 AND 80
     ),
   ADD CONSTRAINT participation_logs_requested_points_check
     CHECK (requested_points IS NULL OR requested_points BETWEEN 0 AND 100000);
@@ -659,7 +666,7 @@ BEGIN
         requested_achievement = v_rule.label,
         requested_points = v_rule.points,
         awarded_scoring_rule_id = NULL,
-        achievement = NULL,
+        awarded_achievement = NULL,
         awarded_points = NULL,
         admin_id = NULL,
         verified_at = NULL,
@@ -805,7 +812,7 @@ BEGIN
   UPDATE public.participation_logs
   SET status = p_status,
       awarded_scoring_rule_id = CASE WHEN p_status = 'approved' THEN v_rule.id ELSE NULL END,
-      achievement = CASE WHEN p_status = 'approved' THEN v_rule.label ELSE NULL END,
+      awarded_achievement = CASE WHEN p_status = 'approved' THEN v_rule.label ELSE NULL END,
       awarded_points = CASE WHEN p_status = 'approved' THEN v_rule.points ELSE NULL END,
       notes = NULLIF(btrim(p_notes), ''),
       admin_id = v_admin_id,
@@ -913,7 +920,7 @@ AS $$
     c.title,
     c.date,
     c.category,
-    pl.achievement,
+    pl.awarded_achievement,
     COALESCE(pl.awarded_points, 0),
     pl.participation_date,
     pl.created_at

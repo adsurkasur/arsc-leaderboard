@@ -145,7 +145,7 @@ export type Database = {
       }
       participation_logs: {
         Row: {
-          achievement: string | null
+          awarded_achievement: string | null
           admin_id: string | null
           awarded_scoring_rule_id: string | null
           awarded_points: number | null
@@ -163,7 +163,7 @@ export type Database = {
           verified_at: string | null
         }
         Insert: {
-          achievement?: string | null
+          awarded_achievement?: string | null
           admin_id?: string | null
           awarded_scoring_rule_id?: string | null
           awarded_points?: number | null
@@ -181,7 +181,7 @@ export type Database = {
           verified_at?: string | null
         }
         Update: {
-          achievement?: string | null
+          awarded_achievement?: string | null
           admin_id?: string | null
           awarded_scoring_rule_id?: string | null
           awarded_points?: number | null

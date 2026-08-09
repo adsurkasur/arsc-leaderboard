@@ -308,6 +308,7 @@ BEGIN
       AND requested_scoring_rule_id = v_rule_id
       AND requested_achievement = 'Juara 1 Utama'
       AND requested_points = 55
+      AND awarded_achievement IS NULL
       AND awarded_points IS NULL
   ) THEN
     RAISE EXCEPTION 'Submission did not preserve the requested scoring snapshot';
@@ -325,6 +326,17 @@ BEGIN
   v_result := public.review_participation_v2(v_log_id, 'approved', v_rule_id, 'Verified');
   IF (v_result->>'awarded_points')::integer IS DISTINCT FROM 55 THEN
     RAISE EXCEPTION 'Configured national score was not applied';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.participation_logs
+    WHERE id = v_log_id
+      AND awarded_scoring_rule_id = v_rule_id
+      AND awarded_achievement = 'Juara 1 Utama'
+      AND awarded_points = 55
+  ) THEN
+    RAISE EXCEPTION 'Review did not preserve the awarded scoring snapshot';
   END IF;
 
   v_result := public.review_participation_v2(v_zero_log_id, 'approved', v_zero_rule_id, NULL);

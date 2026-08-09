@@ -176,7 +176,7 @@ export function RequestsModal({ user }: RequestsModalProps) {
                 
                 {request.status === 'approved' && request.awarded_points !== null && (
                   <div className="mt-1 flex items-center justify-between gap-3 rounded-md bg-success/5 px-2.5 py-2 text-xs">
-                    <span className="font-medium text-foreground">{request.achievement || 'Terverifikasi'}</span>
+                    <span className="font-medium text-foreground">{request.awarded_achievement || 'Terverifikasi'}</span>
                     <span className="font-semibold text-success">+{request.awarded_points} poin</span>
                   </div>
                 )}

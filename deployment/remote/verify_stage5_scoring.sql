@@ -29,6 +29,30 @@ FROM unnest(ARRAY[
 INSERT INTO _stage5_verification_results
   (category, object_name, check_name, status, metric_value)
 SELECT
+  'stage5_column',
+  'public.' || expected.table_name,
+  expected.column_name || '_type',
+  CASE WHEN observed.data_type = expected.data_type THEN 'PASS' ELSE 'FAIL' END,
+  CASE WHEN observed.data_type = expected.data_type THEN 1 ELSE 0 END
+FROM (VALUES
+  ('competitions', 'scoring_template_id', 'uuid'),
+  ('competitions', 'is_active', 'boolean'),
+  ('participation_logs', 'requested_scoring_rule_id', 'uuid'),
+  ('participation_logs', 'awarded_scoring_rule_id', 'uuid'),
+  ('participation_logs', 'requested_achievement', 'text'),
+  ('participation_logs', 'awarded_achievement', 'text'),
+  ('participation_logs', 'requested_points', 'integer'),
+  ('participation_submission_events', 'scoring_rule_id', 'uuid'),
+  ('participation_submission_events', 'achievement', 'text')
+) AS expected(table_name, column_name, data_type)
+LEFT JOIN information_schema.columns observed
+  ON observed.table_schema = 'public'
+ AND observed.table_name = expected.table_name
+ AND observed.column_name = expected.column_name;
+
+INSERT INTO _stage5_verification_results
+  (category, object_name, check_name, status, metric_value)
+SELECT
   'stage5_seed',
   'leaderboard_scoring_templates',
   'system_template_count',

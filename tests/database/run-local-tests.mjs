@@ -35,9 +35,13 @@ runSql(
       DROP COLUMN IF EXISTS scoring_rule_id,
       DROP COLUMN IF EXISTS achievement;
     ALTER TABLE IF EXISTS public.participation_logs
+      DROP CONSTRAINT IF EXISTS check_log_achievement_not_empty,
+      DROP CONSTRAINT IF EXISTS participation_logs_awarded_achievement_check,
+      DROP COLUMN IF EXISTS achievement,
       DROP COLUMN IF EXISTS requested_scoring_rule_id,
       DROP COLUMN IF EXISTS awarded_scoring_rule_id,
       DROP COLUMN IF EXISTS requested_achievement,
+      DROP COLUMN IF EXISTS awarded_achievement,
       DROP COLUMN IF EXISTS requested_points;
     ALTER TABLE IF EXISTS public.competitions
       DROP COLUMN IF EXISTS scoring_template_id,

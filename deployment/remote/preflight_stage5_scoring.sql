@@ -87,6 +87,7 @@ WHERE table_schema = 'public'
         'requested_scoring_rule_id',
         'awarded_scoring_rule_id',
         'requested_achievement',
+        'awarded_achievement',
         'requested_points'
       )
     )

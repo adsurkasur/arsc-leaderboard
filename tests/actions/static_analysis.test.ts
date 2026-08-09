@@ -133,4 +133,10 @@ test('Static Analysis: Stage 5 SQL never mutates Rapor or Halo-owned tables', ()
   assert.match(stage5, /CREATE FUNCTION public\.submit_participation_v2/i);
   assert.match(stage5, /CREATE FUNCTION public\.review_participation_v2/i);
   assert.match(stage5, /CREATE FUNCTION public\.get_public_leaderboard_v2/i);
+  assert.match(stage5, /awarded_achievement/i);
+  assert.doesNotMatch(
+    stage5,
+    /\bpl\.achievement\b/i,
+    'Stage 5 must not depend on the optional legacy participation_logs.achievement column.',
+  );
 });
