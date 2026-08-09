@@ -21,34 +21,31 @@
 ## Before any Stage 4 remote execution
 
 1. Confirm the Halo PSDM and Leaderboard Vercel projects both use Supabase project `jyznguhencjwtzupxjjk`.
-2. Revoke and replace every compromised Supabase secret key using the actual deployment topology:
-   - Rapor ARSC and ARSC Leaderboard use the Supabase/Vercel connection and consume its integration-managed `SUPABASE_SECRET_KEY`.
-   - Halo PSDM uses a manually managed app-specific secret key through `SUPABASE_SECRET_KEY` (with `SUPABASE_SERVICE_ROLE_KEY` retained only as a legacy fallback).
-   - Redeploy every affected Vercel project before deleting the compromised key.
+2. Confirm Rapor ARSC, Halo PSDM, and ARSC Leaderboard all use the Supabase/Vercel connection and consume its integration-managed server credentials. Do not retain manually copied duplicates of integration-managed Supabase variables.
 3. Generate a new high-entropy `RAPOR_ACCESS_CODE_PEPPER` and new random Rapor access codes.
 4. In the Rapor repository, generate RTP and Suksesi payloads, then build the dedicated atomic rotation artifact:
    - `python scripts/build-rapor-payloads-from-xlsx.py --mode rtp`
    - `python scripts/build-rapor-payloads-from-xlsx.py --mode suksesi`
    - `python scripts/build-rapor-access-code-rotation-sql.py --mode both`
-5. Review and manually execute only the generated `workbook/dist/supabase/rotate_rapor_access_codes_both.sql`. It updates `public.rapor_access_codes` in one transaction and refuses a member-set mismatch. Do not use the general staging uploader to rotate production codes.
-6. Rotate the active Rapor hashes before exposing the Stage 4 link RPC. Do not reuse the legacy predictable codes.
-7. Configure the identical server-only pepper in Rapor ARSC, Halo PSDM, and ARSC Leaderboard. Never use a `NEXT_PUBLIC_` variable for it.
-8. Confirm the server-only Supabase secret is available to both account applications:
-   - Leaderboard: integration-managed `SUPABASE_SECRET_KEY` (`SUPABASE_INTEGRATION_SERVICE_KEY` is an optional legacy/local fallback).
-   - Halo PSDM: manually managed `SUPABASE_SECRET_KEY` (`SUPABASE_SERVICE_ROLE_KEY` is an optional legacy fallback).
+5. Configure the identical server-only `RAPOR_ACCESS_CODE_PEPPER` as one Sensitive Vercel Shared Environment Variable linked to Rapor ARSC, Halo PSDM, and ARSC Leaderboard for Production and Preview. Never use a `NEXT_PUBLIC_` variable for it, and remove project-level duplicates before the rotation window.
+6. Review and manually execute only the generated `workbook/dist/supabase/rotate_rapor_access_codes_both.sql`. It updates `public.rapor_access_codes` in one transaction and refuses a member-set mismatch. Do not use the general staging uploader to rotate production codes.
+7. Immediately redeploy all three Vercel projects after the database rotation so their server runtimes use the same pepper as the new hashes. Do not distribute or test the new codes while database and deployments are on different pepper versions.
+8. Confirm the integration-managed server-only Supabase secret is available to Rapor ARSC, Halo PSDM, and ARSC Leaderboard. Legacy fallback variable names may remain supported in code, but must not replace the integration-managed production value.
 9. Confirm no credential or generated Rapor payload is present under a public/static directory or in a deployment artifact.
 
 ## Remote execution sequence
 
 Every numbered SQL execution requires its own approval and complete raw output capture.
 
-1. Run only `deployment/remote/preflight_stage4_identity.sql` in the Supabase SQL Editor.
+1. Run only `deployment/remote/preflight_stage4_identity_single_result.sql` in the Supabase SQL Editor.
 2. Review every prerequisite, collision row, alignment count, and protected-object fingerprint.
 3. If and only if the preflight is accepted, compute and record the final SHA-256 of `deployment/remote/stage4_identity_and_public_reads.sql`.
 4. Run only the approved Stage 4 file manually in the SQL Editor.
 5. Run only `deployment/remote/verify_stage4_identity.sql` after separate approval. Compare the protected-object fingerprints mechanically with the preflight output.
-6. Deploy the Halo PSDM and Leaderboard application revisions after database verification passes.
-7. Complete the smoke test below with dedicated non-production test identities where available.
+6. Confirm the shared pepper is linked to all three Vercel projects with no project-level duplicate.
+7. Run only the reviewed Rapor access-code rotation artifact and capture its complete result.
+8. Immediately redeploy Rapor ARSC, Halo PSDM, and ARSC Leaderboard.
+9. Complete the smoke test below with dedicated non-production test identities where available.
 
 ## Post-deployment smoke test
 
