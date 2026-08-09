@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test:unit": "npx tsx --experimental-test-module-mocks --test tests/actions/async.test.ts tests/actions/stage3_participations.test.ts tests/actions/stage5_competitions.test.ts tests/actions/rapor_identity.test.ts tests/actions/rapor_link.test.ts tests/actions/shared_profile.test.ts tests/actions/static_analysis.test.ts",
+    "test:unit": "npx tsx --experimental-test-module-mocks --test tests/actions/async.test.ts tests/actions/stage3_participations.test.ts tests/actions/stage5_competitions.test.ts tests/actions/stage6_proposals.test.ts tests/actions/rapor_identity.test.ts tests/actions/rapor_link.test.ts tests/actions/shared_profile.test.ts tests/actions/static_analysis.test.ts",
     "test:sync": "tsx --experimental-test-module-mocks --test tests/actions/syncRapor.test.ts",
     "test:db": "node tests/database/run-local-tests.mjs",
     "test:e2e": "playwright test",

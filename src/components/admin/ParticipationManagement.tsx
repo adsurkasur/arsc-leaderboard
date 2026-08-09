@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { Profile, Competition, CompetitionScoringRule, ParticipationLog } from '@/lib/types';
+import { Profile, Competition, CompetitionScoringRule, CompetitionTrack, ParticipationLog } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -44,13 +44,14 @@ export function ParticipationManagement() {
   }, []);
 
   const fetchData = async () => {
-    const [{ data: logsData, error }, rulesResult] = await Promise.all([
+    const [stage6LogsResult, rulesResult] = await Promise.all([
       supabase
         .from('participation_logs')
         .select(`
           *,
           profile:profiles(id, full_name, avatar_url),
-          competition:competitions(id, title, date)
+          competition:competitions(id, title, date),
+          competition_track:leaderboard_competition_tracks(id, name)
         `)
         .order('created_at', { ascending: false }),
       supabase
@@ -59,13 +60,28 @@ export function ParticipationManagement() {
         .order('sort_order'),
     ]);
 
-    if (!error && logsData) {
+    const logsResult = stage6LogsResult.error
+      ? await supabase
+          .from('participation_logs')
+          .select(`
+            *,
+            profile:profiles(id, full_name, avatar_url),
+            competition:competitions(id, title, date)
+          `)
+          .order('created_at', { ascending: false })
+      : stage6LogsResult;
+
+    if (!logsResult.error && logsResult.data) {
+      const logsData = logsResult.data;
       const transformedLogs = logsData.map(log => {
         const logData = log as unknown as ParticipationLog;
         return {
           ...logData,
           profile: logData.profile as unknown as Profile,
-          competition: logData.competition as unknown as Competition
+          competition: logData.competition as unknown as Competition,
+          competition_track: logData.competition_track
+            ? logData.competition_track as unknown as CompetitionTrack
+            : null,
         };
       });
       setLogs(transformedLogs);
@@ -274,6 +290,9 @@ export function ParticipationManagement() {
                   <TableCell>
                     <div>
                       <span className="font-medium">{log.competition?.title || 'Tidak Dikenal'}</span>
+                      {log.competition_track?.name && (
+                        <p className="mt-0.5 text-xs text-muted-foreground">Kategori: {log.competition_track.name}</p>
+                      )}
                       {log.requested_achievement && (
                         <p className="mt-1 text-xs text-muted-foreground">
                           Diajukan: {log.requested_achievement}

@@ -23,8 +23,47 @@ function sqlFile(path) {
 }
 
 runSql(
-  'Resetting local integration fixtures and Stage 4/5 objects...',
+  'Resetting local integration fixtures and Stage 4/5/6 objects...',
   `
+    DROP FUNCTION IF EXISTS public.leaderboard_save_competition_v2(uuid, text, date, text, text, boolean, uuid, jsonb, jsonb);
+    DROP FUNCTION IF EXISTS public.submit_participation_v3(uuid, uuid, uuid, text);
+    DROP FUNCTION IF EXISTS public.submit_competition_proposal(text, text, text, date, text, text, text, text, text);
+    DROP FUNCTION IF EXISTS public.review_competition_proposal(
+      uuid, text, text, uuid, text, date, text, text, boolean, uuid, jsonb, jsonb, uuid, text, text
+    );
+    DROP FUNCTION IF EXISTS public.get_public_member_participations_v3(uuid);
+    DROP TABLE IF EXISTS public.leaderboard_competition_proposals CASCADE;
+    DROP TABLE IF EXISTS public.leaderboard_competition_tracks CASCADE;
+    DROP FUNCTION IF EXISTS public.leaderboard_has_role(uuid, text);
+    DROP FUNCTION IF EXISTS public.leaderboard_has_role(uuid, public.app_role);
+    ALTER TABLE IF EXISTS public.participation_submission_events
+      DROP COLUMN IF EXISTS competition_track_id,
+      DROP COLUMN IF EXISTS competition_track_name;
+    ALTER TABLE IF EXISTS public.participation_logs
+      DROP COLUMN IF EXISTS competition_track_id;
+    DO $reset_stage6$
+    BEGIN
+      IF to_regclass('public.participation_logs') IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1
+          FROM pg_constraint constraint_row
+          WHERE constraint_row.conrelid = 'public.participation_logs'::regclass
+            AND constraint_row.contype = 'u'
+            AND (
+              SELECT array_agg(attribute_row.attname::text ORDER BY attribute_row.attname::text)
+              FROM unnest(constraint_row.conkey) AS key_row(attnum)
+              JOIN pg_attribute attribute_row
+                ON attribute_row.attrelid = constraint_row.conrelid
+               AND attribute_row.attnum = key_row.attnum
+            ) = ARRAY['competition_id', 'profile_id']::text[]
+        )
+      THEN
+        ALTER TABLE public.participation_logs
+          ADD CONSTRAINT participation_logs_profile_id_competition_id_key
+          UNIQUE (profile_id, competition_id);
+      END IF;
+    END;
+    $reset_stage6$;
     DROP FUNCTION IF EXISTS public.leaderboard_save_competition(uuid, text, date, text, text, boolean, uuid, jsonb);
     DROP FUNCTION IF EXISTS public.submit_participation_v2(uuid, uuid, text);
     DROP FUNCTION IF EXISTS public.review_participation_v2(uuid, text, uuid, text);
@@ -90,6 +129,10 @@ runSql('Running read-only Stage 5 preflight...', sqlFile('deployment/remote/pref
 runSql('Applying additive Stage 5 scoring artifact...', sqlFile('deployment/remote/stage5_configurable_scoring.sql'));
 runSql('Running Stage 5 configurable scoring validation...', sqlFile('tests/database/test_stage5_scoring.sql'));
 runSql('Running read-only Stage 5 verification...', sqlFile('deployment/remote/verify_stage5_scoring.sql'));
+runSql('Running read-only Stage 6 preflight...', sqlFile('deployment/remote/preflight_stage6_competition_proposals.sql'));
+runSql('Applying additive Stage 6 competition proposal artifact...', sqlFile('deployment/remote/stage6_competition_proposals.sql'));
+runSql('Running Stage 6 competition proposal validation...', sqlFile('tests/database/test_stage6_competition_proposals.sql'));
+runSql('Running read-only Stage 6 verification...', sqlFile('deployment/remote/verify_stage6_competition_proposals.sql'));
 runSql('Cleaning local test state...', 'DROP TABLE IF EXISTS public._test_stage3_state;');
 
 process.stdout.write('All database integration tests passed.\n');

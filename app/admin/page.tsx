@@ -10,7 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { UsersManagement } from '@/components/admin/UsersManagement';
 import { ParticipationManagement } from '@/components/admin/ParticipationManagement';
 import { CompetitionsManagement } from '@/components/admin/CompetitionsManagement';
-import { Loader2, Users, ClipboardList, Award, Shield } from 'lucide-react';
+import { CompetitionProposalsManagement } from '@/components/admin/CompetitionProposalsManagement';
+import { Loader2, Users, ClipboardList, Award, Shield, Inbox } from 'lucide-react';
 import { m } from 'framer-motion';
 import { pageTransition, staggerContainer, staggerItem, fadeInUp } from '@/lib/motion';
 
@@ -71,7 +72,7 @@ export default function AdminPage() {
             </div>
             <h1 className="text-2xl md:text-3xl font-bold">Dashboard Admin</h1>
           </div>
-          <p className="text-muted-foreground">Kelola pengguna, kompetisi, dan catatan partisipasi</p>
+          <p className="text-muted-foreground">Kelola pengguna, katalog kompetisi, usulan anggota, dan catatan partisipasi</p>
         </m.div>
 
         <m.div
@@ -81,7 +82,7 @@ export default function AdminPage() {
         >
           <Tabs defaultValue="users" className="space-y-6">
             <m.div variants={staggerItem}>
-              <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid h-auto p-1 gap-1">
+              <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid h-auto p-1 gap-1">
                 <TabsTrigger value="users" className="gap-2 py-2.5 data-[state=active]:shadow-sm">
                   <Users className="w-4 h-4" />
                   <span className="hidden sm:inline">Pengguna</span>
@@ -89,6 +90,10 @@ export default function AdminPage() {
                 <TabsTrigger value="competitions" className="gap-2 py-2.5 data-[state=active]:shadow-sm">
                   <Award className="w-4 h-4" />
                   <span className="hidden sm:inline">Kompetisi</span>
+                </TabsTrigger>
+                <TabsTrigger value="proposals" className="gap-2 py-2.5 data-[state=active]:shadow-sm">
+                  <Inbox className="w-4 h-4" />
+                  <span className="hidden sm:inline">Usulan</span>
                 </TabsTrigger>
                 <TabsTrigger value="participation" className="gap-2 py-2.5 data-[state=active]:shadow-sm">
                   <ClipboardList className="w-4 h-4" />
@@ -139,6 +144,21 @@ export default function AdminPage() {
                   </CardHeader>
                   <CardContent>
                     <ParticipationManagement />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="proposals" className="mt-0">
+                <Card className="shadow-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Inbox className="w-5 h-5 text-primary" />
+                      Usulan Kompetisi
+                    </CardTitle>
+                    <CardDescription>Tinjau lomba yang diajukan anggota dan tambahkan ke katalog</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <CompetitionProposalsManagement />
                   </CardContent>
                 </Card>
               </TabsContent>

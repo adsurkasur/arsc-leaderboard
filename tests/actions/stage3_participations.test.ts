@@ -19,7 +19,14 @@ mock.module('@/lib/supabase/server', {
         getUser: async () => ({ data: { user: { id: 'admin1' } }, error: null }),
       },
       rpc: async (fn: string, args: unknown) => {
+        (globalThis as any).mockRpcCalls.push({ fn, args });
         (globalThis as any).mockRpcLastArgs = { fn, args };
+        if ((globalThis as any).mockStage6Missing && fn === 'submit_participation_v3') {
+          return {
+            data: null,
+            error: { code: 'PGRST202', message: 'Could not find submit_participation_v3' },
+          };
+        }
         return { data: { success: true }, error: null };
       },
     }),
@@ -30,23 +37,52 @@ const { reviewParticipation, submitParticipation } = await import(
   '../../src/lib/actions/stage3_participations'
 );
 
-test('Stage 5 participation actions use configured scoring rules', async (t) => {
+test('Stage 6 participation actions use configured scoring rules and tracks', async (t) => {
   t.beforeEach(() => {
     (globalThis as any).mockRpcLastArgs = null;
+    (globalThis as any).mockRpcCalls = [];
+    (globalThis as any).mockStage6Missing = false;
+  });
+
+  await t.test('keeps Stage 5 submission working before the manual Stage 6 deployment', async () => {
+    (globalThis as any).mockStage6Missing = true;
+
+    const result = await submitParticipation(
+      'competition-123',
+      'stage5-default-competition-123',
+      'rule-finalis',
+      'https://example.com/proof',
+    );
+
+    assert.strictEqual(result.success, true);
+    assert.deepStrictEqual((globalThis as any).mockRpcCalls.map((call: { fn: string }) => call.fn), [
+      'submit_participation_v3',
+      'submit_participation_v2',
+    ]);
+    assert.deepStrictEqual((globalThis as any).mockRpcLastArgs, {
+      fn: 'submit_participation_v2',
+      args: {
+        p_competition_id: 'competition-123',
+        p_scoring_rule_id: 'rule-finalis',
+        p_evidence_url: 'https://example.com/proof',
+      },
+    });
   });
 
   await t.test('submits the selected competition scoring rule', async () => {
     const result = await submitParticipation(
       'competition-123',
+      'track-uiux',
       'rule-juara-1',
       'https://example.com/proof',
     );
 
     assert.strictEqual(result.success, true);
     assert.deepStrictEqual((globalThis as any).mockRpcLastArgs, {
-      fn: 'submit_participation_v2',
+      fn: 'submit_participation_v3',
       args: {
         p_competition_id: 'competition-123',
+        p_competition_track_id: 'track-uiux',
         p_scoring_rule_id: 'rule-juara-1',
         p_evidence_url: 'https://example.com/proof',
       },

@@ -18,7 +18,14 @@ function searchFiles(dir: string, fileList: string[] = []): string[] {
 
 test('Static Analysis: No direct-write paths to protected tables', async (t) => {
   const srcFiles = searchFiles(path.join(process.cwd(), 'src'));
-  const protectedTables = ['participation_logs', 'participation_submission_events', 'audit_events', 'verification_requests'];
+  const protectedTables = [
+    'participation_logs',
+    'participation_submission_events',
+    'audit_events',
+    'verification_requests',
+    'leaderboard_competition_tracks',
+    'leaderboard_competition_proposals',
+  ];
   
   // Regex to catch .from('protected_table').insert / update / delete / upsert
   const writeRegex = new RegExp(`from\\(\\s*['"\`]?(${protectedTables.join('|')})['"\`]?\\s*\\)\\s*\\.\\s*(insert|update|delete|upsert)`);
@@ -139,4 +146,31 @@ test('Static Analysis: Stage 5 SQL never mutates Rapor or Halo-owned tables', ()
     /\bpl\.achievement\b/i,
     'Stage 5 must not depend on the optional legacy participation_logs.achievement column.',
   );
+});
+
+test('Static Analysis: Stage 6 is RPC-only and preserves Rapor/Halo ownership boundaries', () => {
+  const stage6 = fs.readFileSync(
+    path.join(process.cwd(), 'deployment', 'remote', 'stage6_competition_proposals.sql'),
+    'utf8',
+  );
+  const proposalAction = fs.readFileSync(
+    path.join(process.cwd(), 'src', 'lib', 'actions', 'stage6_proposals.ts'),
+    'utf8',
+  );
+  const proposalManagement = fs.readFileSync(
+    path.join(process.cwd(), 'src', 'components', 'admin', 'CompetitionProposalsManagement.tsx'),
+    'utf8',
+  );
+
+  assert.doesNotMatch(
+    stage6,
+    /\b(?:insert\s+into|update|delete\s+from|alter\s+table|drop\s+table|create\s+table)\s+public\.(?:rapor_[a-z_]+|users|members|member_release_links|profiles|arsc_identities)\b/i,
+    'Stage 6 must treat Rapor, Halo, and shared identity tables as read-only.',
+  );
+  assert.match(stage6, /CREATE FUNCTION public\.submit_competition_proposal/i);
+  assert.match(stage6, /CREATE FUNCTION public\.review_competition_proposal/i);
+  assert.match(stage6, /UNIQUE \(profile_id, competition_id, competition_track_id\)/i);
+  assert.match(stage6, /'internal-arsc'/i);
+  assert.doesNotMatch(proposalAction, /\.from\([^)]*\)\s*\.\s*(insert|update|delete|upsert)/i);
+  assert.doesNotMatch(proposalManagement, /\.from\([^)]*\)\s*\.\s*(insert|update|delete|upsert)/i);
 });

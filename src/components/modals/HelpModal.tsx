@@ -18,7 +18,7 @@ const guidance = [
   {
     icon: FileUp,
     title: 'Ajukan partisipasi',
-    body: 'Pilih kompetisi yang sudah terdaftar, lalu lampirkan tautan HTTPS menuju sertifikat, pengumuman, atau bukti lain.',
+    body: 'Pilih kompetisi dan kategorinya, lalu lampirkan tautan HTTPS menuju sertifikat, pengumuman, atau bukti lain. Jika lomba belum tersedia, buka tab Usulkan baru; admin akan menambahkannya tanpa meminta Anda mengisi ulang bukti.',
   },
   {
     icon: ListChecks,

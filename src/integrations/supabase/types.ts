@@ -78,6 +78,144 @@ export type Database = {
           },
         ]
       }
+      leaderboard_competition_tracks: {
+        Row: {
+          competition_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_competition_tracks_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leaderboard_competition_proposals: {
+        Row: {
+          created_at: string
+          evidence_url: string
+          id: string
+          information_url: string
+          member_notes: string | null
+          participation_log_id: string | null
+          profile_id: string
+          proposed_achievement: string
+          proposed_date: string | null
+          proposed_level: string
+          proposed_organizer: string
+          proposed_title: string
+          proposed_track_name: string
+          resolution_type: string | null
+          resolved_competition_id: string | null
+          resolved_scoring_rule_id: string | null
+          resolved_track_id: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_by: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          evidence_url: string
+          id?: string
+          information_url: string
+          member_notes?: string | null
+          participation_log_id?: string | null
+          profile_id: string
+          proposed_achievement: string
+          proposed_date?: string | null
+          proposed_level: string
+          proposed_organizer: string
+          proposed_title: string
+          proposed_track_name?: string
+          resolution_type?: string | null
+          resolved_competition_id?: string | null
+          resolved_scoring_rule_id?: string | null
+          resolved_track_id?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_by: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          evidence_url?: string
+          id?: string
+          information_url?: string
+          member_notes?: string | null
+          participation_log_id?: string | null
+          profile_id?: string
+          proposed_achievement?: string
+          proposed_date?: string | null
+          proposed_level?: string
+          proposed_organizer?: string
+          proposed_title?: string
+          proposed_track_name?: string
+          resolution_type?: string | null
+          resolved_competition_id?: string | null
+          resolved_scoring_rule_id?: string | null
+          resolved_track_id?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_competition_proposals_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaderboard_competition_proposals_resolved_competition_id_fkey"
+            columns: ["resolved_competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaderboard_competition_proposals_resolved_track_id_fkey"
+            columns: ["resolved_track_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_competition_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_release_links: {
         Row: {
           created_at: string
@@ -150,6 +288,7 @@ export type Database = {
           awarded_scoring_rule_id: string | null
           awarded_points: number | null
           competition_id: string
+          competition_track_id: string
           created_at: string
           evidence_url: string | null
           id: string
@@ -168,6 +307,7 @@ export type Database = {
           awarded_scoring_rule_id?: string | null
           awarded_points?: number | null
           competition_id: string
+          competition_track_id: string
           created_at?: string
           evidence_url?: string | null
           id?: string
@@ -186,6 +326,7 @@ export type Database = {
           awarded_scoring_rule_id?: string | null
           awarded_points?: number | null
           competition_id?: string
+          competition_track_id?: string
           created_at?: string
           evidence_url?: string | null
           id?: string
@@ -211,6 +352,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participation_logs_competition_track_id_fkey"
+            columns: ["competition_track_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_competition_tracks"
             referencedColumns: ["id"]
           },
           {
@@ -590,6 +738,22 @@ export type Database = {
           participation_id: string
         }[]
       }
+      get_public_member_participations_v3: {
+        Args: { p_profile_id: string }
+        Returns: {
+          achievement: string | null
+          awarded_points: number
+          competition_category: string
+          competition_date: string
+          competition_id: string
+          competition_title: string
+          competition_track_id: string
+          competition_track_name: string
+          created_at: string
+          participation_date: string | null
+          participation_id: string
+        }[]
+      }
       leaderboard_save_competition: {
         Args: {
           p_category: string
@@ -600,6 +764,40 @@ export type Database = {
           p_rules: Json | null
           p_template_id: string | null
           p_title: string
+        }
+        Returns: Json
+      }
+      leaderboard_save_competition_v2: {
+        Args: {
+          p_category: string
+          p_competition_id: string | null
+          p_date: string
+          p_description: string | null
+          p_is_active: boolean
+          p_rules: Json | null
+          p_template_id: string | null
+          p_title: string
+          p_tracks: Json | null
+        }
+        Returns: Json
+      }
+      review_competition_proposal: {
+        Args: {
+          p_category: string | null
+          p_competition_id: string | null
+          p_date: string | null
+          p_description: string | null
+          p_is_active: boolean | null
+          p_proposal_id: string
+          p_review_notes: string | null
+          p_rules: Json | null
+          p_scoring_rule_label: string | null
+          p_status: string
+          p_template_id: string | null
+          p_title: string | null
+          p_track_id: string | null
+          p_track_name: string | null
+          p_tracks: Json | null
         }
         Returns: Json
       }
@@ -617,6 +815,29 @@ export type Database = {
           p_competition_id: string
           p_evidence_url: string
           p_scoring_rule_id: string
+        }
+        Returns: Json
+      }
+      submit_participation_v3: {
+        Args: {
+          p_competition_id: string
+          p_competition_track_id: string
+          p_evidence_url: string
+          p_scoring_rule_id: string
+        }
+        Returns: Json
+      }
+      submit_competition_proposal: {
+        Args: {
+          p_achievement: string
+          p_date: string | null
+          p_evidence_url: string
+          p_information_url: string
+          p_level: string
+          p_member_notes: string | null
+          p_organizer: string
+          p_title: string
+          p_track_name: string
         }
         Returns: Json
       }

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, Clock, Loader2, Link as LinkIcon, RefreshCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
-import { ParticipationLog, Competition } from '@/lib/types';
+import { ParticipationLog, Competition, CompetitionProposal, CompetitionTrack } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { User } from '@supabase/supabase-js';
 import { getErrorMessage, withTimeout } from '@/lib/async';
@@ -20,6 +20,7 @@ interface RequestsModalProps {
 export function RequestsModal({ user }: RequestsModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [userRequests, setUserRequests] = useState<(ParticipationLog & { competition?: Competition })[]>([]);
+  const [proposalRequests, setProposalRequests] = useState<CompetitionProposal[]>([]);
   const [isLoadingRequests, setIsLoadingRequests] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -43,31 +44,59 @@ export function RequestsModal({ user }: RequestsModalProps) {
       if (profileError) throw profileError;
       if (!profileData?.id) {
         setUserRequests([]);
+        setProposalRequests([]);
         return;
       }
 
-      const { data, error } = await withTimeout(
-        supabase
-          .from('participation_logs')
-          .select(`
-            *,
-            competition:competitions(id, title)
-          `)
-          .eq('profile_id', profileData.id)
-          .order('created_at', { ascending: false }),
+      const [stage6ParticipationResult, proposalResult] = await withTimeout(
+        Promise.all([
+          supabase
+            .from('participation_logs')
+            .select(`
+              *,
+              competition:competitions(id, title),
+              competition_track:leaderboard_competition_tracks(id, name)
+            `)
+            .eq('profile_id', profileData.id)
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('leaderboard_competition_proposals')
+            .select('*, resolved_competition:competitions(id, title)')
+            .eq('profile_id', profileData.id)
+            .order('created_at', { ascending: false }),
+        ]),
         REQUEST_HISTORY_TIMEOUT_MS,
         'Riwayat belum merespons. Periksa koneksi lalu coba lagi.',
       );
 
-      if (error) throw error;
-      setUserRequests((data ?? []).map(req => {
+      const participationResult = stage6ParticipationResult.error
+        ? await withTimeout(
+            supabase
+              .from('participation_logs')
+              .select('*, competition:competitions(id, title)')
+              .eq('profile_id', profileData.id)
+              .order('created_at', { ascending: false }),
+            REQUEST_HISTORY_TIMEOUT_MS,
+          )
+        : stage6ParticipationResult;
+
+      if (participationResult.error) throw participationResult.error;
+      setUserRequests((participationResult.data ?? []).map(req => {
           const reqData = req as unknown as ParticipationLog;
           return {
             ...reqData,
             status: reqData.status as 'pending' | 'approved' | 'rejected',
-            competition: reqData.competition as unknown as Competition
+            competition: reqData.competition as unknown as Competition,
+            competition_track: reqData.competition_track
+              ? reqData.competition_track as unknown as CompetitionTrack
+              : null,
           };
         }));
+      setProposalRequests(
+        proposalResult.error
+          ? []
+          : (proposalResult.data ?? []) as unknown as CompetitionProposal[],
+      );
     } catch (error) {
       setLoadError(getErrorMessage(error, 'Riwayat partisipasi belum dapat dimuat.'));
     } finally {
@@ -89,6 +118,10 @@ export function RequestsModal({ user }: RequestsModalProps) {
         return <Badge variant="outline" className="bg-success/10 text-success border-success/20">Disetujui</Badge>;
       case 'rejected':
         return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">Ditolak</Badge>;
+      case 'needs_info':
+        return <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">Perlu informasi</Badge>;
+      case 'accepted':
+        return <Badge variant="outline" className="bg-success/10 text-success border-success/20">Ditambahkan</Badge>;
       default:
         return null;
     }
@@ -102,11 +135,11 @@ export function RequestsModal({ user }: RequestsModalProps) {
           Permintaan Saya
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Permintaan Partisipasi Saya</DialogTitle>
+          <DialogTitle>Permintaan Saya</DialogTitle>
           <DialogDescription>
-            Lacak status partisipasi kompetisi Anda.
+            Lacak usulan kompetisi dan pengajuan partisipasi Anda.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 max-h-96 overflow-y-auto">
@@ -128,17 +161,67 @@ export function RequestsModal({ user }: RequestsModalProps) {
                 Coba lagi
               </Button>
             </div>
-          ) : userRequests.length === 0 ? (
+          ) : userRequests.length === 0 && proposalRequests.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>Belum ada partisipasi</p>
-              <p className="text-sm">Ajukan partisipasi untuk memulai</p>
+              <p>Belum ada permintaan</p>
+              <p className="text-sm">Ajukan partisipasi atau usulkan kompetisi untuk memulai</p>
             </div>
           ) : (
-            userRequests.map((request) => (
+            <>
+              {proposalRequests.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Usulan kompetisi</p>
+                  {proposalRequests.map((proposal) => (
+                    <div key={proposal.id} className="space-y-2 rounded-xl border p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium">{proposal.proposed_title}</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {proposal.proposed_track_name} · {proposal.proposed_level}
+                          </p>
+                        </div>
+                        {getStatusBadge(proposal.status)}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3 text-xs">
+                        <a href={proposal.information_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
+                          <LinkIcon className="size-3" /> Sumber resmi
+                        </a>
+                        <a href={proposal.evidence_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
+                          <LinkIcon className="size-3" /> Bukti
+                        </a>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Capaian yang diajukan: <span className="font-medium text-foreground">{proposal.proposed_achievement}</span>
+                      </p>
+                      {proposal.review_notes && (
+                        <div className="rounded-lg border bg-muted/40 p-2 text-xs">
+                          <p className="font-semibold">Catatan admin</p>
+                          <p className="mt-1 leading-5 text-muted-foreground">{proposal.review_notes}</p>
+                          {proposal.status === 'needs_info' && (
+                            <p className="mt-2 font-medium text-primary">
+                              Lengkapi informasi melalui “Ajukan Partisipasi” lalu kirim ulang menggunakan nama dan kategori yang sama.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {userRequests.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pengajuan partisipasi</p>
+                  {userRequests.map((request) => (
               <div key={request.id} className="flex flex-col gap-2 p-3 border rounded-lg">
                 <div className="flex items-center justify-between">
-                  <p className="font-medium">{request.competition?.title || 'Kompetisi Tidak Dikenal'}</p>
+                  <div>
+                    <p className="font-medium">{request.competition?.title || 'Kompetisi Tidak Dikenal'}</p>
+                    {request.competition_track?.name && (
+                      <p className="mt-0.5 text-xs text-muted-foreground">{request.competition_track.name}</p>
+                    )}
+                  </div>
                   {getStatusBadge(request.status)}
                 </div>
                 
@@ -181,7 +264,10 @@ export function RequestsModal({ user }: RequestsModalProps) {
                   </div>
                 )}
               </div>
-            ))
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </DialogContent>

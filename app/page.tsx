@@ -32,7 +32,7 @@ const flowSteps = [
   {
     icon: FileCheck2,
     title: 'Ajukan bukti kompetisi',
-    description: 'Pilih kompetisi yang terdaftar dan lampirkan tautan bukti.',
+    description: 'Pilih kompetisi terdaftar atau usulkan lomba baru, lalu lampirkan bukti.',
   },
   {
     icon: ShieldCheck,

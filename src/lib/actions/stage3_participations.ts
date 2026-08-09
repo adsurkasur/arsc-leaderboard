@@ -32,6 +32,15 @@ type ExtendedDatabase = Database & {
         };
         Returns: { success: boolean; data?: unknown; error?: string };
       };
+      submit_participation_v3: {
+        Args: {
+          p_competition_id: string;
+          p_competition_track_id: string;
+          p_scoring_rule_id: string;
+          p_evidence_url: string;
+        };
+        Returns: { success: boolean; data?: unknown; error?: string };
+      };
       review_participation_v2: {
         Args: {
           p_log_id: string;
@@ -45,8 +54,17 @@ type ExtendedDatabase = Database & {
   };
 };
 
+function isMissingStage6Function(error: { code?: string; message?: string } | null) {
+  if (!error) return false;
+
+  return error.code === 'PGRST202'
+    || error.code === '42883'
+    || error.message?.includes('submit_participation_v3') === true;
+}
+
 export async function submitParticipation(
   competitionId: string,
+  competitionTrackId: string,
   scoringRuleId: string,
   evidenceUrl: string,
 ) {
@@ -59,17 +77,32 @@ export async function submitParticipation(
 
   // The RPC validates identity, competition/rule ownership, and state transitions.
   const typedClient = userClient as SupabaseClient<ExtendedDatabase>;
-  const { data, error } = await typedClient.rpc('submit_participation_v2', {
+  const stage6Result = await typedClient.rpc('submit_participation_v3', {
     p_competition_id: competitionId,
+    p_competition_track_id: competitionTrackId,
     p_scoring_rule_id: scoringRuleId,
     p_evidence_url: evidenceUrl,
   });
 
-  if (error) {
-    return { success: false, error: error.message };
+  if (isMissingStage6Function(stage6Result.error)) {
+    const stage5Result = await typedClient.rpc('submit_participation_v2', {
+      p_competition_id: competitionId,
+      p_scoring_rule_id: scoringRuleId,
+      p_evidence_url: evidenceUrl,
+    });
+
+    if (stage5Result.error) {
+      return { success: false, error: stage5Result.error.message };
+    }
+
+    return { success: true, data: stage5Result.data };
   }
 
-  return { success: true, data };
+  if (stage6Result.error) {
+    return { success: false, error: stage6Result.error.message };
+  }
+
+  return { success: true, data: stage6Result.data };
 }
 
 export async function reviewParticipation(

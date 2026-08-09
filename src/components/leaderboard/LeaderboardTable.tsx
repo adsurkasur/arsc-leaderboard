@@ -46,6 +46,7 @@ export function LeaderboardTable() {
   const [participationData, setParticipationData] = useState<Array<{
     id: string;
     competition?: { id: string; title: string; date: string; category: string } | null;
+    competition_track_name: string | null;
     achievement: string | null;
     awarded_points: number;
     participation_date: string | null;
@@ -226,7 +227,7 @@ export function LeaderboardTable() {
 
     try {
       const { data, error } = await withTimeout(
-        supabase.rpc('get_public_member_participations_v2', {
+        supabase.rpc('get_public_member_participations_v3', {
           p_profile_id: profile.id,
         }),
         LEADERBOARD_REQUEST_TIMEOUT_MS,
@@ -242,20 +243,21 @@ export function LeaderboardTable() {
             category: participation.competition_category,
           },
           achievement: participation.achievement,
+          competition_track_name: participation.competition_track_name,
           awarded_points: participation.awarded_points,
           participation_date: participation.participation_date,
           created_at: participation.created_at,
         })));
       } else {
-        const legacyResult = await withTimeout(
-          supabase.rpc('get_public_member_participations', {
+        const stage5Result = await withTimeout(
+          supabase.rpc('get_public_member_participations_v2', {
             p_profile_id: profile.id,
           }),
           LEADERBOARD_REQUEST_TIMEOUT_MS,
         );
 
-        if (legacyResult.data) {
-          setParticipationData(legacyResult.data.map((participation) => ({
+        if (!stage5Result.error && stage5Result.data) {
+          setParticipationData(stage5Result.data.map((participation) => ({
             id: participation.participation_id,
             competition: {
               id: participation.competition_id,
@@ -263,11 +265,36 @@ export function LeaderboardTable() {
               date: participation.competition_date,
               category: participation.competition_category,
             },
-            achievement: null,
-            awarded_points: 0,
+            achievement: participation.achievement,
+            competition_track_name: null,
+            awarded_points: participation.awarded_points,
             participation_date: participation.participation_date,
             created_at: participation.created_at,
           })));
+        } else {
+          const legacyResult = await withTimeout(
+            supabase.rpc('get_public_member_participations', {
+              p_profile_id: profile.id,
+            }),
+            LEADERBOARD_REQUEST_TIMEOUT_MS,
+          );
+
+          if (legacyResult.data) {
+            setParticipationData(legacyResult.data.map((participation) => ({
+              id: participation.participation_id,
+              competition: {
+                id: participation.competition_id,
+                title: participation.competition_title,
+                date: participation.competition_date,
+                category: participation.competition_category,
+              },
+              achievement: null,
+              competition_track_name: null,
+              awarded_points: 0,
+              participation_date: participation.participation_date,
+              created_at: participation.created_at,
+            })));
+          }
         }
       }
     } catch (error) {
@@ -681,6 +708,9 @@ export function LeaderboardTable() {
                     </div>
                     {participation.achievement && (
                       <p className="mt-2 text-sm font-medium">{participation.achievement}</p>
+                    )}
+                    {participation.competition_track_name && (
+                      <p className="mt-1 text-xs text-muted-foreground">Kategori: {participation.competition_track_name}</p>
                     )}
                     <div className="mt-2 pt-2 border-t border-border/50 grid grid-cols-2 gap-2 text-xs">
                       <div>

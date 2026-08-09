@@ -20,6 +20,7 @@ import { supabase } from '@/lib/supabase/client';
 import {
   Competition,
   CompetitionScoringRule,
+  CompetitionTrack,
   ScoringTemplate,
   ScoringTemplateRule,
 } from '@/lib/types';
@@ -60,12 +61,21 @@ import { getErrorMessage } from '@/lib/async';
 
 type SortField = 'title' | 'category' | 'date';
 type SortDirection = 'asc' | 'desc';
-type CompetitionWithRules = Competition & { scoring_rules: CompetitionScoringRule[] };
+type CompetitionWithRules = Competition & {
+  scoring_rules: CompetitionScoringRule[];
+  tracks: CompetitionTrack[];
+};
 
 interface EditableRule {
   id?: string;
   label: string;
   points: number | '';
+}
+
+interface EditableTrack {
+  id?: string;
+  name: string;
+  description?: string;
 }
 
 interface CompetitionForm {
@@ -76,6 +86,7 @@ interface CompetitionForm {
   isActive: boolean;
   templateId: string | null;
   rules: EditableRule[];
+  tracks: EditableTrack[];
 }
 
 const emptyForm = (): CompetitionForm => ({
@@ -86,6 +97,7 @@ const emptyForm = (): CompetitionForm => ({
   isActive: true,
   templateId: null,
   rules: [{ label: 'Peserta', points: 0 }],
+  tracks: [{ name: 'Umum' }],
 });
 
 function normalizeRules(rules: CompetitionScoringRule[]) {
@@ -99,7 +111,7 @@ export function CompetitionsManagement() {
   const [templates, setTemplates] = useState<ScoringTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [isStage5Ready, setIsStage5Ready] = useState(true);
+  const [isStage6Ready, setIsStage6Ready] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCompetition, setEditingCompetition] = useState<CompetitionWithRules | null>(null);
@@ -115,7 +127,7 @@ export function CompetitionsManagement() {
     const [competitionResult, templateResult] = await Promise.all([
       supabase
         .from('competitions')
-        .select('*, scoring_rules:leaderboard_competition_scoring_rules(*)')
+        .select('*, scoring_rules:leaderboard_competition_scoring_rules(*), tracks:leaderboard_competition_tracks(*)')
         .order('date', { ascending: false }),
       supabase
         .from('leaderboard_scoring_templates')
@@ -129,6 +141,9 @@ export function CompetitionsManagement() {
         scoring_rules: normalizeRules(
           (competition.scoring_rules ?? []) as CompetitionScoringRule[],
         ),
+        tracks: [...((competition.tracks ?? []) as CompetitionTrack[])]
+          .filter((track) => track.is_active)
+          .sort((a, b) => a.name.localeCompare(b.name)),
       })) as CompetitionWithRules[];
 
       const nextTemplates = (templateResult.data ?? []).map((template) => ({
@@ -140,31 +155,47 @@ export function CompetitionsManagement() {
 
       setCompetitions(nextCompetitions);
       setTemplates(nextTemplates);
-      setIsStage5Ready(true);
+      setIsStage6Ready(true);
       setIsLoading(false);
       return;
     }
 
-    // Keep the page readable if frontend deployment lands before the manual SQL step.
+    // Keep the deployed Stage 5 catalogue readable before the manual Stage 6 SQL step.
     const fallback = await supabase
       .from('competitions')
-      .select('id, title, date, description, category, created_at, updated_at')
+      .select('*, scoring_rules:leaderboard_competition_scoring_rules(*)')
       .order('date', { ascending: false });
 
     setCompetitions(
       (fallback.data ?? []).map((competition) => ({
         ...competition,
-        is_active: true,
-        scoring_template_id: null,
-        scoring_rules: [],
+        scoring_rules: normalizeRules(
+          (competition.scoring_rules ?? []) as CompetitionScoringRule[],
+        ),
+        tracks: [{
+          id: `stage5-default-${competition.id}`,
+          competition_id: competition.id,
+          name: 'Umum',
+          description: 'Kategori bawaan sebelum Stage 6 aktif.',
+          is_active: true,
+          created_at: competition.created_at,
+          updated_at: competition.updated_at,
+        }],
       })) as CompetitionWithRules[],
     );
-    setTemplates([]);
-    setIsStage5Ready(false);
+    if (!templateResult.error) {
+      setTemplates((templateResult.data ?? []).map((template) => ({
+        ...template,
+        rules: [...((template.rules ?? []) as ScoringTemplateRule[])].sort(
+          (a, b) => a.sort_order - b.sort_order || a.label.localeCompare(b.label),
+        ),
+      })) as ScoringTemplate[]);
+    }
+    setIsStage6Ready(false);
     setLoadError(
       fallback.error
         ? getErrorMessage(fallback.error, 'Data kompetisi belum dapat dimuat.')
-        : 'Konfigurasi scoring Stage 5 belum tersedia di database.',
+        : 'Konfigurasi kategori dan usulan Stage 6 belum tersedia di database.',
     );
     setIsLoading(false);
   }, []);
@@ -245,6 +276,11 @@ export function CompetitionsManagement() {
         label: rule.label,
         points: rule.points,
       })),
+      tracks: competition.tracks.map((track) => ({
+        id: track.id,
+        name: track.name,
+        description: track.description ?? '',
+      })),
     });
     setIsDialogOpen(true);
   };
@@ -276,12 +312,33 @@ export function CompetitionsManagement() {
     });
   };
 
+  const updateTrack = (index: number, patch: Partial<EditableTrack>) => {
+    setFormData((current) => ({
+      ...current,
+      tracks: current.tracks.map((track, trackIndex) =>
+        trackIndex === index ? { ...track, ...patch } : track,
+      ),
+    }));
+  };
+
+  const removeTrack = (index: number) => {
+    setFormData((current) => ({
+      ...current,
+      tracks: current.tracks.filter((_, trackIndex) => trackIndex !== index),
+    }));
+  };
+
   const handleSave = async () => {
     const normalizedRules = formData.rules.map((rule, index) => ({
       id: rule.id,
       label: rule.label.trim(),
       points: Number(rule.points),
       sort_order: (index + 1) * 10,
+    }));
+    const normalizedTracks = formData.tracks.map((track) => ({
+      id: track.id,
+      name: track.name.trim(),
+      description: track.description?.trim() || null,
     }));
 
     if (!formData.title.trim() || !formData.date || !formData.category.trim()) {
@@ -295,12 +352,24 @@ export function CompetitionsManagement() {
     if (
       normalizedRules.length === 0
       || normalizedRules.some(
-        (rule) => !rule.label || !Number.isInteger(rule.points) || rule.points < 0,
+        (rule) => !rule.label || !Number.isInteger(rule.points) || rule.points < 0 || rule.points > 100000,
       )
     ) {
       toast({
         title: 'Aturan skor belum valid',
-        description: 'Tambahkan minimal satu capaian dengan poin bilangan bulat minimal 0.',
+        description: 'Tambahkan minimal satu capaian dengan poin bilangan bulat antara 0 dan 100.000.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (
+      normalizedTracks.length === 0
+      || normalizedTracks.some((track) => !track.name)
+      || new Set(normalizedTracks.map((track) => track.name.toLowerCase())).size !== normalizedTracks.length
+    ) {
+      toast({
+        title: 'Kategori/cabang belum valid',
+        description: 'Tambahkan minimal satu kategori dengan nama yang unik.',
         variant: 'destructive',
       });
       return;
@@ -317,6 +386,7 @@ export function CompetitionsManagement() {
         isActive: formData.isActive,
         templateId: formData.templateId,
         rules: normalizedRules,
+        tracks: normalizedTracks,
       });
 
       if (!result.success) throw new Error(result.error);
@@ -359,6 +429,11 @@ export function CompetitionsManagement() {
         label: rule.label,
         points: rule.points,
         sort_order: (index + 1) * 10,
+      })),
+      tracks: competition.tracks.map((track) => ({
+        id: track.id,
+        name: track.name,
+        description: track.description,
       })),
     });
 
@@ -405,13 +480,13 @@ export function CompetitionsManagement() {
 
   return (
     <div className="space-y-5">
-      {!isStage5Ready && (
+      {!isStage6Ready && (
         <div className="flex items-start gap-3 rounded-2xl border border-warning/25 bg-warning/5 p-4">
           <CircleAlert className="mt-0.5 size-5 shrink-0 text-warning" />
           <div>
-            <p className="font-medium">Konfigurasi scoring belum aktif</p>
+            <p className="font-medium">Kategori kompetisi belum aktif</p>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              {loadError} Jalankan artifact Stage 5 di Supabase sebelum membuat kompetisi.
+              {loadError} Jalankan artifact Stage 6 di Supabase sebelum mengubah katalog.
             </p>
           </div>
         </div>
@@ -429,7 +504,7 @@ export function CompetitionsManagement() {
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openCreateDialog} className="gap-2" disabled={!isStage5Ready}>
+            <Button onClick={openCreateDialog} className="gap-2" disabled={!isStage6Ready}>
               <Plus className="size-4" />
               Tambah Kompetisi
             </Button>
@@ -508,7 +583,11 @@ export function CompetitionsManagement() {
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold">Aturan capaian dan poin</p>
-                      <p className="text-xs text-muted-foreground">Poin diberikan otomatis saat admin menyetujui.</p>
+                      <p className="max-w-xl text-xs leading-5 text-muted-foreground">
+                        Capaian adalah hasil yang dapat dipilih anggota. Poin harus berupa bilangan bulat 0–100.000
+                        dan baru diberikan setelah bukti disetujui admin. Perubahan aturan tidak mengubah skor lama
+                        yang sudah tersimpan.
+                      </p>
                     </div>
                     <Button
                       type="button"
@@ -523,6 +602,12 @@ export function CompetitionsManagement() {
                       <Plus className="size-3.5" />
                       Tambah
                     </Button>
+                  </div>
+
+                  <div className="hidden grid-cols-[minmax(0,1fr)_7rem_auto] gap-2 px-1 text-xs font-medium text-muted-foreground sm:grid">
+                    <span>Nama capaian</span>
+                    <span>Jumlah poin</span>
+                    <span className="pr-2 text-right">Urutan / aksi</span>
                   </div>
 
                   {formData.rules.map((rule, index) => (
@@ -580,6 +665,67 @@ export function CompetitionsManagement() {
                           <Trash2 className="size-4" />
                         </Button>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border p-4 sm:p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold">Kategori atau cabang lomba</p>
+                    <p className="mt-1 max-w-xl text-xs leading-5 text-muted-foreground">
+                      Gunakan “Umum” jika lomba tidak memiliki cabang. Tambahkan kategori seperti UI/UX Design
+                      atau Data Mining agar satu acara dapat memuat beberapa pemenang dan satu anggota dapat
+                      mengajukan lebih dari satu kategori.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 gap-2"
+                    onClick={() => setFormData((current) => ({
+                      ...current,
+                      tracks: [...current.tracks, { name: '' }],
+                    }))}
+                  >
+                    <Plus className="size-3.5" />
+                    Tambah
+                  </Button>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  <div className="hidden grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto] gap-2 px-1 text-xs font-medium text-muted-foreground sm:grid">
+                    <span>Nama kategori/cabang</span>
+                    <span>Keterangan opsional</span>
+                    <span>Aksi</span>
+                  </div>
+                  {formData.tracks.map((track, index) => (
+                    <div key={track.id ?? `new-track-${index}`} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto]">
+                      <Input
+                        aria-label={`Nama kategori ${index + 1}`}
+                        value={track.name}
+                        onChange={(event) => updateTrack(index, { name: event.target.value })}
+                        placeholder="Contoh: UI/UX Design"
+                      />
+                      <Input
+                        aria-label={`Keterangan kategori ${index + 1}`}
+                        value={track.description ?? ''}
+                        onChange={(event) => updateTrack(index, { description: event.target.value })}
+                        placeholder="Opsional"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="justify-self-end text-muted-foreground hover:text-destructive"
+                        onClick={() => removeTrack(index)}
+                        disabled={formData.tracks.length === 1}
+                        aria-label={`Hapus kategori ${index + 1}`}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -669,6 +815,7 @@ export function CompetitionsManagement() {
                   <TableCell>
                     <p className="text-sm font-medium">{competition.scoring_rules.length} capaian</p>
                     <p className="text-xs text-muted-foreground">{min}–{max} poin</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{competition.tracks.length} kategori/cabang</p>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">

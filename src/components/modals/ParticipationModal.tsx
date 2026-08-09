@@ -6,12 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus, Loader2, AlertCircle, RefreshCw, Search, Send } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Competition, CompetitionScoringRule } from '@/lib/types';
+import { Competition, CompetitionScoringRule, CompetitionTrack } from '@/lib/types';
 import { User } from '@supabase/supabase-js';
 import { submitParticipation } from '@/lib/actions/stage3_participations';
+import { submitCompetitionProposal } from '@/lib/actions/stage6_proposals';
 import { RaporLinkForm } from '@/components/profile/RaporLinkForm';
 import { getErrorMessage, withTimeout } from '@/lib/async';
 
@@ -32,12 +35,25 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [competitionId, setCompetitionId] = useState('');
+  const [competitionTrackId, setCompetitionTrackId] = useState('');
   const [scoringRuleId, setScoringRuleId] = useState('');
   const [evidenceUrl, setEvidenceUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [effectiveLinkStatus, setEffectiveLinkStatus] = useState<string | null>(linkStatus);
   const [isLoadingCompetitions, setIsLoadingCompetitions] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [submissionMode, setSubmissionMode] = useState<'existing' | 'proposal'>('existing');
+  const [proposal, setProposal] = useState({
+    title: '',
+    organizer: '',
+    informationUrl: '',
+    date: '',
+    level: 'Nasional',
+    trackName: 'Umum',
+    achievement: '',
+    evidenceUrl: '',
+    memberNotes: '',
+  });
 
   const fetchCompetitions = useCallback(async () => {
     if (!user || !isLinkedIdentity(effectiveLinkStatus)) return;
@@ -58,7 +74,8 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
             scoring_template_id,
             created_at,
             updated_at,
-            scoring_rules:leaderboard_competition_scoring_rules(*)
+            scoring_rules:leaderboard_competition_scoring_rules(*),
+            tracks:leaderboard_competition_tracks(*)
           `)
           .eq('is_active', true)
           .order('date', { ascending: false }),
@@ -72,25 +89,49 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
           scoring_rules: [...((competition.scoring_rules ?? []) as CompetitionScoringRule[])]
             .filter((rule) => rule.is_active)
             .sort((a, b) => a.sort_order - b.sort_order),
+          tracks: [...((competition.tracks ?? []) as CompetitionTrack[])]
+            .filter((track) => track.is_active)
+            .sort((a, b) => a.name.localeCompare(b.name)),
         })) as Competition[]);
         return;
       }
 
-      // Compatibility fallback while the Stage 5 SQL artifact awaits manual execution.
-      const legacyResult = await withTimeout(
+      // Preserve the deployed Stage 5 flow while Stage 6 still awaits its manual SQL step.
+      const stage5Result = await withTimeout(
         supabase
           .from('competitions')
-          .select('id, title, date, description, category, created_at, updated_at')
+          .select(`
+            id,
+            title,
+            date,
+            description,
+            category,
+            is_active,
+            scoring_template_id,
+            created_at,
+            updated_at,
+            scoring_rules:leaderboard_competition_scoring_rules(*)
+          `)
+          .eq('is_active', true)
           .order('date', { ascending: false }),
         PARTICIPATION_REQUEST_TIMEOUT_MS,
       );
 
-      if (legacyResult.error) throw competitionsResult.error;
-      setCompetitions((legacyResult.data ?? []).map((competition) => ({
+      if (stage5Result.error) throw competitionsResult.error;
+      setCompetitions((stage5Result.data ?? []).map((competition) => ({
         ...competition,
-        is_active: true,
-        scoring_template_id: null,
-        scoring_rules: [],
+        scoring_rules: [...((competition.scoring_rules ?? []) as CompetitionScoringRule[])]
+          .filter((rule) => rule.is_active)
+          .sort((a, b) => a.sort_order - b.sort_order),
+        tracks: [{
+          id: `stage5-default-${competition.id}`,
+          competition_id: competition.id,
+          name: 'Umum',
+          description: 'Kategori bawaan sebelum Stage 6 aktif.',
+          is_active: true,
+          created_at: competition.created_at,
+          updated_at: competition.updated_at,
+        }],
       })) as Competition[]);
     } catch (error) {
       setLoadError(getErrorMessage(error, 'Formulir pengajuan belum dapat dimuat.'));
@@ -111,10 +152,10 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
   }, [effectiveLinkStatus, fetchCompetitions, isModalOpen, user]);
 
   const handleSubmit = async () => {
-    if (!competitionId || !scoringRuleId || !evidenceUrl.trim()) {
+    if (!competitionId || !competitionTrackId || !scoringRuleId || !evidenceUrl.trim()) {
       toast({
         title: 'Kesalahan',
-        description: 'Silakan pilih kompetisi, capaian, dan sertakan URL bukti.',
+        description: 'Silakan pilih kompetisi, kategori, capaian, dan sertakan URL bukti.',
         variant: 'destructive',
       });
       return;
@@ -125,7 +166,7 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
     try {
       // Execute the Stage 3 RPC explicitly (never write to participation_logs directly)
       const result = await withTimeout(
-        submitParticipation(competitionId, scoringRuleId, evidenceUrl.trim()),
+        submitParticipation(competitionId, competitionTrackId, scoringRuleId, evidenceUrl.trim()),
         PARTICIPATION_REQUEST_TIMEOUT_MS,
         'Pengajuan belum merespons. Periksa koneksi lalu coba lagi.',
       );
@@ -143,6 +184,7 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
         });
         setIsModalOpen(false);
         setCompetitionId('');
+        setCompetitionTrackId('');
         setScoringRuleId('');
         setEvidenceUrl('');
       }
@@ -150,6 +192,71 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
       toast({
         title: 'Kesalahan',
         description: getErrorMessage(error, 'Terjadi kesalahan yang tidak terduga.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleProposalSubmit = async () => {
+    if (
+      !proposal.title.trim()
+      || !proposal.organizer.trim()
+      || !proposal.informationUrl.trim()
+      || !proposal.level.trim()
+      || !proposal.trackName.trim()
+      || !proposal.achievement.trim()
+      || !proposal.evidenceUrl.trim()
+    ) {
+      toast({
+        title: 'Informasi belum lengkap',
+        description: 'Lengkapi nama, penyelenggara, sumber resmi, tingkat, kategori, capaian, dan tautan bukti.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const result = await withTimeout(
+        submitCompetitionProposal({
+          title: proposal.title.trim(),
+          organizer: proposal.organizer.trim(),
+          informationUrl: proposal.informationUrl.trim(),
+          date: proposal.date || null,
+          level: proposal.level,
+          trackName: proposal.trackName.trim(),
+          achievement: proposal.achievement.trim(),
+          evidenceUrl: proposal.evidenceUrl.trim(),
+          memberNotes: proposal.memberNotes.trim() || null,
+        }),
+        PARTICIPATION_REQUEST_TIMEOUT_MS,
+        'Usulan belum merespons. Periksa koneksi lalu coba lagi.',
+      );
+
+      if (!result.success) throw new Error(result.error);
+
+      toast({
+        title: 'Usulan kompetisi terkirim',
+        description: 'Admin akan memeriksa informasi lomba. Setelah diterima, pengajuan partisipasi dibuat otomatis.',
+      });
+      setProposal({
+        title: '',
+        organizer: '',
+        informationUrl: '',
+        date: '',
+        level: 'Nasional',
+        trackName: 'Umum',
+        achievement: '',
+        evidenceUrl: '',
+        memberNotes: '',
+      });
+      setIsModalOpen(false);
+    } catch (error) {
+      toast({
+        title: 'Usulan belum terkirim',
+        description: getErrorMessage(error, 'Terjadi kesalahan saat mengirim usulan.'),
         variant: 'destructive',
       });
     } finally {
@@ -167,12 +274,11 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
           Ajukan Partisipasi
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Ajukan Partisipasi</DialogTitle>
           <DialogDescription>
-            Pilih kompetisi, capaian yang diraih, dan tautan bukti Anda.
-            Permintaan akan ditinjau oleh administrator.
+            Pilih kompetisi yang sudah ada atau usulkan lomba baru. Semua bukti tetap ditinjau administrator.
           </DialogDescription>
         </DialogHeader>
         
@@ -211,14 +317,28 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
             />
           </div>
         ) : (
-          <>
-            <div className="space-y-4">
+          <Tabs value={submissionMode} onValueChange={(value) => setSubmissionMode(value as 'existing' | 'proposal')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="existing" className="gap-2">
+                <Search className="size-4" />
+                Kompetisi terdaftar
+              </TabsTrigger>
+              <TabsTrigger value="proposal" className="gap-2">
+                <Plus className="size-4" />
+                Usulkan baru
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="existing" className="mt-5 space-y-5">
+              <div className="space-y-4">
               <div>
                 <Label htmlFor="competition">Kompetisi *</Label>
                 <Select
                   value={competitionId}
                   onValueChange={(value) => {
                     setCompetitionId(value);
+                    const tracks = competitions.find((competition) => competition.id === value)?.tracks ?? [];
+                    setCompetitionTrackId(tracks.length === 1 ? tracks[0].id : '');
                     setScoringRuleId('');
                   }}
                 >
@@ -238,7 +358,27 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Hanya kompetisi yang sudah terdaftar yang dapat dipilih.
+                  Tidak menemukannya? Gunakan tab “Usulkan baru”; Anda tidak perlu menunggu admin untuk mengisi ulang bukti.
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="competition-track">Kategori/cabang *</Label>
+                <Select
+                  value={competitionTrackId}
+                  onValueChange={setCompetitionTrackId}
+                  disabled={!competitionId}
+                >
+                  <SelectTrigger id="competition-track" className="border-primary/20 focus:border-primary">
+                    <SelectValue placeholder={competitionId ? 'Pilih kategori...' : 'Pilih kompetisi dahulu'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(competitions.find((competition) => competition.id === competitionId)?.tracks ?? []).map((track) => (
+                      <SelectItem key={track.id} value={track.id}>{track.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Setiap kategori dapat memiliki pemenang yang sama, termasuk lebih dari satu Juara 1 untuk tim.
                 </p>
               </div>
               <div>
@@ -283,8 +423,8 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
                   URL ke sertifikat, pengumuman, atau bukti valid lainnya.
                 </p>
               </div>
-            </div>
-            <DialogFooter>
+              </div>
+              <DialogFooter>
               <Button variant="outline" onClick={() => setIsModalOpen(false)}>
                 Batal
               </Button>
@@ -298,8 +438,113 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
                   'Kirim Permintaan'
                 )}
               </Button>
-            </DialogFooter>
-          </>
+              </DialogFooter>
+            </TabsContent>
+
+            <TabsContent value="proposal" className="mt-5 space-y-5">
+              <div className="rounded-2xl border border-primary/15 bg-primary/[0.04] p-4 text-sm leading-6 text-muted-foreground">
+                Kirim informasi singkat tentang lomba. Admin akan memeriksa sumber, membuat atau menghubungkan
+                kompetisi dan kategorinya, lalu pengajuan partisipasi Anda dibuat otomatis sebagai menunggu tinjauan.
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="proposal-title">Nama kompetisi *</Label>
+                  <Input
+                    id="proposal-title"
+                    value={proposal.title}
+                    onChange={(event) => setProposal({ ...proposal, title: event.target.value })}
+                    placeholder="Contoh: Gemastik 2026"
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="proposal-organizer">Penyelenggara *</Label>
+                  <Input
+                    id="proposal-organizer"
+                    value={proposal.organizer}
+                    onChange={(event) => setProposal({ ...proposal, organizer: event.target.value })}
+                    placeholder="Nama institusi atau organisasi"
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="proposal-info-url">Sumber informasi resmi *</Label>
+                  <Input
+                    id="proposal-info-url"
+                    type="url"
+                    value={proposal.informationUrl}
+                    onChange={(event) => setProposal({ ...proposal, informationUrl: event.target.value })}
+                    placeholder="https://instagram.com/... atau situs resmi"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="proposal-date">Tanggal (jika diketahui)</Label>
+                  <Input
+                    id="proposal-date"
+                    type="date"
+                    value={proposal.date}
+                    onChange={(event) => setProposal({ ...proposal, date: event.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="proposal-level">Tingkat kompetisi *</Label>
+                  <Select value={proposal.level} onValueChange={(level) => setProposal({ ...proposal, level })}>
+                    <SelectTrigger id="proposal-level"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {['Internal ARSC', 'Internal UB', 'Regional', 'Nasional', 'Internasional', 'PKM', 'Lainnya'].map((level) => (
+                        <SelectItem key={level} value={level}>{level}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="proposal-track">Kategori/cabang *</Label>
+                  <Input
+                    id="proposal-track"
+                    value={proposal.trackName}
+                    onChange={(event) => setProposal({ ...proposal, trackName: event.target.value })}
+                    placeholder="Umum atau contoh: UI/UX Design"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="proposal-achievement">Capaian yang diraih *</Label>
+                  <Input
+                    id="proposal-achievement"
+                    value={proposal.achievement}
+                    onChange={(event) => setProposal({ ...proposal, achievement: event.target.value })}
+                    placeholder="Contoh: Juara 1 atau Finalis"
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="proposal-evidence">Tautan bukti *</Label>
+                  <Input
+                    id="proposal-evidence"
+                    type="url"
+                    value={proposal.evidenceUrl}
+                    onChange={(event) => setProposal({ ...proposal, evidenceUrl: event.target.value })}
+                    placeholder="https://drive.google.com/..."
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="proposal-notes">Keterangan tambahan (opsional)</Label>
+                  <Textarea
+                    id="proposal-notes"
+                    value={proposal.memberNotes}
+                    onChange={(event) => setProposal({ ...proposal, memberNotes: event.target.value })}
+                    placeholder="Informasi yang membantu admin memverifikasi lomba atau kategori."
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsModalOpen(false)}>Batal</Button>
+                <Button onClick={() => void handleProposalSubmit()} disabled={isSubmitting} className="gap-2">
+                  {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                  Kirim usulan
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+          </Tabs>
         )}
       </DialogContent>
     </Dialog>

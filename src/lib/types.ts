@@ -26,6 +26,47 @@ export interface Competition {
   created_at: string;
   updated_at: string;
   scoring_rules?: CompetitionScoringRule[];
+  tracks?: CompetitionTrack[];
+}
+
+export interface CompetitionTrack {
+  id: string;
+  competition_id: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type CompetitionProposalStatus = 'pending' | 'needs_info' | 'accepted' | 'rejected';
+
+export interface CompetitionProposal {
+  id: string;
+  submitted_by: string;
+  profile_id: string;
+  proposed_title: string;
+  proposed_organizer: string;
+  information_url: string;
+  proposed_date: string | null;
+  proposed_level: string;
+  proposed_track_name: string;
+  proposed_achievement: string;
+  evidence_url: string;
+  member_notes: string | null;
+  status: CompetitionProposalStatus;
+  review_notes: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  resolved_competition_id: string | null;
+  resolved_track_id: string | null;
+  resolved_scoring_rule_id: string | null;
+  participation_log_id: string | null;
+  resolution_type: string | null;
+  created_at: string;
+  updated_at: string;
+  profile?: Profile;
+  resolved_competition?: Competition;
 }
 
 export interface CompetitionScoringRule {
@@ -61,6 +102,7 @@ export interface ParticipationLog {
   id: string;
   profile_id: string;
   competition_id: string;
+  competition_track_id: string;
   participation_date: string | null;
   awarded_achievement: string | null;
   evidence_url: string | null;
@@ -76,6 +118,7 @@ export interface ParticipationLog {
   created_at: string;
   profile?: Profile;
   competition?: Competition;
+  competition_track?: CompetitionTrack;
 }
 
 export interface VerificationRequest {

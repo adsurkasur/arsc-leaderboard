@@ -8,6 +8,7 @@ test.describe('ARSC Leaderboard public experience', () => {
     await expect(page.getByRole('complementary', { name: 'Cara kerja Leaderboard' })).toBeVisible();
     await expect(page.getByText('Hubungkan Rapor', { exact: true })).toBeVisible();
     await expect(page.getByText('Ajukan bukti kompetisi', { exact: true })).toBeVisible();
+    await expect(page.getByText(/Pilih kompetisi terdaftar atau usulkan lomba baru/i)).toBeVisible();
     await expect(page.getByText('Masuk setelah ditinjau', { exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Kontribusi kompetisi yang sudah diverifikasi/i })).toBeVisible();
 
