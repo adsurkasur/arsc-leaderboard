@@ -121,15 +121,13 @@ export async function linkProfileWithRaporCode(accessCode: string): Promise<Iden
 
   const { data: memberRow, error: memberError } = await integrationClient
     .from('rapor_members')
-    .select('member_code, release_code, name, unit, jabatan, rapor_releases!inner(status, is_active)')
+    .select('member_code, release_code, name, unit, jabatan')
     .eq('member_code', codeRow.member_code)
     .eq('release_code', codeRow.release_code)
-    .eq('rapor_releases.status', 'published')
-    .eq('rapor_releases.is_active', true)
     .maybeSingle();
 
   if (memberError || !memberRow) {
-    return { success: false, error: 'Rapor untuk kode ini belum aktif atau belum dipublikasikan.' };
+    return { success: false, error: 'Data anggota untuk kode Rapor ini tidak tersedia.' };
   }
 
   return applyReferenceToProfile(userId, {

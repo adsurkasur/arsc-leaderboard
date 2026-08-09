@@ -18,6 +18,7 @@ assert.deepEqual(contract.referenceRpc.columns, [
 ]);
 assert.equal(contract.referenceRpc.executeRole, 'service_role');
 assert.equal(contract.accessCode.pepperEnvironmentVariable, 'RAPOR_ACCESS_CODE_PEPPER');
+assert.equal(contract.accessCode.releaseResolution.requiresActiveRelease, false);
 assert.equal(sharedIdentity.auth.canonicalKey, 'auth.users.id');
 assert.equal(sharedIdentity.projections.haloProfile, 'public.users.id');
 assert.equal(sharedIdentity.projections.leaderboardProfile, 'public.profiles.user_id');
@@ -31,7 +32,9 @@ assert.match(syncAction, /get_leaderboard_reference_members/);
 assert.match(syncAction, /upsert_leaderboard_reference_member/);
 assert.match(identityAction, /RAPOR_ACCESS_CODE_PEPPER/);
 assert.match(identityAction, /rapor_access_codes/);
-assert.match(identityAction, /rapor_releases!inner\(status, is_active\)/);
+assert.match(identityAction, /\.eq\('member_code', codeRow\.member_code\)/);
+assert.match(identityAction, /\.eq\('release_code', codeRow\.release_code\)/);
+assert.doesNotMatch(identityAction, /rapor_releases\.is_active/);
 assert.match(identityHelper, /createHash\('sha256'\)/);
 assert.match(identityHelper, /trim\(\)\.toLowerCase\(\)/);
 assert.match(identityHelper, /::/);

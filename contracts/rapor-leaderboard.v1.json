@@ -22,7 +22,11 @@
     "algorithm": "sha256",
     "normalization": "trim-lowercase",
     "inputFormat": "normalized_code::pepper",
-    "pepperEnvironmentVariable": "RAPOR_ACCESS_CODE_PEPPER"
+    "pepperEnvironmentVariable": "RAPOR_ACCESS_CODE_PEPPER",
+    "releaseResolution": {
+      "memberReleasePair": "rapor_access_codes.member_code + rapor_access_codes.release_code",
+      "requiresActiveRelease": false
+    }
   },
   "privacy": {
     "publicRaporTableAccess": false,
