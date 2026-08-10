@@ -25,6 +25,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CaseThread } from '@/components/requests/CaseThread';
+import { useAuth } from '@/hooks/useAuth';
 
 type ProposalWithProfile = CompetitionProposal & { profile?: Profile };
 type CompetitionOption = Competition & {
@@ -60,6 +62,7 @@ function normalizeRules<T extends CompetitionScoringRule | ScoringTemplateRule>(
 }
 
 export function CompetitionProposalsManagement() {
+  const { user } = useAuth();
   const [proposals, setProposals] = useState<ProposalWithProfile[]>([]);
   const [competitions, setCompetitions] = useState<CompetitionOption[]>([]);
   const [templates, setTemplates] = useState<ScoringTemplate[]>([]);
@@ -429,6 +432,10 @@ export function CompetitionProposalsManagement() {
               </div>
 
               <div className="space-y-2"><Label>Catatan admin</Label><Textarea value={form.reviewNotes} onChange={(event) => setForm({ ...form, reviewNotes: event.target.value })} placeholder="Wajib untuk meminta informasi atau menolak." rows={3} /></div>
+
+              {user && (
+                <CaseThread caseType="proposal" caseId={reviewing.id} currentUserId={user.id} isAdmin />
+              )}
             </div>
           )}
 

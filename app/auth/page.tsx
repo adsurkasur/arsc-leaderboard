@@ -109,7 +109,7 @@ export default function AuthPage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.25 }}
     >
-      <section className="relative overflow-hidden bg-[hsl(222_47%_8%)] px-6 py-8 text-white sm:px-10 lg:flex lg:min-h-screen lg:flex-col lg:justify-between lg:px-14 lg:py-12">
+      <section className="relative hidden overflow-hidden bg-[hsl(222_47%_8%)] px-6 py-8 text-white sm:px-10 lg:flex lg:min-h-screen lg:flex-col lg:justify-between lg:px-14 lg:py-12">
         <div className="pointer-events-none absolute inset-0 opacity-60 [background-image:radial-gradient(circle_at_20%_20%,hsl(217_91%_60%/0.24),transparent_32%),radial-gradient(circle_at_80%_85%,hsl(160_84%_45%/0.14),transparent_30%)]" />
         <div className="relative">
           <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-300 transition-colors hover:text-white">
@@ -153,8 +153,17 @@ export default function AuthPage() {
         </p>
       </section>
 
-      <section className="flex min-h-[42rem] items-center px-4 py-10 sm:px-8 lg:min-h-screen lg:px-12">
+      <section className="flex min-h-[100dvh] items-center px-4 py-6 sm:px-8 lg:min-h-screen lg:px-12 lg:py-10">
         <div className="mx-auto w-full max-w-md">
+          <div className="mb-8 flex items-center justify-between lg:hidden">
+            <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <ArrowLeft className="size-4" /> Beranda
+            </Link>
+            <div className="flex items-center gap-2">
+              <Image src="/arsc-logo.png" alt="Logo ARSC" width={32} height={32} className="size-8 object-contain" priority />
+              <span className="text-sm font-semibold">ARSC Leaderboard</span>
+            </div>
+          </div>
           <div className="mb-6">
             <p className="text-sm font-semibold text-primary">Akses anggota</p>
             <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em]">Masuk atau buat akun</h2>

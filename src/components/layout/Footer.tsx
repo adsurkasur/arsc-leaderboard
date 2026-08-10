@@ -22,11 +22,10 @@ export function Footer() {
           <p className="mt-1 text-muted-foreground">Rekam partisipasi kompetisi anggota ARSC.</p>
         </div>
         <div className="flex flex-col gap-2 text-muted-foreground sm:items-end">
-          <Link href="/#leaderboard" className="transition-colors hover:text-foreground">Lihat peringkat</Link>
+          <Link href="/leaderboard" className="transition-colors hover:text-foreground">Lihat peringkat</Link>
           <p>© {new Date().getFullYear()} Agritech Research and Study Club</p>
         </div>
       </div>
     </m.footer>
   );
 }
-

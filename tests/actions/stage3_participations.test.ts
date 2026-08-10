@@ -27,6 +27,12 @@ mock.module('@/lib/supabase/server', {
             error: { code: 'PGRST202', message: 'Could not find submit_participation_v3' },
           };
         }
+        if ((globalThis as any).mockStage7Missing && fn === 'review_participation_v3') {
+          return {
+            data: null,
+            error: { code: 'PGRST202', message: 'Could not find review_participation_v3' },
+          };
+        }
         return { data: { success: true }, error: null };
       },
     }),
@@ -42,6 +48,7 @@ test('Stage 6 participation actions use configured scoring rules and tracks', as
     (globalThis as any).mockRpcLastArgs = null;
     (globalThis as any).mockRpcCalls = [];
     (globalThis as any).mockStage6Missing = false;
+    (globalThis as any).mockStage7Missing = false;
   });
 
   await t.test('keeps Stage 5 submission working before the manual Stage 6 deployment', async () => {
@@ -99,7 +106,7 @@ test('Stage 6 participation actions use configured scoring rules and tracks', as
 
     assert.strictEqual(result.success, true);
     assert.deepStrictEqual((globalThis as any).mockRpcLastArgs, {
-      fn: 'review_participation_v2',
+      fn: 'review_participation_v3',
       args: {
         p_log_id: 'log123',
         p_status: 'approved',
@@ -114,5 +121,23 @@ test('Stage 6 participation actions use configured scoring rules and tracks', as
 
     assert.strictEqual(result.success, true);
     assert.strictEqual((globalThis as any).mockRpcLastArgs.args.p_scoring_rule_id, null);
+  });
+
+  await t.test('keeps Stage 6 review working before the manual Stage 7 deployment', async () => {
+    (globalThis as any).mockStage7Missing = true;
+    const result = await reviewParticipation('log123', 'rejected', null, 'Bukti belum cukup');
+
+    assert.strictEqual(result.success, true);
+    assert.deepStrictEqual((globalThis as any).mockRpcCalls.map((call: { fn: string }) => call.fn), [
+      'review_participation_v3',
+      'review_participation_v2',
+    ]);
+  });
+
+  await t.test('blocks a rejection without a member-visible reason before calling the database', async () => {
+    const result = await reviewParticipation('log123', 'rejected', null, '   ');
+
+    assert.strictEqual(result.success, false);
+    assert.strictEqual((globalThis as any).mockRpcCalls.length, 0);
   });
 });

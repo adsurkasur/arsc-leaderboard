@@ -25,6 +25,8 @@ test('Static Analysis: No direct-write paths to protected tables', async (t) => 
     'verification_requests',
     'leaderboard_competition_tracks',
     'leaderboard_competition_proposals',
+    'leaderboard_case_messages',
+    'leaderboard_notifications',
   ];
   
   // Regex to catch .from('protected_table').insert / update / delete / upsert
@@ -173,4 +175,25 @@ test('Static Analysis: Stage 6 is RPC-only and preserves Rapor/Halo ownership bo
   assert.match(stage6, /'internal-arsc'/i);
   assert.doesNotMatch(proposalAction, /\.from\([^)]*\)\s*\.\s*(insert|update|delete|upsert)/i);
   assert.doesNotMatch(proposalManagement, /\.from\([^)]*\)\s*\.\s*(insert|update|delete|upsert)/i);
+});
+
+test('Static Analysis: Stage 7 preserves shared data and guards historical deletion', () => {
+  const stage7 = fs.readFileSync(
+    path.join(process.cwd(), 'deployment', 'remote', 'stage7_operations.sql'),
+    'utf8',
+  );
+  const stage7Action = fs.readFileSync(
+    path.join(process.cwd(), 'src', 'lib', 'actions', 'stage7_operations.ts'),
+    'utf8',
+  );
+
+  assert.doesNotMatch(
+    stage7,
+    /\b(?:insert\s+into|update|delete\s+from|alter\s+table|drop\s+table|create\s+table)\s+public\.(?:rapor_[a-z_]+|users|members|member_release_links|profiles|arsc_identities)\b/i,
+    'Stage 7 must treat Rapor, Halo, and shared identity tables as read-only.',
+  );
+  assert.match(stage7, /ON DELETE RESTRICT/i);
+  assert.match(stage7, /Competition has historical references and must remain archived/i);
+  assert.match(stage7, /Rejected submissions require a member-visible reason/i);
+  assert.doesNotMatch(stage7Action, /\.from\([^)]*\)\s*\.\s*(insert|update|delete|upsert)/i);
 });

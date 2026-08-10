@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { AnimatePresence, m } from 'framer-motion';
 import {
   BadgeCheck,
+  Clock,
   HelpCircle,
   Info,
   Link2,
@@ -27,7 +28,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { AboutModal, HelpModal, ProfileSettingsModal, RequestsModal } from '@/components/modals';
+import { AboutModal, HelpModal, ProfileSettingsModal } from '@/components/modals';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
 export function Header() {
   const {
@@ -92,10 +94,14 @@ export function Header() {
 
           <nav className="hidden items-center gap-1 md:flex" aria-label="Navigasi utama">
             <Button variant="ghost" size="sm" asChild className="rounded-full px-4 text-muted-foreground">
-              <Link href="/#leaderboard">Peringkat</Link>
+              <Link href="/leaderboard">Peringkat</Link>
             </Button>
 
-            {!isLoading && user && !isAdmin && !isHaloOperator && <RequestsModal user={user} />}
+            {!isLoading && user && !isAdmin && (
+              <Button variant="outline" size="sm" asChild className="gap-2 rounded-full">
+                <Link href="/requests"><Clock className="size-4" /> Permintaan saya</Link>
+              </Button>
+            )}
 
             {!isLoading && user && shouldOfferRaporLink && (
               <Button
@@ -117,6 +123,8 @@ export function Header() {
                 </Link>
               </Button>
             )}
+
+            {!isLoading && user && <NotificationCenter isAdmin={isAdmin} />}
 
             {isLoading ? (
               <div className="ml-2 size-9 animate-pulse rounded-full bg-muted" aria-hidden="true" />
@@ -183,6 +191,7 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-1 md:hidden">
+            {!isLoading && user && <NotificationCenter isAdmin={isAdmin} />}
             {!isLoading && !user && (
               <Button asChild size="sm" className="rounded-full px-4">
                 <Link href="/auth">Masuk</Link>
@@ -212,7 +221,7 @@ export function Header() {
             >
               <div className="container space-y-2 py-4">
                 <Link
-                  href="/#leaderboard"
+                  href="/leaderboard"
                   className="flex min-h-11 items-center rounded-xl px-3 text-sm font-medium hover:bg-muted"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -251,7 +260,16 @@ export function Header() {
                       </button>
                     )}
 
-                    {!isAdmin && !isHaloOperator && <div className="px-1 py-1"><RequestsModal user={user} /></div>}
+                    {!isAdmin && (
+                      <Link
+                        href="/requests"
+                        className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium hover:bg-muted"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Clock className="size-4" />
+                        Permintaan saya
+                      </Link>
+                    )}
 
                     {isAdmin && (
                       <Link

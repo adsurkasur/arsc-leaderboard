@@ -17,11 +17,14 @@ import { Loader2, Pencil, ArrowUpDown, ArrowUp, ArrowDown, Search, ExternalLink 
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { reviewParticipation } from '@/lib/actions/stage3_participations';
+import { CaseThread } from '@/components/requests/CaseThread';
+import { useAuth } from '@/hooks/useAuth';
 
 type SortField = 'user' | 'competition' | 'status' | 'created_at';
 type SortDirection = 'asc' | 'desc';
 
 export function ParticipationManagement() {
+  const { user } = useAuth();
   const [logs, setLogs] = useState<ParticipationLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -163,6 +166,10 @@ export function ParticipationManagement() {
     if (!reviewingLog || !reviewingLog.id) return;
     if (reviewStatus !== 'approved' && reviewStatus !== 'rejected') {
       toast({ title: 'Gagal', description: 'Status harus disetujui atau ditolak.', variant: 'destructive' });
+      return;
+    }
+    if (reviewStatus === 'rejected' && !reviewNotes.trim()) {
+      toast({ title: 'Alasan diperlukan', description: 'Jelaskan alasan penolakan agar anggota dapat menindaklanjuti.', variant: 'destructive' });
       return;
     }
     
@@ -328,9 +335,8 @@ export function ParticipationManagement() {
                       variant="outline" 
                       size="sm" 
                       onClick={() => openReviewDialog(log)}
-                      disabled={log.status !== 'pending'}
                     >
-                      {log.status === 'pending' ? 'Tinjau' : 'Selesai'}
+                      {log.status === 'pending' ? 'Tinjau' : 'Lihat'}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -341,7 +347,7 @@ export function ParticipationManagement() {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Tinjau Partisipasi</DialogTitle>
             <DialogDescription>
@@ -358,7 +364,7 @@ export function ParticipationManagement() {
               </div>
             </div>
             
-            <div className="space-y-2">
+            {reviewingLog?.status === 'pending' && <div className="space-y-2">
               <Label>Status Keputusan *</Label>
               <Select value={reviewStatus} onValueChange={setReviewStatus}>
                 <SelectTrigger>
@@ -370,9 +376,9 @@ export function ParticipationManagement() {
                   <SelectItem value="pending" disabled>Menunggu</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </div>}
             
-            {reviewStatus === 'approved' && (
+            {reviewingLog?.status === 'pending' && reviewStatus === 'approved' && (
               <div className="space-y-2">
                 <Label>Capaian terverifikasi *</Label>
                 <Select value={reviewRuleId} onValueChange={setReviewRuleId}>
@@ -402,8 +408,8 @@ export function ParticipationManagement() {
               </div>
             )}
             
-            <div className="space-y-2">
-              <Label htmlFor="notes">Catatan (opsional)</Label>
+            {reviewingLog?.status === 'pending' && <div className="space-y-2">
+              <Label htmlFor="notes">Catatan {reviewStatus === 'rejected' ? '*' : '(opsional)'}</Label>
               <Textarea
                 id="notes"
                 value={reviewNotes}
@@ -411,15 +417,19 @@ export function ParticipationManagement() {
                 placeholder="Alasan penolakan atau catatan tambahan..."
                 rows={3}
               />
-            </div>
+            </div>}
+
+            {reviewingLog && user && (
+              <CaseThread caseType="participation" caseId={reviewingLog.id} currentUserId={user.id} isAdmin />
+            )}
           </div>
-          <DialogFooter>
+          {reviewingLog?.status === 'pending' && <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Batal</Button>
             <Button onClick={handleReviewSubmission} disabled={isSaving || reviewStatus === 'pending' || (reviewStatus === 'approved' && !reviewRuleId)}>
               {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Kirim Tinjauan
             </Button>
-          </DialogFooter>
+          </DialogFooter>}
         </DialogContent>
       </Dialog>
     </div>

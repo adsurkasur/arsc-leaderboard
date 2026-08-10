@@ -216,6 +216,111 @@ export type Database = {
           },
         ]
       }
+      leaderboard_case_messages: {
+        Row: {
+          author_role: string
+          author_user_id: string | null
+          body: string
+          created_at: string
+          id: string
+          message_type: string
+          participation_log_id: string | null
+          proposal_id: string | null
+          visibility: string
+        }
+        Insert: {
+          author_role: string
+          author_user_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          message_type: string
+          participation_log_id?: string | null
+          proposal_id?: string | null
+          visibility?: string
+        }
+        Update: {
+          author_role?: string
+          author_user_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          message_type?: string
+          participation_log_id?: string | null
+          proposal_id?: string | null
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_case_messages_participation_log_id_fkey"
+            columns: ["participation_log_id"]
+            isOneToOne: false
+            referencedRelation: "participation_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaderboard_case_messages_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_competition_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leaderboard_notifications: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          is_read: boolean
+          message: string
+          participation_log_id: string | null
+          proposal_id: string | null
+          read_at: string | null
+          recipient_user_id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          is_read?: boolean
+          message: string
+          participation_log_id?: string | null
+          proposal_id?: string | null
+          read_at?: string | null
+          recipient_user_id: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          participation_log_id?: string | null
+          proposal_id?: string | null
+          read_at?: string | null
+          recipient_user_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_notifications_participation_log_id_fkey"
+            columns: ["participation_log_id"]
+            isOneToOne: false
+            referencedRelation: "participation_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaderboard_notifications_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_competition_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_release_links: {
         Row: {
           created_at: string
@@ -670,6 +775,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      leaderboard_add_case_message: {
+        Args: {
+          p_body: string
+          p_case_id: string
+          p_case_type: string
+          p_visibility: string
+        }
+        Returns: Json
+      }
+      leaderboard_delete_competition: {
+        Args: { p_competition_id: string; p_confirmation_title: string }
+        Returns: Json
+      }
+      leaderboard_mark_all_notifications_read: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      leaderboard_mark_notification_read: {
+        Args: { p_notification_id: string }
+        Returns: Json
+      }
       get_public_category_scores_v2: {
         Args: { p_category: string }
         Returns: {
@@ -802,6 +928,15 @@ export type Database = {
         Returns: Json
       }
       review_participation_v2: {
+        Args: {
+          p_log_id: string
+          p_notes: string | null
+          p_scoring_rule_id: string | null
+          p_status: string
+        }
+        Returns: Json
+      }
+      review_participation_v3: {
         Args: {
           p_log_id: string
           p_notes: string | null

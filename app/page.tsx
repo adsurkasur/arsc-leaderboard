@@ -61,7 +61,7 @@ export default function HomePage() {
         <div className="pointer-events-none absolute inset-0 opacity-70 [background-image:radial-gradient(circle_at_15%_15%,hsl(217_91%_60%/0.22),transparent_30%),radial-gradient(circle_at_85%_80%,hsl(160_84%_45%/0.13),transparent_28%)]" />
         <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:linear-gradient(hsl(0_0%_100%/0.6)_1px,transparent_1px),linear-gradient(90deg,hsl(0_0%_100%/0.6)_1px,transparent_1px)] [background-size:56px_56px]" />
 
-        <div className="container relative grid gap-12 py-16 md:py-20 lg:grid-cols-[minmax(0,1.12fr)_minmax(22rem,0.88fr)] lg:items-center lg:gap-16 lg:py-24">
+        <div className="container relative grid gap-10 py-12 sm:py-16 md:py-20 lg:grid-cols-[minmax(0,1.12fr)_minmax(22rem,0.88fr)] lg:items-center lg:gap-16 lg:py-24">
           <m.div
             className="max-w-3xl"
             variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
@@ -102,7 +102,7 @@ export default function HomePage() {
                 </Button>
               ) : null}
               <Button asChild variant="ghost" size="lg" className="h-12 rounded-full px-5 text-slate-200 hover:bg-white/10 hover:text-white">
-                <Link href="/#leaderboard" className="gap-2">
+                <Link href="/leaderboard" className="gap-2">
                   Lihat peringkat
                   <ArrowDown className="size-4" />
                 </Link>
@@ -138,7 +138,7 @@ export default function HomePage() {
           <m.aside
             variants={reveal}
             transition={{ duration: 0.58, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
-            className="rounded-[1.75rem] border border-white/10 bg-white/[0.065] p-5 shadow-2xl shadow-black/20 backdrop-blur sm:p-7"
+            className="hidden rounded-[1.75rem] border border-white/10 bg-white/[0.065] p-5 shadow-2xl shadow-black/20 backdrop-blur sm:p-7 lg:block"
             aria-label="Cara kerja Leaderboard"
           >
             <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-5">
@@ -179,7 +179,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      <main id="leaderboard" className="scroll-mt-24">
+      <section className="container py-8 md:hidden">
+        <div className="rounded-3xl border bg-card p-5 shadow-sm">
+          <p className="text-sm font-semibold text-primary">Peringkat anggota</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">Lihat kontribusi yang sudah diverifikasi</h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">Peringkat dibuka di halaman tersendiri agar lebih nyaman dicari dan dibaca dari ponsel.</p>
+          <Button asChild className="mt-5 w-full rounded-xl"><Link href="/leaderboard">Buka leaderboard</Link></Button>
+        </div>
+      </section>
+
+      <main id="leaderboard" className="hidden scroll-mt-24 md:block">
         <section className="container py-14 md:py-20">
           <m.div
             className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between md:mb-9"

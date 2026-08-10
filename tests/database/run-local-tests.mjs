@@ -23,8 +23,66 @@ function sqlFile(path) {
 }
 
 runSql(
-  'Resetting local integration fixtures and Stage 4/5/6 objects...',
+  'Resetting local integration fixtures and Stage 4/5/6/7 objects...',
   `
+    DO $drop_stage7_triggers$
+    BEGIN
+      IF to_regclass('public.leaderboard_competition_proposals') IS NOT NULL THEN
+        DROP TRIGGER IF EXISTS leaderboard_proposal_activity ON public.leaderboard_competition_proposals;
+      END IF;
+      IF to_regclass('public.participation_logs') IS NOT NULL THEN
+        DROP TRIGGER IF EXISTS leaderboard_participation_activity ON public.participation_logs;
+      END IF;
+    END;
+    $drop_stage7_triggers$;
+    DROP FUNCTION IF EXISTS public.leaderboard_capture_proposal_activity();
+    DROP FUNCTION IF EXISTS public.leaderboard_capture_participation_activity();
+    DROP FUNCTION IF EXISTS public.leaderboard_add_case_message(text, uuid, text, text);
+    DROP FUNCTION IF EXISTS public.leaderboard_mark_notification_read(uuid);
+    DROP FUNCTION IF EXISTS public.leaderboard_mark_all_notifications_read();
+    DROP FUNCTION IF EXISTS public.review_participation_v3(uuid, text, uuid, text);
+    DROP FUNCTION IF EXISTS public.leaderboard_delete_competition(uuid, text);
+    DROP TABLE IF EXISTS public.leaderboard_notifications CASCADE;
+    DROP TABLE IF EXISTS public.leaderboard_case_messages CASCADE;
+    DO $reset_stage7_fks$
+    DECLARE
+      v_target_table text;
+      v_constraint_name text;
+      v_delete_action "char";
+    BEGIN
+      FOREACH v_target_table IN ARRAY ARRAY['participation_logs', 'verification_requests']
+      LOOP
+        IF to_regclass(format('public.%I', v_target_table)) IS NULL
+          OR to_regclass('public.competitions') IS NULL
+        THEN
+          CONTINUE;
+        END IF;
+
+        SELECT constraint_row.conname, constraint_row.confdeltype
+        INTO v_constraint_name, v_delete_action
+        FROM pg_constraint constraint_row
+        WHERE constraint_row.conrelid = format('public.%I', v_target_table)::regclass
+          AND constraint_row.confrelid = 'public.competitions'::regclass
+          AND constraint_row.contype = 'f'
+          AND (
+            SELECT array_agg(attribute_row.attname::text ORDER BY attribute_row.attname::text)
+            FROM unnest(constraint_row.conkey) AS key_row(attnum)
+            JOIN pg_attribute attribute_row
+              ON attribute_row.attrelid = constraint_row.conrelid
+             AND attribute_row.attnum = key_row.attnum
+          ) = ARRAY['competition_id']::text[];
+
+        IF v_constraint_name IS NOT NULL AND v_delete_action = 'r'::"char" THEN
+          EXECUTE format('ALTER TABLE public.%I DROP CONSTRAINT %I', v_target_table, v_constraint_name);
+          EXECUTE format(
+            'ALTER TABLE public.%I ADD CONSTRAINT %I FOREIGN KEY (competition_id) REFERENCES public.competitions(id) ON DELETE CASCADE',
+            v_target_table,
+            v_constraint_name
+          );
+        END IF;
+      END LOOP;
+    END;
+    $reset_stage7_fks$;
     DROP FUNCTION IF EXISTS public.leaderboard_save_competition_v2(uuid, text, date, text, text, boolean, uuid, jsonb, jsonb);
     DROP FUNCTION IF EXISTS public.submit_participation_v3(uuid, uuid, uuid, text);
     DROP FUNCTION IF EXISTS public.submit_competition_proposal(text, text, text, date, text, text, text, text, text);
@@ -133,6 +191,10 @@ runSql('Running read-only Stage 6 preflight...', sqlFile('deployment/remote/pref
 runSql('Applying additive Stage 6 competition proposal artifact...', sqlFile('deployment/remote/stage6_competition_proposals.sql'));
 runSql('Running Stage 6 competition proposal validation...', sqlFile('tests/database/test_stage6_competition_proposals.sql'));
 runSql('Running read-only Stage 6 verification...', sqlFile('deployment/remote/verify_stage6_competition_proposals.sql'));
+runSql('Running read-only Stage 7 preflight...', sqlFile('deployment/remote/preflight_stage7_operations.sql'));
+runSql('Applying additive Stage 7 operations artifact...', sqlFile('deployment/remote/stage7_operations.sql'));
+runSql('Running Stage 7 operations validation...', sqlFile('tests/database/test_stage7_operations.sql'));
+runSql('Running read-only Stage 7 verification...', sqlFile('deployment/remote/verify_stage7_operations.sql'));
 runSql('Cleaning local test state...', 'DROP TABLE IF EXISTS public._test_stage3_state;');
 
 process.stdout.write('All database integration tests passed.\n');

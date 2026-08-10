@@ -44,9 +44,34 @@ test.describe('ARSC Leaderboard public experience', () => {
     await menuButton.click();
     await expect(page.getByRole('link', { name: 'Peringkat anggota' })).toBeVisible();
 
+    await page.getByRole('link', { name: 'Peringkat anggota' }).click();
+    await expect(page).toHaveURL(/\/leaderboard$/);
+    await expect(page.getByRole('heading', { name: /Kontribusi kompetisi yang sudah diverifikasi/i })).toBeVisible();
+
     const hasHorizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
     );
     expect(hasHorizontalOverflow).toBe(false);
+  });
+
+  test('shows the mobile login form before secondary marketing content', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/auth');
+
+    const heading = page.getByRole('heading', { name: 'Masuk atau buat akun' });
+    const submit = page.getByRole('button', { name: 'Masuk' });
+    await expect(heading).toBeVisible();
+    await expect(submit).toBeVisible();
+
+    const submitBox = await submit.boundingBox();
+    expect(submitBox).not.toBeNull();
+    expect((submitBox?.y ?? 1000) + (submitBox?.height ?? 0)).toBeLessThanOrEqual(844);
+    await expect(page.getByText('Satu akun ARSC untuk Halo PSDM dan Leaderboard.')).toBeHidden();
+  });
+
+  test('keeps request history behind authentication', async ({ page }) => {
+    await page.goto('/requests');
+    await expect(page.getByRole('heading', { name: 'Pengajuan & percakapan' })).toBeVisible();
+    await expect(page.getByRole('main').getByRole('link', { name: 'Masuk' })).toBeVisible();
   });
 });

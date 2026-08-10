@@ -456,6 +456,7 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
                     onChange={(event) => setProposal({ ...proposal, title: event.target.value })}
                     placeholder="Contoh: Gemastik 2026"
                   />
+                  <p className="text-xs leading-5 text-muted-foreground">Gunakan nama resmi kegiatan beserta tahun atau edisinya agar tidak tertukar.</p>
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="proposal-organizer">Penyelenggara *</Label>
@@ -465,6 +466,7 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
                     onChange={(event) => setProposal({ ...proposal, organizer: event.target.value })}
                     placeholder="Nama institusi atau organisasi"
                   />
+                  <p className="text-xs leading-5 text-muted-foreground">Tuliskan pihak yang secara resmi menyelenggarakan atau menaungi lomba.</p>
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="proposal-info-url">Sumber informasi resmi *</Label>
@@ -475,6 +477,7 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
                     onChange={(event) => setProposal({ ...proposal, informationUrl: event.target.value })}
                     placeholder="https://instagram.com/... atau situs resmi"
                   />
+                  <p className="text-xs leading-5 text-muted-foreground">Tautkan situs, unggahan Instagram, atau pengumuman resmi yang menjelaskan kompetisi.</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="proposal-date">Tanggal (jika diketahui)</Label>
@@ -484,6 +487,7 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
                     value={proposal.date}
                     onChange={(event) => setProposal({ ...proposal, date: event.target.value })}
                   />
+                  <p className="text-xs leading-5 text-muted-foreground">Boleh dikosongkan bila tanggal belum diumumkan.</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="proposal-level">Tingkat kompetisi *</Label>
@@ -495,6 +499,7 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs leading-5 text-muted-foreground">Pilih jangkauan peserta tertinggi yang berlaku untuk kompetisi ini.</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="proposal-track">Kategori/cabang *</Label>
@@ -504,6 +509,7 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
                     onChange={(event) => setProposal({ ...proposal, trackName: event.target.value })}
                     placeholder="Umum atau contoh: UI/UX Design"
                   />
+                  <p className="text-xs leading-5 text-muted-foreground">Satu acara dapat memiliki beberapa kategori dan lebih dari satu Juara 1.</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="proposal-achievement">Capaian yang diraih *</Label>
@@ -513,6 +519,7 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
                     onChange={(event) => setProposal({ ...proposal, achievement: event.target.value })}
                     placeholder="Contoh: Juara 1 atau Finalis"
                   />
+                  <p className="text-xs leading-5 text-muted-foreground">Tulis hasil yang tertera pada pengumuman atau sertifikat; admin akan memetakannya ke skor resmi.</p>
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="proposal-evidence">Tautan bukti *</Label>
@@ -523,6 +530,7 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
                     onChange={(event) => setProposal({ ...proposal, evidenceUrl: event.target.value })}
                     placeholder="https://drive.google.com/..."
                   />
+                  <p className="text-xs leading-5 text-muted-foreground">Pastikan tautan dapat dibuka admin tanpa meminta akses tambahan.</p>
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="proposal-notes">Keterangan tambahan (opsional)</Label>
@@ -533,6 +541,7 @@ export function ParticipationModal({ user, linkStatus, onIdentityLinked }: Parti
                     placeholder="Informasi yang membantu admin memverifikasi lomba atau kategori."
                     rows={3}
                   />
+                  <p className="text-xs leading-5 text-muted-foreground">Tambahkan konteks bila nama tim, kategori, atau hasil pada bukti tidak langsung terlihat.</p>
                 </div>
               </div>
 

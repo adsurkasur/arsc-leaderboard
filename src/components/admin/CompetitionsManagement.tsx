@@ -25,6 +25,7 @@ import {
   ScoringTemplateRule,
 } from '@/lib/types';
 import { saveCompetition } from '@/lib/actions/stage5_competitions';
+import { deleteCompetition } from '@/lib/actions/stage7_operations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,6 +59,16 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/async';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 type SortField = 'title' | 'category' | 'date';
 type SortDirection = 'asc' | 'desc';
@@ -117,9 +128,34 @@ export function CompetitionsManagement() {
   const [editingCompetition, setEditingCompetition] = useState<CompetitionWithRules | null>(null);
   const [formData, setFormData] = useState<CompetitionForm>(emptyForm);
   const [isSaving, setIsSaving] = useState(false);
+  const [deletingCompetition, setDeletingCompetition] = useState<CompetitionWithRules | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const { toast } = useToast();
+
+  const handleDeleteCompetition = async () => {
+    if (!deletingCompetition || deleteConfirmation !== deletingCompetition.title) return;
+
+    setIsDeleting(true);
+    const result = await deleteCompetition(deletingCompetition.id, deleteConfirmation);
+    setIsDeleting(false);
+
+    if (!result.success) {
+      toast({
+        title: 'Kompetisi tidak dihapus',
+        description: result.error,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({ title: 'Kompetisi dihapus', description: 'Kompetisi kosong telah dihapus secara permanen.' });
+    setDeletingCompetition(null);
+    setDeleteConfirmation('');
+    await fetchData();
+  };
 
   const fetchData = useCallback(async () => {
     setLoadError(null);
@@ -836,6 +872,17 @@ export function CompetitionsManagement() {
                       >
                         {competition.is_active ? <Archive className="size-4" /> : <RotateCcw className="size-4" />}
                       </Button>
+                      {!competition.is_active && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => { setDeletingCompetition(competition); setDeleteConfirmation(''); }}
+                          aria-label={`Hapus ${competition.title}`}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -844,6 +891,39 @@ export function CompetitionsManagement() {
           </TableBody>
         </Table>
       </div>
+
+      <AlertDialog open={Boolean(deletingCompetition)} onOpenChange={(open) => !open && setDeletingCompetition(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus kompetisi kosong?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">Penghapusan hanya diizinkan untuk kompetisi yang sudah diarsipkan dan tidak mempunyai riwayat partisipasi, verifikasi, atau usulan.</span>
+              <span className="block font-medium text-foreground">Data bersejarah tidak akan pernah ikut terhapus.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="delete-competition-confirmation">Ketik nama kompetisi untuk mengonfirmasi</Label>
+            <Input
+              id="delete-competition-confirmation"
+              value={deleteConfirmation}
+              onChange={(event) => setDeleteConfirmation(event.target.value)}
+              placeholder={deletingCompetition?.title}
+              autoComplete="off"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(event) => { event.preventDefault(); void handleDeleteCompetition(); }}
+              disabled={isDeleting || deleteConfirmation !== deletingCompetition?.title}
+            >
+              {isDeleting && <Loader2 className="mr-2 size-4 animate-spin" />}
+              Hapus permanen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

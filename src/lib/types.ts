@@ -69,6 +69,34 @@ export interface CompetitionProposal {
   resolved_competition?: Competition;
 }
 
+export type LeaderboardCaseType = 'proposal' | 'participation';
+export type LeaderboardMessageVisibility = 'member_admins' | 'admins_only';
+
+export interface LeaderboardCaseMessage {
+  id: string;
+  proposal_id: string | null;
+  participation_log_id: string | null;
+  author_user_id: string | null;
+  author_role: 'member' | 'admin' | 'system';
+  visibility: LeaderboardMessageVisibility;
+  message_type: 'member_message' | 'admin_response' | 'admin_internal' | 'system_event';
+  body: string;
+  created_at: string;
+}
+
+export interface LeaderboardNotification {
+  id: string;
+  recipient_user_id: string;
+  proposal_id: string | null;
+  participation_log_id: string | null;
+  event_type: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  read_at: string | null;
+  created_at: string;
+}
+
 export interface CompetitionScoringRule {
   id: string;
   competition_id: string;

@@ -50,6 +50,15 @@ type ExtendedDatabase = Database & {
         };
         Returns: { success: boolean; data?: unknown; error?: string };
       };
+      review_participation_v3: {
+        Args: {
+          p_log_id: string;
+          p_status: string;
+          p_scoring_rule_id: string | null;
+          p_notes: string | null;
+        };
+        Returns: { success: boolean; data?: unknown; error?: string };
+      };
     };
   };
 };
@@ -111,6 +120,10 @@ export async function reviewParticipation(
   scoringRuleId?: string | null,
   notes?: string | null
 ) {
+  if (status === 'rejected' && !notes?.trim()) {
+    return { success: false, error: 'Alasan penolakan wajib diisi agar dapat dilihat anggota.' };
+  }
+
   const userClient = await createClient();
   const { data: { user }, error: authError } = await userClient.auth.getUser();
 
@@ -119,6 +132,23 @@ export async function reviewParticipation(
   }
 
   const typedClient = userClient as SupabaseClient<ExtendedDatabase>;
+  const stage7Result = await typedClient.rpc('review_participation_v3', {
+    p_log_id: logId,
+    p_status: status,
+    p_scoring_rule_id: scoringRuleId ?? null,
+    p_notes: notes ?? null,
+  });
+
+  const isStage7Missing = stage7Result.error?.code === 'PGRST202'
+    || stage7Result.error?.code === '42883'
+    || stage7Result.error?.message?.includes('review_participation_v3') === true;
+
+  if (!isStage7Missing) {
+    return stage7Result.error
+      ? { success: false, error: stage7Result.error.message }
+      : { success: true, data: stage7Result.data };
+  }
+
   const { data, error } = await typedClient.rpc('review_participation_v2', {
     p_log_id: logId,
     p_status: status,
@@ -126,9 +156,5 @@ export async function reviewParticipation(
     p_notes: notes ?? null,
   });
 
-  if (error) {
-    return { success: false, error: error.message };
-  }
-
-  return { success: true, data };
+  return error ? { success: false, error: error.message } : { success: true, data };
 }
