@@ -1,5 +1,7 @@
 # ARSC Leaderboard
 
+> Operational note (verified 2026-08-15): read [`docs/MAINTAINER_GUIDE.md`](docs/MAINTAINER_GUIDE.md) before development or deployment. This README contains older claims; current source and dated stage evidence take precedence. Preserved evidence records Stage 7 as locally validated but not remotely deployed.
+
 A modern, real-time competition leaderboard application built for tracking and ranking participants across various competitive events. Features comprehensive user management, admin controls, and Indonesian language support.
 
 ## 🌟 Features
@@ -213,7 +215,7 @@ Ensure these environment variables are set in your deployment platform:
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+No `LICENSE` file is currently present in this repository. Confirm licensing and ownership terms with the project owner before external distribution.
 
 ## 🙏 Acknowledgments
 
