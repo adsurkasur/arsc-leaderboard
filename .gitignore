@@ -82,3 +82,7 @@ supabase/.ref
 
 # Data extraction
 .data/
+
+# Allow modular documentation logs
+!logs/
+!logs/*.md
