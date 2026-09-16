@@ -12,7 +12,19 @@ const INTEGRATION_KEY = process.env.SUPABASE_SECRET_KEY
   || process.env.SUPABASE_INTEGRATION_SERVICE_KEY;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-export async function syncRaporMembers() {
+type SyncReport = {
+  processed: number;
+  newIdentities: number;
+  linkedIdentities: number;
+  ambiguous: number;
+  reconciliationErrors: string[];
+};
+
+type SyncRaporResult =
+  | { success: true; message?: string; report: SyncReport | null }
+  | { success: false; error: string };
+
+export async function syncRaporMembers(): Promise<SyncRaporResult> {
   if (!SUPABASE_URL || !INTEGRATION_KEY) {
     return { success: false, error: "Missing server-only integration configuration." };
   }
@@ -59,7 +71,7 @@ export async function syncRaporMembers() {
   return await processSync(remoteData, integrationClient);
 }
 
-async function handleSnapshotFallback(integrationClient: SupabaseClient) {
+async function handleSnapshotFallback(integrationClient: SupabaseClient): Promise<SyncRaporResult> {
   console.log("Falling back to local snapshot due to remote failure...");
   try {
     const snapshotPath = path.join(process.cwd(), ".data", "MINIMIZED_CONFIDENTIAL_SNAPSHOT.json");
@@ -80,7 +92,7 @@ async function handleSnapshotFallback(integrationClient: SupabaseClient) {
   }
 }
 
-async function processSync(remoteData: Record<string, unknown>[], integrationClient: SupabaseClient) {
+async function processSync(remoteData: Record<string, unknown>[], integrationClient: SupabaseClient): Promise<SyncRaporResult> {
   let newIdentities = 0;
   let linkedIdentities = 0;
   const ambiguous = 0;
@@ -116,7 +128,7 @@ async function processSync(remoteData: Record<string, unknown>[], integrationCli
     else linkedIdentities++;
   }
 
-  const report = {
+  const report: SyncReport = {
     processed: remoteData.length,
     newIdentities,
     linkedIdentities,

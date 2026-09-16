@@ -1,6 +1,6 @@
 import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { accountUsesRapor, formatHaloPosition, formatHaloUnit } from '../../src/lib/sharedProfile.ts';
+import { accountUsesRapor, formatHaloPosition, formatHaloUnit } from '../../src/lib/sharedProfile';
 
 type ProfileWrite = {
   table: string;
@@ -49,7 +49,7 @@ mock.module('@/lib/supabase/server', {
   },
 });
 
-const { updateProfileAvatar } = await import('../../src/lib/actions/raporIdentity.ts');
+const { updateProfileAvatar } = await import('../../src/lib/actions/raporIdentity');
 
 test('shared account profile rules', async (t) => {
   await t.test('uses Halo labels and exempts PH accounts from the Rapor link flow', () => {

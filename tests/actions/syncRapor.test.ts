@@ -72,7 +72,7 @@ mock.module('@supabase/supabase-js', {
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://127.0.0.1:54321';
 process.env.SUPABASE_INTEGRATION_SERVICE_KEY = 'local-test-service-key';
 
-const { syncRaporMembers } = await import('../../src/lib/actions/syncRapor.ts');
+const { syncRaporMembers } = await import('../../src/lib/actions/syncRapor');
 
 test('syncRaporMembers keeps the Rapor integration behind the admin boundary', async (t) => {
   t.beforeEach(() => {

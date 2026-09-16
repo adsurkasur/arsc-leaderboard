@@ -84,7 +84,7 @@ mock.module('@/lib/supabase/server', {
   },
 });
 
-const { linkProfileWithRaporCode } = await import('../../src/lib/actions/raporIdentity.ts');
+const { linkProfileWithRaporCode } = await import('../../src/lib/actions/raporIdentity');
 
 test('legacy Rapor codes resolve their stored member release without requiring the active release', async () => {
   const result = await linkProfileWithRaporCode('legacy-code');

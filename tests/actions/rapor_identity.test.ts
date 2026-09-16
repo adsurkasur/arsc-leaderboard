@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { hashRaporAccessCode, normalizeRaporUnit } from '../../src/lib/rapor/identity.ts';
+import { hashRaporAccessCode, normalizeRaporUnit } from '../../src/lib/rapor/identity';
 
 test('Rapor identity helpers follow the producer contract', async (t) => {
   await t.test('normalizes access codes exactly like the Rapor portal', () => {
