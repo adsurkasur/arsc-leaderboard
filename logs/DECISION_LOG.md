@@ -27,3 +27,16 @@
   - SSO with Halo through the shared same-origin Supabase cookie was accepted by the owner.
 - **Gate**: Do not merge or auto-deploy onto `main` before Stage 7 SQL is applied and verified remotely. Alternatively, branch from the live commit.
 - **Consequences**: The Supabase Auth redirect allow-list must include the new URL, and logout is shared with Halo. Spec: `docs/MULTI_ZONE_MIGRATION.md`.
+
+### [DEC-004] basePath is env-driven (off by default)
+- **Date**: 2026-09-28
+- **Status**: Accepted
+- **Context**: DEC-003 approved serving Leaderboard under `/app/leaderboard`. A hard-coded basePath would move production on merge and break the current URL and auth redirect URLs before arsc-home and the Supabase allow-list are ready.
+- **Decision**:
+  - `basePath` comes from `NEXT_PUBLIC_BASE_PATH`. It is empty by default and validated. `withBase()` prefixes image and metadata URLs, and the signup redirect includes the base path.
+  - Activation is an env change on the deployment, done by the owner following the arsc-home runbook.
+  - The back link appears only under the zone.
+- **Consequences**:
+  - Rollback is reversible: unset the env var and redeploy.
+  - Under the shared domain, SSO with Halo happens through the same-origin Supabase cookie, as approved.
+  - Analytics are recorded by the arsc-home project, because `@vercel/analytics` always uses `/_vercel/insights` at the domain root.

@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { withBase } from '@/lib/base-path';
 
 const emailSchema = z.string().email('Masukkan alamat email yang valid');
 const passwordSchema = z.string().min(6, 'Kata sandi minimal 6 karakter');
@@ -121,7 +122,7 @@ export default function AuthPage() {
         <div className="relative mx-auto mt-12 max-w-xl lg:mx-0 lg:mt-16">
           <div className="flex items-center gap-3">
             <span className="flex size-12 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white">
-              <Image src="/arsc-logo.png" alt="Logo ARSC" width={42} height={42} className="size-10 object-contain" priority />
+              <Image src={withBase("/arsc-logo.png")} alt="Logo ARSC" width={42} height={42} className="size-10 object-contain" priority />
             </span>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-300">ARSC</p>
@@ -160,7 +161,7 @@ export default function AuthPage() {
               <ArrowLeft className="size-4" /> Beranda
             </Link>
             <div className="flex items-center gap-2">
-              <Image src="/arsc-logo.png" alt="Logo ARSC" width={32} height={32} className="size-8 object-contain" priority />
+              <Image src={withBase("/arsc-logo.png")} alt="Logo ARSC" width={32} height={32} className="size-8 object-contain" priority />
               <span className="text-sm font-semibold">ARSC Leaderboard</span>
             </div>
           </div>

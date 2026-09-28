@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Footer } from "@/components/layout/Footer";
+import { withBase } from "@/lib/base-path";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
   description: "Peringkat partisipasi kompetisi anggota ARSC yang sudah diverifikasi, dengan identitas resmi dari Rapor ARSC.",
   keywords: ["ARSC", "kompetisi", "partisipasi", "prestasi", "leaderboard"],
   icons: {
-    icon: "/favico.ico",
+    icon: withBase("/favico.ico"),
   },
 };
 

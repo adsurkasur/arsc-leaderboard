@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { withBase } from '@/lib/base-path';
 
 interface AboutModalProps {
   open: boolean;
@@ -24,7 +25,7 @@ export function AboutModal({ open, onOpenChange }: AboutModalProps) {
         <div className="space-y-5">
           <div className="flex items-center gap-4 rounded-2xl border bg-muted/25 p-4">
             <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-card">
-              <Image src="/arsc-logo.png" alt="Logo ARSC" width={56} height={56} className="size-14 object-contain" />
+              <Image src={withBase("/arsc-logo.png")} alt="Logo ARSC" width={56} height={56} className="size-14 object-contain" />
             </div>
             <div>
               <p className="font-semibold">Agritech Research and Study Club</p>

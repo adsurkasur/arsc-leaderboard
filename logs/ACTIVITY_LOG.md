@@ -1,5 +1,25 @@
 # Activity Log
 
+### [2026-09-28] [Claude Code / Multi-Zones basePath]
+- **Goal**: Make Leaderboard servable at `/app/leaderboard` on the shared ARSC domain **without changing current production**.
+- **Actions**:
+  - Added `src/lib/base-path.ts`. `BASE_PATH` comes from `NEXT_PUBLIC_BASE_PATH`, is empty by default, and is validated.
+  - Wired `basePath` in `next.config.ts`.
+  - Routed the 4× `next/image` `/arsc-logo.png` sources and the favicon metadata through `withBase()`.
+  - The signup `emailRedirectTo` now includes `BASE_PATH`.
+  - Added a `← ARSC` back link in the Header, shown only when `BASE_PATH` is set.
+  - Added `tests/actions/base_path.test.ts` to `test:unit`.
+- **Files**: src/lib/base-path.ts, tests/actions/base_path.test.ts, next.config.ts, app/{layout,auth/page}.tsx, src/components/{layout/Header,modals/AboutModal}.tsx, src/hooks/useAuth.tsx, package.json, docs/MULTI_ZONE_MIGRATION.md, logs/*.
+- **Verification**:
+  - `npm run lint`: 0 errors (8 pre-existing warnings).
+  - `npm run test:ci`: unit 38/38, sync 5/5, and the Rapor-Leaderboard contract passed.
+  - Standalone build (CI placeholder Supabase env): `/`, `/auth`, `/leaderboard`, the favicon, the logo, and `/_next/image` all return 200, with no back link.
+  - Zone build (`NEXT_PUBLIC_BASE_PATH=/app/leaderboard`) served through arsc-home with `ZONE_LEADERBOARD_URL`:
+    - All of the pages and assets above return 200 under `/app/leaderboard`.
+    - In the browser, the Layanan card opens `/app/leaderboard`, `_next` assets load from the zone, and `← ARSC` returns to `/id`.
+    - The only errors were refused connections to the placeholder Supabase, as expected.
+- **Gate**: Stage 7R still applies to any deploy of `main`. This PR adds no runtime change while the env var is unset.
+
 ### [2026-09-28] [Claude Code / Planning + Documentation]
 - **Goal**: Document the approved plan to serve Leaderboard at `/app/leaderboard` under one ARSC domain (Next.js Multi-Zones, main zone = new repo `arsc-home`), for handoff.
 - **Actions**: Read-only basePath readiness audit at `298c8b8`, covering `next/image` string sources, favicon metadata, `emailRedirectTo`, and the proxy location. Wrote the migration spec with an explicit Stage 7R release gate. Added a planned-change section to the maintainer guide. Recorded DEC-003. Replaced the literal `\n` artifacts at the end of `AGENTS.md` and `logs/README.md` with real newlines.
