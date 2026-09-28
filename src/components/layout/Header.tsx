@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { AboutModal, HelpModal, ProfileSettingsModal } from '@/components/modals';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { BASE_PATH, withBase } from '@/lib/base-path';
 
 export function Header() {
   const {
@@ -80,9 +81,15 @@ export function Header() {
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="container flex h-[4.5rem] items-center justify-between gap-4">
+          {/* Back to the ARSC site (cross-zone: plain <a>, only when served under the shared domain) */}
+          {BASE_PATH && (
+            <a href="/" className="hidden shrink-0 text-sm font-semibold text-muted-foreground hover:text-foreground sm:inline">
+              ← ARSC
+            </a>
+          )}
           <Link href="/" className="group flex min-w-0 items-center gap-3" aria-label="ARSC Leaderboard — Beranda">
             <span className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-card shadow-sm transition-transform duration-200 group-hover:-translate-y-0.5">
-              <Image src="/arsc-logo.png" alt="" width={32} height={32} className="size-8 object-contain" priority />
+              <Image src={withBase("/arsc-logo.png")} alt="" width={32} height={32} className="size-8 object-contain" priority />
             </span>
             <span className="min-w-0 leading-none">
               <span className="block text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-primary">ARSC</span>

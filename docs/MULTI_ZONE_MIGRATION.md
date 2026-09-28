@@ -1,5 +1,5 @@
 ---
-status: approved-not-started (blocked by Stage 7R)
+status: implemented-behind-env (feat/multi-zone-basepath), not activated
 last_verified: 2026-09-28
 audience: maintainers-and-ai
 sensitivity: internal
@@ -72,3 +72,17 @@ Use synthetic accounts only.
 ## Rollback
 
 Unset `ZONE_LEADERBOARD_URL` in arsc-home and remove the 308. For a full rollback, revert the basePath PR.
+
+## Implementation notes (2026-09-28, branch `feat/multi-zone-basepath`)
+
+- **Activation is an env var, not a code change.** `NEXT_PUBLIC_BASE_PATH` is empty by default, so merging keeps today's behavior.
+  - Set it to `/app/leaderboard` only when arsc-home's `ZONE_LEADERBOARD_URL` points at this deployment **and** the Supabase Auth allow-list contains `https://<domain>/app/leaderboard/`.
+  - The **Stage 7R gate still applies**: do not deploy `main` against a database without the Stage 7 objects.
+- `src/lib/base-path.ts` is the single source of truth. It is tested by `tests/actions/base_path.test.ts`, which is part of `npm run test:unit`.
+- Verified locally end to end, with a zone build served through arsc-home's rewrite:
+  - pages, `_next` assets, `next/image`, and the favicon all load
+  - the back link works
+  - the only errors were refused connections to the placeholder Supabase
+- `src/proxy.ts` is still likely inactive (see the finding above). It is untouched by this PR.
+- **Vercel Analytics**: under the shared domain, page views are recorded by the arsc-home project.
+- **Windows / Git Bash**: use `MSYS_NO_PATHCONV=1` when passing `/app/leaderboard` on the command line.

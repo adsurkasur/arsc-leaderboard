@@ -5,6 +5,7 @@ import { useState, useEffect, createContext, useContext, ReactNode, useCallback,
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 import { getErrorMessage, withTimeout } from '@/lib/async';
+import { BASE_PATH } from '@/lib/base-path';
 
 const AUTH_REQUEST_TIMEOUT_MS = 10_000;
 
@@ -243,7 +244,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, metadata?: { full_name: string; bidang_biro: string }) => {
-    const redirectUrl = `${window.location.origin}/`;
+    const redirectUrl = `${window.location.origin}${BASE_PATH}/`;
     const { error } = await supabase.auth.signUp({
       email,
       password,
