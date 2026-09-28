@@ -75,3 +75,12 @@ A change is ready when lint, unit/sync/contract tests, build, relevant isolated 
 ## Local verification note (2026-08-15)
 
 Lint passed with 8 Fast Refresh warnings and no errors. All 35 unit/static tests, 5 Rapor synchronization tests, the Rapor-Leaderboard contract, and the production build passed. Local database and Playwright suites were not run; this result does not change Stage 7's recorded remote status.
+
+## Planned deployment change: one ARSC domain (2026-09-28)
+
+The owner approved serving Leaderboard at `https://<domain>/app/leaderboard` through Next.js Multi-Zones. The main zone is the new `adsurkasur/arsc-home` repo. **Not implemented yet.** Read `docs/MULTI_ZONE_MIGRATION.md` before changing `next.config.ts`, image and asset paths, or auth redirect URLs.
+
+- **Release gate:** the basePath change must not reach production before Stage 7R is complete (see the Stage 7 remote release section above).
+- After migration, Leaderboard and Halo share one origin, so their Supabase session cookie is shared (owner-approved SSO) and logout is shared too.
+- Audit finding: `src/proxy.ts` is probably inactive because `app/` is at the repository root. Track and fix it separately.
+- Cross-system map: arsc-home `docs/ECOSYSTEM.md` and `docs/MULTI_ZONES_RUNBOOK.md`. Umbrella context: `ARSC_SYSTEM_HANDOFF_ADDENDUM_2026-09-28.md` in the managed ARSC workspace.
