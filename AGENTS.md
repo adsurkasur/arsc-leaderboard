@@ -27,4 +27,4 @@ Any task that modifies code, configuration, database schemas, documentation, or 
 - **Understand Before Touching**: Trace real call paths and read relevant docs before proposing edits.
 - **Root Cause over Symptom**: Fix shared utilities and underlying root causes rather than patching one-off symptoms.
 - **Verify Every Change**: Every non-trivial change must leave behind a runnable verification check (test suite, verification script, or assertion check).
-- **Preserve Documentation Integrity**: Do not delete unrelated comments, docstrings, or architectural notes without explicit instructions.\n
+- **Preserve Documentation Integrity**: Do not delete unrelated comments, docstrings, or architectural notes without explicit instructions.
